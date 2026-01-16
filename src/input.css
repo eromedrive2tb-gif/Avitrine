@@ -1,13 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700&display=swap');
+
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
-  --color-brand-dark: #0B2641;
-  --color-brand-darker: #0E1136;
-  --color-brand-primary: #FF4006;
-  --color-brand-secondary: #A37CFF;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  --color-void: #050505;
+  --color-surface: #121212;
+  --color-primary: #8A2BE2;
+  --color-accent: #00F0FF;
 }
 
+/* Custom Base Styles */
 body {
-  @apply bg-[#0B2641] text-white font-sans;
+  @apply bg-void text-gray-200 font-body antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display tracking-wide text-white;
+}
+
+/* Scrollbar Hide Utility */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  @apply backdrop-blur-md bg-white/5 border border-white/10;
+}
+
+.glass-card {
+  @apply backdrop-blur-xl bg-[#121212]/80 border border-white/5 shadow-2xl;
 }
