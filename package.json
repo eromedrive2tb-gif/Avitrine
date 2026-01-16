@@ -1,0 +1,22 @@
+{
+  "name": "code",
+  "scripts": {
+    "dev": "bun run --hot src/index.tsx",
+    "css:build": "tailwindcss -i ./src/input.css -o ./static/styles.css",
+    "css:watch": "tailwindcss -i ./src/input.css -o ./static/styles.css --watch"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.971.0",
+    "autoprefixer": "^10.4.23",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.11.4",
+    "postcss": "^8.5.6",
+    "postgres": "^3.4.8",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.31.8"
+  }
+}
