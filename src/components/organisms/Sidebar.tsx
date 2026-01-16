@@ -19,7 +19,7 @@ export const Sidebar: FC = () => {
       <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-40 hidden md:hidden glass backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
 
       {/* Sidebar Container */}
-      <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-[#050505] border-r border-white/5 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto custom-scrollbar">
+      <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-[#050505] border-r border-white/5 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto custom-scrollbar flex flex-col">
         
         {/* Mobile Header (Logo) */}
         <div class="flex items-center justify-between p-6 md:hidden">
@@ -28,9 +28,9 @@ export const Sidebar: FC = () => {
         </div>
 
         {/* Logo Desktop Area (Spacer since Navbar covers top) */}
-        <div class="hidden md:block h-20"></div> 
+        <div class="hidden md:block h-20 shrink-0"></div> 
 
-        <div class="px-4 py-6">
+        <div class="px-4 py-6 flex-grow">
           {/* Main Menu */}
           <div class="mb-8">
             <h3 class="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Menu</h3>
@@ -56,19 +56,23 @@ export const Sidebar: FC = () => {
               ))}
             </nav>
           </div>
-
-          {/* Ad Spot Small */}
-          <div class="px-4 mt-auto">
-             <div class="w-full aspect-square rounded-lg bg-gradient-to-br from-purple-900 to-black border border-white/10 flex items-center justify-center relative overflow-hidden group cursor-pointer">
-                <div class="absolute inset-0 bg-primary/20 group-hover:bg-primary/30 transition-colors"></div>
-                <div class="relative z-10 text-center">
-                    <p class="text-xs font-bold text-white mb-2">SEJA CRIADOR</p>
-                    <button class="text-[10px] bg-primary text-white px-3 py-1 rounded uppercase font-bold">Cadastrar</button>
-                </div>
-             </div>
-          </div>
-
         </div>
+
+        {/* Ad Spot Small (Fixed at bottom or scrollable depending on height, put in flex flow) */}
+        <div class="p-4 mt-auto border-t border-white/5 bg-[#0a0a0a]">
+             <span class="text-[10px] text-gray-600 uppercase mb-1 block">Publicidade</span>
+             <a href="#" class="block w-full aspect-square rounded-lg bg-white overflow-hidden relative group border border-white/10">
+                <img src="https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=400&q=80" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                <div class="absolute bottom-3 left-3 right-3 text-center">
+                    <p class="text-white font-bold text-lg leading-none mb-1">BET WIN</p>
+                    <button class="bg-[#FFD700] text-black text-[10px] font-bold w-full py-1 rounded hover:bg-white transition-colors">
+                        BÔNUS DE R$500
+                    </button>
+                </div>
+             </a>
+        </div>
+
       </aside>
 
       {/* Script for toggle logic */}
@@ -77,7 +81,6 @@ export const Sidebar: FC = () => {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             
-            // Check if we are on mobile (using the transform class as state check or window width)
             if (sidebar.classList.contains('-translate-x-full')) {
                 sidebar.classList.remove('-translate-x-full');
                 overlay.classList.remove('hidden');
