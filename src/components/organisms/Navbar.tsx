@@ -7,36 +7,49 @@ interface NavbarProps {
 
 export const Navbar: FC<NavbarProps> = ({ isAdmin = false }) => {
   return (
-    <nav class="fixed top-0 left-0 w-full z-50 transition-all duration-300 backdrop-blur-xl bg-void/70 border-b border-white/5">
-      <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
-        {/* Logo */}
-        <a href="/" class="flex items-center gap-3 group">
-          <div class="relative w-10 h-10 flex items-center justify-center">
-             <div class="absolute inset-0 bg-primary rounded-lg blur-md opacity-50 group-hover:opacity-80 transition-opacity"></div>
-             <div class="relative w-full h-full bg-gradient-to-br from-primary to-purple-900 rounded-lg flex items-center justify-center border border-white/10">
-               <span class="font-display text-2xl text-white pt-1">C</span>
-             </div>
-          </div>
-          <div class="flex flex-col">
-            <span class="text-2xl font-display text-white tracking-wide leading-none">
+    <nav class="fixed top-0 left-0 w-full z-[60] transition-all duration-300 bg-[#050505] border-b border-white/5 h-16">
+      <div class="w-full px-4 md:px-6 h-full flex items-center justify-between">
+        
+        {/* Left: Hamburger & Logo */}
+        <div class="flex items-center gap-4">
+          {/* Hamburger (Mobile Only) */}
+          <button onclick="toggleSidebar()" class="md:hidden text-white p-1">
+             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+
+          <a href="/" class="flex items-center gap-2 group">
+             <div class="w-8 h-8 bg-gradient-to-br from-primary to-purple-900 rounded flex items-center justify-center font-display text-white">C</div>
+             <span class="text-xl font-display text-white tracking-wide hidden sm:block">
               Creator<span class="text-primary">Flix</span>
             </span>
-            <span class="text-[10px] uppercase tracking-[0.2em] text-gray-400 hidden sm:block">Premium Content</span>
-          </div>
-        </a>
-
-        {/* Desktop Menu */}
-        <div class="hidden md:flex items-center gap-10">
-          <a href="/" class="text-sm font-medium uppercase tracking-widest text-white border-b-2 border-primary pb-1">Home</a>
-          <a href="/models" class="text-sm font-medium uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Modelos</a>
-          <a href="/plans" class="text-sm font-medium uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Planos</a>
+          </a>
         </div>
 
-        {/* Actions */}
-        <div class="flex items-center gap-6">
-          <a href="/login" class="text-sm font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors hidden md:block">Login</a>
-          <Button href="/register" variant="primary" className="!py-2 !px-6 text-xs shadow-neon-purple">
-            Assinar VIP
+        {/* Center: Search Bar (Tube Style) */}
+        <div class="hidden md:flex flex-1 max-w-xl mx-8">
+            <div class="relative w-full group">
+                <input 
+                    type="text" 
+                    placeholder="Pesquisar modelos, vídeos, categorias..." 
+                    class="w-full bg-[#121212] border border-white/10 text-gray-300 text-sm rounded-full py-2 px-5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                />
+                <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary">
+                    🔍
+                </button>
+            </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div class="flex items-center gap-3">
+          <a href="/plans" class="hidden md:flex items-center gap-1 text-[#FFD700] text-xs font-bold border border-[#FFD700]/30 px-3 py-1.5 rounded-full hover:bg-[#FFD700]/10 transition-colors">
+            <span>💎</span> SEJA VIP
+          </a>
+          
+          <div class="h-6 w-px bg-white/10 mx-2 hidden md:block"></div>
+          
+          <a href="/login" class="text-sm font-medium text-gray-400 hover:text-white">Entrar</a>
+          <Button href="/register" variant="primary" className="!py-1.5 !px-4 !text-xs !rounded-full">
+            Criar Conta
           </Button>
         </div>
       </div>

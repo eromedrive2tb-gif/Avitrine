@@ -2,132 +2,109 @@ import { FC } from 'hono/jsx';
 import { Layout } from '../components/templates/Layout';
 import { Button } from '../components/atoms/Button';
 import { ModelCard } from '../components/molecules/ModelCard';
+import { AdBanner } from '../components/molecules/AdBanner';
+import { NativeAdBlock } from '../components/molecules/NativeAdBlock';
+import { HeroCarousel } from '../components/organisms/HeroCarousel';
 
 export const HomePage: FC = () => {
   // Mock Data
-  const liveModels = [
-    { name: "Alessandra V.", imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80", category: "Exclusive", isLive: true, views: "12k" },
+  const trendingModels = [
     { name: "Fernanda T.", imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80", category: "Gamer", isLive: true, views: "8.5k" },
     { name: "Sarah J.", imageUrl: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80", category: "Cosplay", isLive: true, views: "5.1k" },
-    { name: "Mikaela", imageUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80", category: "Chat", isLive: true, views: "3.2k" },
-    { name: "Ruby Rose", imageUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80", category: "Alternative", isLive: true, views: "15k" },
   ];
 
-  const trendingModels = [
-    { name: "Julia K.", imageUrl: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=80", category: "Fashion", isLive: false },
-    { name: "Mariana S.", imageUrl: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&q=80", category: "Vlog", isLive: false },
-    { name: "Elena R.", imageUrl: "https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=600&q=80", category: "Fitness", isLive: false },
-    { name: "Sophie", imageUrl: "https://images.unsplash.com/photo-1526510747491-58f928ec870f?w=600&q=80", category: "Art", isLive: false },
+  const feedModels = [
+    { name: "Julia K.", imageUrl: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=80", category: "Fashion", isLive: false, views: "2k" },
+    { name: "Mariana S.", imageUrl: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&q=80", category: "Vlog", isLive: false, views: "4k" },
+    { name: "Elena R.", imageUrl: "https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=600&q=80", category: "Fitness", isLive: false, views: "12k" },
+    { name: "HOT_GIRL_99", imageUrl: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80", category: "PATROCINADO", isLive: false, views: "AD", isPromoted: true },
+    { name: "Sophie", imageUrl: "https://images.unsplash.com/photo-1526510747491-58f928ec870f?w=600&q=80", category: "Art", isLive: false, views: "900" },
+    { name: "Valentina", imageUrl: "https://images.unsplash.com/photo-1529139574466-a302d2d3f524?w=600&q=80", category: "Lifestyle", isLive: false, views: "3.2k" },
+    { name: "Isabella", imageUrl: "https://images.unsplash.com/photo-1529139574466-a302d2d3f524?w=600&q=80", category: "Model", isLive: false, views: "5k" },
+    { name: "Carla", imageUrl: "https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=600&q=80", category: "Fitness", isLive: false, views: "2.1k" }
+  ];
+
+  const sponsoredModels = [
+    { name: "Vitoria Secret", imageUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80", category: "Premium", isLive: false, views: "PRO" },
+    { name: "Bella Doll", imageUrl: "https://images.unsplash.com/photo-1464863979621-258859e62245?w=600&q=80", category: "New", isLive: false, views: "PRO" },
   ];
 
   return (
     <Layout>
-      {/* Cinematic Hero Section */}
-      <section class="relative h-[85vh] flex items-center overflow-hidden">
-        {/* Video Background Placeholder */}
-        <div class="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=2000&auto=format&fit=crop" 
-            class="w-full h-full object-cover opacity-60 scale-105 animate-[pulse_10s_ease-in-out_infinite]"
-            alt="Hero Background"
-          />
-          {/* Vignette & Gradient */}
-          <div class="absolute inset-0 bg-gradient-to-t from-void via-void/50 to-transparent"></div>
-          <div class="absolute inset-0 bg-gradient-to-r from-void via-transparent to-void/20"></div>
-        </div>
-
-        <div class="relative z-10 max-w-[1400px] mx-auto px-6 w-full pt-20">
-          <div class="max-w-3xl">
-            <div class="flex items-center gap-3 mb-6 animate-[fadeIn_1s_ease-out]">
-              <span class="px-3 py-1 border border-primary/50 bg-primary/10 backdrop-blur-md rounded text-xs font-bold uppercase tracking-widest text-primary shadow-neon-purple">
-                Novo Lançamento
-              </span>
-              <span class="text-gray-400 text-sm font-semibold tracking-wide">
-                 ★ 4.98 (2k+ Reviews)
-              </span>
-            </div>
-            
-            <h1 class="text-7xl md:text-9xl font-display leading-[0.9] mb-8 text-white drop-shadow-2xl">
-              ALESSANDRA <br/> 
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">VILLENEUVE</span>
-            </h1>
-            
-            <p class="text-xl md:text-2xl text-gray-300 font-light mb-10 max-w-xl leading-relaxed">
-              Explore o conteúdo exclusivo da modelo #1 do Brasil. 
-              Bastidores, ensaios em 4K e interação em tempo real.
-            </p>
-            
-            <div class="flex flex-col sm:flex-row gap-6">
-              <Button href="/plans" variant="primary" className="!text-lg !px-12 !py-4 shadow-neon-purple">
-                Assinar Agora
-              </Button>
-              <Button href="/models" variant="secondary" className="!text-lg !px-10 !py-4">
-                Ver Trailer
-              </Button>
-            </div>
+      <div class="max-w-[1600px] mx-auto pb-20 p-4 md:p-6">
+        
+        {/* TOP SECTION: Carousel + Side Ads/Trending */}
+        <section class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          
+          {/* Main Carousel (Takes 3 columns on large screens) */}
+          <div class="lg:col-span-3">
+             <HeroCarousel />
           </div>
-        </div>
-      </section>
 
-      {/* Swimlane: Live Now */}
-      <section class="py-12 border-b border-white/5 bg-gradient-to-b from-void to-surface">
-        <div class="max-w-[1400px] mx-auto px-6 mb-8 flex items-end justify-between">
-          <div>
-            <div class="flex items-center gap-3 mb-2">
-              <span class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_red]"></span>
-              <h2 class="text-red-500 text-sm font-bold uppercase tracking-[0.2em]">Acontecendo Agora</h2>
-            </div>
-            <h3 class="text-4xl md:text-5xl">Live Streaming</h3>
+          {/* Side Column (Desktop Only - Trending/Ads) */}
+          <div class="hidden lg:flex flex-col gap-4 h-[380px]">
+             {/* Trending Mini Cards */}
+             <div class="flex-1 relative rounded-lg overflow-hidden border border-white/10 group cursor-pointer">
+                <img src={trendingModels[0].imageUrl} class="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                <div class="absolute top-2 left-2 bg-red-600 text-[10px] font-bold px-2 rounded text-white animate-pulse">LIVE</div>
+                <div class="absolute bottom-2 left-2 font-bold text-white leading-tight">
+                    {trendingModels[0].name}<br/>
+                    <span class="text-[10px] text-gray-300">Gamer Girl Room</span>
+                </div>
+             </div>
+             
+             {/* Small Square Ad */}
+             <div class="h-1/3 bg-[#111] rounded-lg border border-[#FFD700]/30 flex items-center justify-center relative overflow-hidden group">
+                 <div class="text-center z-10">
+                     <p class="text-[#FFD700] text-xs font-bold uppercase tracking-widest mb-1">Promoção</p>
+                     <p class="text-white font-display text-xl">50% OFF</p>
+                 </div>
+                 <div class="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-black/50 group-hover:opacity-0 transition-opacity"></div>
+             </div>
           </div>
-          <a href="/models?filter=live" class="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">
-            Ver Todas <span class="text-primary">→</span>
-          </a>
+        </section>
+
+        {/* Type B: Banner Ad */}
+        <AdBanner 
+            title="Aposte na BetWinner" 
+            subtitle="Bônus de 100% no primeiro depósito." 
+            ctaText="Pegar Bônus" 
+            link="#"
+            imageUrl="https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=800&q=80"
+        />
+
+        {/* Filters / Tags Scroll */}
+        <div class="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+            {['Recomendados', 'Brasileiras', 'VR', 'Live', 'Novinhas', 'Milf', 'Gamer'].map((tag, i) => (
+                <button class={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${i === 0 ? 'bg-white text-black' : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white'}`}>
+                    {tag}
+                </button>
+            ))}
         </div>
-        
-        {/* Horizontal Scroll Container */}
-        <div class="flex overflow-x-auto pb-12 pt-4 px-6 gap-6 snap-x scrollbar-hide max-w-[1400px] mx-auto">
-          {liveModels.map((model) => (
-            <div class="min-w-[280px] md:min-w-[320px] snap-center">
-              <ModelCard {...model} />
+
+        {/* Main Feed: High Density */}
+        <section>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                {/* Mobile: Show trending items here since side col is hidden */}
+                <div class="lg:hidden block"><ModelCard {...trendingModels[0]} /></div>
+                
+                {feedModels.map(m => <ModelCard {...m} />)}
             </div>
-          ))}
-        </div>
-      </section>
+        </section>
 
-      {/* Swimlane: Trending */}
-      <section class="py-20 bg-void">
-        <div class="max-w-[1400px] mx-auto px-6 mb-10">
-          <h2 class="text-4xl md:text-5xl mb-2">Em Alta na Semana</h2>
-          <p class="text-gray-400 font-light">As criadoras que estão quebrando a internet.</p>
-        </div>
-        
-        <div class="max-w-[1400px] mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-          {trendingModels.map((model) => (
-            <ModelCard {...model} />
-          ))}
-        </div>
-      </section>
+        {/* Native Ad Block */}
+        <NativeAdBlock title="Diamond Selection" models={sponsoredModels} />
 
-      {/* Premium CTA */}
-      <section class="py-32 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gold/5"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-void via-transparent to-void"></div>
-        
-        <div class="relative z-10 max-w-4xl mx-auto text-center px-6">
-          <span class="inline-block mb-6 px-4 py-1 border border-gold/40 text-gold text-sm font-bold uppercase tracking-[0.3em] rounded-full">
-            Experiência VIP
-          </span>
-          <h2 class="text-5xl md:text-7xl mb-8 text-white">
-            Desbloqueie o <span class="text-gold italic font-serif">Impossível</span>
-          </h2>
-          <p class="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Tenha acesso a conteúdos 8K, VR Experience e chat direto com suas criadoras favoritas no plano Diamond.
-          </p>
-          <Button href="/plans" variant="primary" className="!bg-gold !text-black hover:!bg-white shadow-neon-gold border-none">
-            Ver Planos VIP
-          </Button>
-        </div>
-      </section>
+        {/* Secondary Feed */}
+        <section class="mt-8">
+            <h3 class="font-display text-2xl text-white mb-4">Novas Revelações</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                 {feedModels.slice().reverse().map(m => <ModelCard {...m} />)}
+            </div>
+        </section>
+
+      </div>
     </Layout>
   );
 };

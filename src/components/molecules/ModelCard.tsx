@@ -3,10 +3,10 @@ import { FC } from 'hono/jsx';
 interface ModelCardProps {
   name: string;
   imageUrl: string;
-  videoUrl?: string; // Optional video preview
   category?: string;
   isLive?: boolean;
   views?: string;
+  isPromoted?: boolean; // Type A: "Post" Ad
 }
 
 export const ModelCard: FC<ModelCardProps> = ({ 
@@ -14,47 +14,52 @@ export const ModelCard: FC<ModelCardProps> = ({
   imageUrl, 
   category = 'Model', 
   isLive = false,
-  views = '1.2k'
+  views = '1.2k',
+  isPromoted = false
 }) => {
   return (
-    <div class="group relative w-full aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface border border-white/5 hover:border-primary/50 transition-all duration-500 hover:shadow-neon-purple">
+    <div class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer transition-all duration-300 ${
+      isPromoted 
+        ? 'border-2 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)]' 
+        : 'bg-surface border border-white/5 hover:border-primary/50'
+    }`}>
       {/* Image Layer */}
       <img 
         src={imageUrl} 
         alt={name} 
-        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 z-0" 
+        class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
         loading="lazy"
       />
       
-      {/* Video Preview Layer (Simulated with opacity on hover) */}
-      <div class="absolute inset-0 bg-black/20 z-10 group-hover:bg-transparent transition-colors duration-300"></div>
+      {/* Promoted Badge */}
+      {isPromoted && (
+        <div class="absolute top-0 left-0 w-full bg-[#FFD700] text-black text-[10px] font-bold uppercase text-center py-0.5 z-30">
+          Patrocinado
+        </div>
+      )}
 
-      {/* Gradient Overlay for Text Readability */}
-      <div class="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent opacity-80 z-20"></div>
-
-      {/* Live Badge */}
+      {/* Live Badge (Compact) */}
       {isLive && (
-        <div class="absolute top-3 right-3 z-30">
-          <span class="flex items-center gap-2 bg-red-600/20 backdrop-blur-md border border-red-500/50 text-red-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-[0_0_10px_rgba(239,68,68,0.4)] animate-pulse">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            Ao Vivo
+        <div class="absolute top-2 right-2 z-30">
+          <span class="flex items-center gap-1 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider animate-pulse">
+            Live
           </span>
         </div>
       )}
 
-      {/* Content */}
-      <div class="absolute bottom-0 left-0 w-full p-4 z-30 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-        <div class="flex items-center gap-2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0 delay-75">
-          <span class="text-xs font-semibold text-primary uppercase tracking-wider">{category}</span>
-          <span class="w-1 h-1 bg-gray-500 rounded-full"></span>
-          <span class="text-xs text-gray-400 flex items-center gap-1">
+      {/* Gradient Overlay (Always visible at bottom for text readability) */}
+      <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 to-transparent z-20"></div>
+
+      {/* Content (Compact for Mobile) */}
+      <div class="absolute bottom-0 left-0 w-full p-3 z-30">
+        <h3 class="text-white text-sm md:text-base font-bold truncate leading-tight">{name}</h3>
+        
+        <div class="flex items-center justify-between mt-1">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wide truncate pr-2">{category}</span>
+          <span class="text-[10px] text-primary flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded backdrop-blur-sm">
             👁 {views}
           </span>
         </div>
-        
-        <h3 class="text-white text-2xl font-display uppercase leading-none mb-1 group-hover:text-primary transition-colors duration-300">{name}</h3>
-        
-        <div class="h-1 w-0 group-hover:w-full bg-primary transition-all duration-500 ease-out mt-3"></div>
       </div>
     </div>
   );
