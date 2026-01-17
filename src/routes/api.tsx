@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
 import { AdminService } from '../services/admin';
 import { db } from '../db'; 
-import { whitelabelModels, whitelabelPosts } from '../db/schema';
-// Adicionado 'and' aos imports
-import { inArray, desc, sql, and } from 'drizzle-orm';
+// Adicionado whitelabelMedia aos imports
+import { whitelabelModels, whitelabelPosts, whitelabelMedia } from '../db/schema';
+// Adicionado 'eq' aos imports
+import { inArray, desc, sql, and, eq } from 'drizzle-orm';
 
 const apiRoutes = new Hono();
 
@@ -58,42 +59,37 @@ apiRoutes.get('/models', async (c) => {
 
     const modelIds = models.map(m => m.id);
     
-    // PASSO 2: Buscar posts que POSSUAM imagens (CORRIGIDO)
-    const posts = await db.selectDistinctOn([whitelabelPosts.whitelabelModelId], {
+    // PASSO 2: Buscar a imagem mais recente de cada modelo (CORRIGIDO E OTIMIZADO)
+    // Usamos DISTINCT ON para garantir 1 resultado por modelo.
+    // O filtro 'image' e a regex de extensão garantem que não venha mp3/m4v.
+    const thumbnails = await db.selectDistinctOn([whitelabelPosts.whitelabelModelId], {
       modelId: whitelabelPosts.whitelabelModelId,
-      mediaCdns: whitelabelPosts.mediaCdns
+      url: whitelabelMedia.url,
+      s3Key: whitelabelMedia.s3Key,
     })
-    .from(whitelabelPosts)
+    .from(whitelabelMedia)
+    .innerJoin(whitelabelPosts, eq(whitelabelMedia.whitelabelPostId, whitelabelPosts.id))
     .where(
       and(
         inArray(whitelabelPosts.whitelabelModelId, modelIds),
-        // Usando json_array_length em vez de jsonb_array_length
-        sql`${whitelabelPosts.mediaCdns}->>'images' IS NOT NULL`,
-        sql`json_array_length(${whitelabelPosts.mediaCdns}->'images') > 0`
+        eq(whitelabelMedia.type, 'image'),
+        // Filtro extra via Regex para garantir extensões de imagem (evita mp3 disfarçado)
+        sql`${whitelabelMedia.s3Key} ~* '\\.(jpg|jpeg|png|webp|gif)$'`
       )
     )
-    .orderBy(whitelabelPosts.whitelabelModelId, desc(whitelabelPosts.id));
+    // Ordenamos pelo post mais novo (desc) e depois pela primeira mídia do post
+    .orderBy(whitelabelPosts.whitelabelModelId, desc(whitelabelPosts.id), whitelabelMedia.id);
 
     // PASSO 3: Mesclar os dados
     const result = models.map(model => {
+      // Se a modelo já tem thumbnail fixa no banco, usa ela
       if (model.thumbnailUrl) return model;
 
-      const post = posts.find(p => p.modelId === model.id);
-      let foundImage = null;
-
-      if (post && post.mediaCdns) {
-        const media = typeof post.mediaCdns === 'string' 
-          ? JSON.parse(post.mediaCdns) 
-          : post.mediaCdns;
-        
-        if (media?.images && Array.isArray(media.images) && media.images.length > 0) {
-          foundImage = media.images[0];
-        }
-      }
+      // Busca a imagem encontrada no PASSO 2
+      const thumb = thumbnails.find(t => t.modelId === model.id);
+      let foundImage = thumb?.url || thumb?.s3Key;
       
       if (foundImage && typeof foundImage === 'string') {
-        // Se a imagem não for um link completo, ou se tiver espaços, 
-        // garante que os caracteres especiais sejam URL-Safe
         if (!foundImage.startsWith('http')) {
             foundImage = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${foundImage.split('/').map(p => encodeURIComponent(p)).join('/')}`;
         }
@@ -101,7 +97,7 @@ apiRoutes.get('/models', async (c) => {
 
       return {
         ...model,
-        thumbnailUrl: foundImage
+        thumbnailUrl: foundImage || null
       };
     });
 
