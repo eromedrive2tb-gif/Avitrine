@@ -9,16 +9,17 @@ interface AdminWhitelabelProps {
   currentPage?: number;
   totalPages?: number;
   error?: string;
+  stats?: { models: number; posts: number; media: number };
 }
 
-export const AdminWhitelabel: FC<AdminWhitelabelProps> = ({ models, currentPage = 1, totalPages = 1, error }) => {
+export const AdminWhitelabel: FC<AdminWhitelabelProps> = ({ models, currentPage = 1, totalPages = 1, error, stats }) => {
   
   return (
     <AdminLayout title="Integração Whitelabel (S3/DigitalOcean)" activePath="/admin/whitelabel">
       
       <div class="space-y-8 pb-20">
         
-        <WhitelabelStatus error={error} />
+        <WhitelabelStatus error={error} stats={stats} />
 
         <WhitelabelTable models={models} currentPage={currentPage} totalPages={totalPages} error={error} />
         

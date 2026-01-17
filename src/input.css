@@ -3,22 +3,42 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  
+  /* Definição de Cores Core */
   --color-void: #050505;
   --color-surface: #121212;
   --color-primary: #8A2BE2;
   --color-accent: #00F0FF;
+  --color-gold: #FFD700;
+
+  /* Fontes Customizadas */
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Efeitos de Sombra Neon */
+  --shadow-neon-purple: 0 0 10px rgba(138, 43, 226, 0.5), 0 0 20px rgba(138, 43, 226, 0.3);
 }
 
-/* Custom Base Styles */
-body {
-  @apply bg-void text-gray-200 font-body antialiased;
+@layer base {
+  body {
+    background-color: var(--color-void);
+    color: #e5e7eb;
+    font-family: var(--font-body);
+  }
 }
 
-h1, h2, h3, h4, h5, h6 {
-  @apply font-display tracking-wide text-white;
+/* Scrollbar Customizada para Dark Mode */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(138, 43, 226, 0.2);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 43, 226, 0.5);
 }
 
 /* Scrollbar Hide Utility */

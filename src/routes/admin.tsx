@@ -23,11 +23,16 @@ adminRoutes.get('/whitelabel', async (c) => {
   let models: any[] = [];
   let totalPages = 1;
   let error = undefined;
+  let stats = { models: 0, posts: 0, media: 0 };
   
   try {
-    const result = await WhitelabelDbService.listModels(page, 12); 
+    const [result, fetchedStats] = await Promise.all([
+        WhitelabelDbService.listModels(page, 12),
+        WhitelabelDbService.getStats()
+    ]);
     models = result.data;
     totalPages = result.totalPages;
+    stats = fetchedStats;
   } catch (e: any) {
     error = e.message;
   }
@@ -38,6 +43,7 @@ adminRoutes.get('/whitelabel', async (c) => {
       currentPage={page}
       totalPages={totalPages}
       error={error} 
+      stats={stats}
     />
   );
 });

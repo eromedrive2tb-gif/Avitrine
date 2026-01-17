@@ -17,16 +17,6 @@ export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, currentPage 
                     <span class="text-xs text-gray-500 flex items-center gap-1 mr-4">
                         <span class="w-2 h-2 bg-green-500 rounded-full"></span> DB Synced
                     </span>
-                    
-                    <button 
-                        hx-post="/admin/whitelabel/sync" 
-                        hx-swap="none"
-                        hx-on="htmx:afterOnLoad: window.location.reload()"
-                        class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-500 transition-colors flex items-center gap-2"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                        Sync Now
-                    </button>
                 </div>
             </div>
 

@@ -247,6 +247,18 @@ export const WhitelabelDbService = {
 
   async syncModelDetails(folderName: string) {
      return { success: true };
+  },
+
+  async getStats() {
+      const [modelCount] = await db.select({ count: count() }).from(whitelabelModels);
+      const [postCount] = await db.select({ count: count() }).from(whitelabelPosts);
+      const [mediaCount] = await db.select({ count: count() }).from(whitelabelMedia);
+
+      return {
+          models: modelCount.count,
+          posts: postCount.count,
+          media: mediaCount.count
+      };
   }
 };
 
