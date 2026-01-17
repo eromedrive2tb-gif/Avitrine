@@ -152,9 +152,12 @@ export const WhitelabelDbService = {
           const postId = postMap.get(postKey);
           if (!postId) continue;
 
+          const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key}`;
+
           mediaToInsert.push({
               whitelabelPostId: postId,
               s3Key: item.Key,
+              url: cdnUrl,
               type: /\.(mp4|mov|webm)$/i.test(fileName) ? 'video' : 'image'
           });
       }
@@ -164,7 +167,10 @@ export const WhitelabelDbService = {
           // Chunking 1000 items (Drizzle/Postgres limit is 65535 params, so ~20k rows with 3 cols. 1000 is safe)
           await db.insert(whitelabelMedia)
             .values(mediaToInsert as any)
-            .onConflictDoNothing();
+            .onConflictDoUpdate({
+                target: whitelabelMedia.s3Key,
+                set: { url: sql`excluded.url` }
+            });
           stats.media += mediaToInsert.length;
       }
 
@@ -182,6 +188,23 @@ export const WhitelabelDbService = {
             SELECT count(*) FROM whitelabel_posts 
             WHERE whitelabel_posts.whitelabel_model_id = whitelabel_models.id
         )
+    `);
+
+    // Final pass: Update post media JSON (media_cdns)
+    await db.execute(sql`
+        UPDATE whitelabel_posts
+        SET media_cdns = sub.media_json
+        FROM (
+            SELECT 
+                whitelabel_post_id,
+                json_build_object(
+                    'images', COALESCE(json_agg(url) FILTER (WHERE type = 'image' AND url IS NOT NULL), '[]'),
+                    'videos', COALESCE(json_agg(url) FILTER (WHERE type = 'video' AND url IS NOT NULL), '[]')
+                ) as media_json
+            FROM whitelabel_media
+            GROUP BY whitelabel_post_id
+        ) as sub
+        WHERE whitelabel_posts.id = sub.whitelabel_post_id
     `);
     
     return stats;

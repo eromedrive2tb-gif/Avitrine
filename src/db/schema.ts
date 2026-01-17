@@ -63,6 +63,7 @@ export const whitelabelPosts = pgTable('whitelabel_posts', {
   whitelabelModelId: integer('whitelabel_model_id').references(() => whitelabelModels.id, { onDelete: 'cascade' }).notNull(),
   folderName: text('folder_name').notNull(),
   title: text('title'),
+  mediaCdns: json('media_cdns'),
   createdAt: timestamp('created_at').defaultNow(),
 }, (t) => ({
   unq: unique().on(t.whitelabelModelId, t.folderName),
