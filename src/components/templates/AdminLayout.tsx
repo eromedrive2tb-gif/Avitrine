@@ -17,7 +17,7 @@ export const AdminLayout: FC<AdminLayoutProps> = ({ children, title = "Admin Pan
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
       </head>
-      <body class="bg-void text-white font-body min-h-screen antialiased selection:bg-primary selection:text-white">
+      <body class="bg-[#222222] text-white font-body min-h-screen antialiased selection:bg-primary selection:text-white">
         
         <AdminSidebar activePath={activePath} />
 
@@ -30,7 +30,7 @@ export const AdminLayout: FC<AdminLayoutProps> = ({ children, title = "Admin Pan
             </div>
 
             {/* Header - Mais elevado e com glassmorphism sutil */}
-            <header class="h-16 border-b border-primary/20 flex items-center justify-between px-8 bg-void/80 backdrop-blur-md sticky top-0 z-40">
+            <header class="h-16 border-b border-primary/20 flex items-center justify-between px-8 bg-[#000000] sticky top-0 z-40">
                 <div class="flex items-center gap-4">
                   <div class="h-8 w-1 bg-primary rounded-full shadow-neon-purple"></div>
                   <h1 class="font-display text-2xl tracking-wide text-white">{title}</h1>

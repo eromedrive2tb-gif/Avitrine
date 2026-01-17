@@ -8,22 +8,22 @@ export const AdminSettings: FC = () => {
             <div class="max-w-2xl space-y-8">
                 
                 {/* General */}
-                <div class="p-6 rounded-xl bg-[#121212] border border-white/5">
+                <div class="p-6 rounded-xl bg-surface border border-white/5">
                     <h3 class="font-bold text-white mb-4 border-b border-white/5 pb-2">Geral</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="text-xs text-gray-500">Nome do Site</label>
-                            <input type="text" value="CreatorFlix" class="w-full bg-[#050505] border border-white/10 rounded p-2 text-white mt-1" />
+                            <input type="text" value="CreatorFlix" class="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-white mt-1" />
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Email de Suporte</label>
-                            <input type="text" value="help@creatorflix.com" class="w-full bg-[#050505] border border-white/10 rounded p-2 text-white mt-1" />
+                            <input type="text" value="help@creatorflix.com" class="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-white mt-1" />
                         </div>
                     </div>
                 </div>
 
                 {/* Payment Gateways */}
-                <div class="p-6 rounded-xl bg-[#121212] border border-white/5">
+                <div class="p-6 rounded-xl bg-surface border border-white/5">
                     <h3 class="font-bold text-white mb-4 border-b border-white/5 pb-2">Pagamentos (Gateway)</h3>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between p-3 bg-white/5 rounded border border-white/5">

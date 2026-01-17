@@ -10,7 +10,7 @@ interface WhitelabelTableProps {
 
 export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, currentPage = 1, totalPages = 1, error }) => {
     return (
-        <div class="rounded-xl border border-white/5 bg-[#121212] overflow-hidden">
+        <div class="rounded-xl border border-white/5 bg-surface overflow-hidden">
             <div class="p-4 border-b border-white/5 flex justify-between items-center bg-[#1a1a1a]">
                 <h3 class="font-bold text-white text-sm">Explorador de Arquivos S3 (Cached)</h3>
                 <div class="flex gap-2 items-center">

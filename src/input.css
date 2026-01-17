@@ -5,7 +5,7 @@
 @theme {
   /* Definição de Cores Core */
   --color-void: #050505;
-  --color-surface: #121212;
+  --color-surface: #2a2a2a;
   --color-primary: #8A2BE2;
   --color-accent: #00F0FF;
   --color-gold: #FFD700;
@@ -56,5 +56,5 @@
 }
 
 .glass-card {
-  @apply backdrop-blur-xl bg-[#121212]/80 border border-white/5 shadow-2xl;
+  @apply backdrop-blur-xl bg-[#2a2a2a]/80 border border-white/5 shadow-2xl;
 }

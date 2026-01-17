@@ -11,7 +11,7 @@ export const AdminPlans: FC = () => {
       <div class="grid md:grid-cols-3 gap-6">
           {/* Plan Card Editor */}
           {plans.map(plan => (
-              <div class="p-6 rounded-xl bg-[#121212] border border-white/5">
+              <div class="p-6 rounded-xl bg-surface border border-white/5">
                   <div class="flex justify-between items-center mb-4">
                       <h3 class="font-bold text-xl text-white">{plan.name}</h3>
                       <span class="text-xs bg-green-500/10 text-green-500 px-2 py-1 rounded">Ativo</span>
@@ -20,11 +20,11 @@ export const AdminPlans: FC = () => {
                   <div class="space-y-4 mb-6">
                       <div>
                           <label class="block text-xs text-gray-500 mb-1">Preço (R$)</label>
-                          <input type="text" value={plan.price} class="w-full bg-[#050505] border border-white/10 rounded px-3 py-2 text-white" />
+                          <input type="text" value={plan.price} class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white" />
                       </div>
                       <div>
                           <label class="block text-xs text-gray-500 mb-1">Comissão Plataforma (%)</label>
-                          <input type="text" value="20%" class="w-full bg-[#050505] border border-white/10 rounded px-3 py-2 text-white" />
+                          <input type="text" value="20%" class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white" />
                       </div>
                   </div>
 

@@ -16,7 +16,7 @@ interface AdTableProps {
 
 export const AdTable: FC<AdTableProps> = ({ ads }) => {
   return (
-    <div class="rounded-xl border border-white/5 bg-[#121212] overflow-hidden">
+    <div class="rounded-xl border border-white/5 bg-surface overflow-hidden">
       <table class="w-full text-left text-sm text-gray-400">
         <thead class="bg-[#1a1a1a] text-xs uppercase font-bold text-gray-200">
           <tr>
@@ -29,7 +29,7 @@ export const AdTable: FC<AdTableProps> = ({ ads }) => {
             <th class="px-6 py-4 text-right">Ações</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5 bg-[#121212]">
+        <tbody class="divide-y divide-white/5 bg-surface">
           {ads.map((ad) => (
             <tr class="hover:bg-white/5 transition-colors">
               <td class="px-6 py-4 font-bold text-white">{ad.name}</td>

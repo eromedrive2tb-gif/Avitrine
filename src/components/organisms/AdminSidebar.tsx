@@ -23,10 +23,10 @@ export const AdminSidebar: FC<{ activePath?: string }> = ({ activePath = '/admin
   ];
 
   return (
-    <aside class="fixed top-0 left-0 h-full w-[240px] bg-void border-r border-primary/40 flex flex-col z-50 shadow-[10px_0_40px_-15px_rgba(138,43,226,0.4)]">
+    <aside class="fixed top-0 left-0 h-full w-[240px] bg-[#000000] border-r border-primary/40 flex flex-col z-50 shadow-[10px_0_40px_-15px_rgba(138,43,226,0.4)]">
       
       {/* Brand - Divisória primária reforçada */}
-      <div class="h-16 flex items-center px-6 bg-void border-b border-primary/30">
+      <div class="h-16 flex items-center px-6 bg-[#000000] border-b border-primary/30">
         <span class="font-display text-xl text-white tracking-widest uppercase">
           CREATOR<span class="text-primary ml-1.5 shadow-neon-purple">ADMIN</span>
         </span>
@@ -73,7 +73,7 @@ export const AdminSidebar: FC<{ activePath?: string }> = ({ activePath = '/admin
       </nav>
 
       {/* Admin User Card - Removido borda branca e ajustado contraste */}
-      <div class="p-4 bg-void border-t border-primary/30">
+      <div class="p-4 bg-[#000000] border-t border-primary/30">
         <div class="p-3 rounded-xl bg-surface border border-primary/20 flex items-center gap-3 hover:border-primary/50 transition-all duration-500 group shadow-lg">
           <div class="relative flex-shrink-0">
             <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-purple-900 flex items-center justify-center font-display text-base text-white shadow-lg">

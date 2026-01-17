@@ -5,7 +5,7 @@ module.exports = {
     extend: {
       colors: {
         void: '#050505',      // Background Principal
-        surface: '#121212',   // Cards/Modais
+        surface: '#2a2a2a',   // Cards/Modais
         primary: '#8A2BE2',   // Neon Purple
         accent: '#00F0FF',    // Electric Blue
         gold: '#FFD700',      // Premium/Diamond

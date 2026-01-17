@@ -81,7 +81,7 @@
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --color-void: #050505;
-    --color-surface: #121212;
+    --color-surface: #2a2a2a;
     --color-primary: #8A2BE2;
     --color-gold: #FFD700;
     --font-display: "Bebas Neue", sans-serif;
@@ -1014,6 +1014,9 @@
   .bg-\[\#0a0a0a\] {
     background-color: #0a0a0a;
   }
+  .bg-\[\#000000\] {
+    background-color: #000000;
+  }
   .bg-\[\#1a1a1a\] {
     background-color: #1a1a1a;
   }
@@ -1034,6 +1037,9 @@
   }
   .bg-\[\#121212\] {
     background-color: #121212;
+  }
+  .bg-\[\#222222\] {
+    background-color: #222222;
   }
   .bg-\[\#A37CFF\] {
     background-color: #A37CFF;
@@ -1168,28 +1174,19 @@
     background-color: var(--color-surface);
   }
   .bg-surface\/40 {
-    background-color: color-mix(in srgb, #121212 40%, transparent);
+    background-color: color-mix(in srgb, #2a2a2a 40%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-surface) 40%, transparent);
     }
   }
   .bg-surface\/50 {
-    background-color: color-mix(in srgb, #121212 50%, transparent);
+    background-color: color-mix(in srgb, #2a2a2a 50%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-surface) 50%, transparent);
     }
   }
   .bg-transparent {
     background-color: transparent;
-  }
-  .bg-void {
-    background-color: var(--color-void);
-  }
-  .bg-void\/80 {
-    background-color: color-mix(in srgb, #050505 80%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      background-color: color-mix(in oklab, var(--color-void) 80%, transparent);
-    }
   }
   .bg-white {
     background-color: var(--color-white);
@@ -2548,7 +2545,7 @@
   @supports (color: color-mix(in lab, red, red)) {
     border-color: color-mix(in oklab, var(--color-white) 5%, transparent);
   }
-  background-color: color-mix(in oklab, #121212 80%, transparent);
+  background-color: color-mix(in oklab, #2a2a2a 80%, transparent);
   --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
   box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   --tw-backdrop-blur: blur(var(--blur-xl));

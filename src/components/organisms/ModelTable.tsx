@@ -16,7 +16,7 @@ interface ModelTableProps {
 
 export const ModelTable: FC<ModelTableProps> = ({ models }) => {
   return (
-    <div class="rounded-xl border border-white/5 bg-[#121212] overflow-hidden">
+    <div class="rounded-xl border border-white/5 bg-surface overflow-hidden">
       <table class="w-full text-left text-sm text-gray-400">
         <thead class="bg-[#1a1a1a] text-xs uppercase font-bold text-gray-200">
           <tr>
@@ -28,7 +28,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models }) => {
             <th class="px-6 py-4 text-right">Ações</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5 bg-[#121212]">
+        <tbody class="divide-y divide-white/5 bg-surface">
           {models.map((m) => (
             <tr class="hover:bg-white/5 transition-colors group">
               <td class="px-6 py-4 flex items-center gap-3">

@@ -15,7 +15,7 @@ export const AdminModels: FC = () => {
              <button class="px-4 py-2 bg-transparent border border-white/10 rounded text-gray-400 hover:text-white text-xs font-bold uppercase hover:bg-white/5">Pendentes (3)</button>
              <button class="px-4 py-2 bg-transparent border border-white/10 rounded text-gray-400 hover:text-white text-xs font-bold uppercase hover:bg-white/5">Banidas (12)</button>
          </div>
-         <input type="text" placeholder="Buscar modelo..." class="bg-[#121212] border border-white/10 rounded px-4 py-2 text-xs text-white w-64 focus:border-primary focus:outline-none" />
+         <input type="text" placeholder="Buscar modelo..." class="bg-surface border border-white/10 rounded px-4 py-2 text-xs text-white w-64 focus:border-primary focus:outline-none" />
       </div>
 
       <ModelTable models={models} />

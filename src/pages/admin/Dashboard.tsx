@@ -59,7 +59,7 @@ export const AdminDashboard: FC = () => {
                         <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-sm group-hover:border-primary/50 transition-all">
                           👤
                         </div>
-                        <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-void rounded-full flex items-center justify-center">
+                        <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-black rounded-full flex items-center justify-center">
                           <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
                         </div>
                       </div>
