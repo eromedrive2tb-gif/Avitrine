@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { db } from '../db';
-import { whitelabelModels, whitelabelPosts } from '../db/schema';
-import { desc, inArray, sql, and } from 'drizzle-orm'; // Adicionado 'sql' e 'and'
+import { whitelabelModels, whitelabelPosts, whitelabelMedia } from '../db/schema';
+import { desc, inArray, sql, and, eq } from 'drizzle-orm'; 
 import { HomePage } from '../pages/Home';
 import { ModelsPage } from '../pages/Models';
 import { PlansPage } from '../pages/Plans';
@@ -9,36 +9,43 @@ import { AuthPage } from '../pages/Auth';
 import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 
-// Imports necessários para Assinar a URL
+// Imports para assinatura de URL
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client, S3_CONFIG } from '../services/s3';
 
 const publicRoutes = new Hono();
 
-// Função auxiliar para gerar URL assinada a partir da URL pública
-async function signUrl(publicUrl: string | null) {
-  if (!publicUrl) return null;
+/**
+ * Função para assinar a chave do S3 e gerar uma URL temporária válida.
+ * Isso resolve o erro 403 Forbidden.
+ */
+async function signS3Key(key: string | null) {
+  if (!key) return null;
   try {
-    const urlObj = new URL(publicUrl);
-    let rawPath = urlObj.pathname.substring(1); 
-
-    // CORREÇÃO: Trata URLs malformadas com '%%'
-    if (rawPath.includes('%%')) {
-        rawPath = rawPath.replace(/%%/g, '%25');
+    let finalKey = key;
+    
+    // Se a chave vier como uma URL completa, extraímos apenas o caminho do arquivo
+    if (key.startsWith('http')) {
+      const url = new URL(key);
+      finalKey = decodeURIComponent(url.pathname.substring(1));
     }
 
-    const key = decodeURIComponent(rawPath);
+    // Correção para caracteres especiais (como emojis ou espaços)
+    if (finalKey.includes('%%')) {
+        finalKey = finalKey.replace(/%%/g, '%25');
+    }
 
     const command = new GetObjectCommand({
       Bucket: S3_CONFIG.bucket,
-      Key: key,
+      Key: finalKey,
     });
     
+    // Gera a URL assinada válida por 1 hora (3600 segundos)
     return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
   } catch (error) {
-    console.error(`Erro ao assinar URL ${publicUrl}:`, error);
-    return publicUrl; 
+    console.error(`Erro ao assinar chave ${key}:`, error);
+    return null;
   }
 }
 
@@ -56,53 +63,38 @@ publicRoutes.get('/', async (c) => {
     .orderBy(desc(whitelabelModels.postCount))
     .limit(20);
 
-    let resultModels = models;
-
-    // 2. Buscar thumbnails nas posts (CORREÇÃO AQUI)
-    if (models.length > 0) {
-      const modelIds = models.map(m => m.id);
-      
-      // A query agora filtra: "Traga o post mais recente QUE TENHA IMAGENS"
-      const posts = await db.selectDistinctOn([whitelabelPosts.whitelabelModelId], {
-        modelId: whitelabelPosts.whitelabelModelId,
-        mediaCdns: whitelabelPosts.mediaCdns
-      })
-      .from(whitelabelPosts)
-      .where(and(
-         inArray(whitelabelPosts.whitelabelModelId, modelIds),
-         // Verifica se a primeira posição do array de imagens não é nula
-         sql`${whitelabelPosts.mediaCdns}::json->'images'->0 IS NOT NULL`
-      ))
-      .orderBy(whitelabelPosts.whitelabelModelId, desc(whitelabelPosts.id));
-
-      // 3. Mesclar dados
-      resultModels = models.map(model => {
-        let finalImage = model.thumbnailUrl;
-
-        // Se não tem oficial, tenta achar no post recuperado
-        if (!finalImage) {
-          const post = posts.find(p => p.modelId === model.id);
-          if (post && post.mediaCdns) {
-            const media = typeof post.mediaCdns === 'string' 
-              ? JSON.parse(post.mediaCdns) 
-              : post.mediaCdns;
-            
-            if (media?.images?.length > 0) {
-              finalImage = media.images[0];
-            }
-          }
-        }
-
-        return { ...model, thumbnailUrl: finalImage };
-      });
+    if (models.length === 0) {
+      return c.html(<HomePage models={[]} />);
     }
 
-    // 4. Assinar todas as URLs encontradas
-    const signedModels = await Promise.all(resultModels.map(async (m) => {
-      const signedThumb = await signUrl(m.thumbnailUrl);
+    const modelIds = models.map(m => m.id);
+    
+    // 2. BUSCA OTIMIZADA: Apenas imagens reais (Evita MP3/Vídeo)
+    const thumbnails = await db.selectDistinctOn([whitelabelPosts.whitelabelModelId], {
+      modelId: whitelabelPosts.whitelabelModelId,
+      s3Key: whitelabelMedia.s3Key,
+    })
+    .from(whitelabelMedia)
+    .innerJoin(whitelabelPosts, eq(whitelabelMedia.whitelabelPostId, whitelabelPosts.id))
+    .where(
+      and(
+        inArray(whitelabelPosts.whitelabelModelId, modelIds),
+        eq(whitelabelMedia.type, 'image'),
+        sql`${whitelabelMedia.s3Key} ~* '\\.(jpg|jpeg|png|webp|gif)$'`
+      )
+    )
+    .orderBy(whitelabelPosts.whitelabelModelId, desc(whitelabelPosts.id), whitelabelMedia.id);
+
+    // 3. Mesclar dados e ASSINAR as URLs para evitar o 403 Forbidden
+    const signedModels = await Promise.all(models.map(async (model) => {
+      const thumbData = thumbnails.find(t => t.modelId === model.id);
+      
+      // Prioridade: Thumbnail definida na modelo > Imagem encontrada no Post
+      const keyToSign = model.thumbnailUrl || thumbData?.s3Key || null;
+
       return {
-        ...m,
-        thumbnailUrl: signedThumb
+        ...model,
+        thumbnailUrl: await signS3Key(keyToSign)
       };
     }));
 
