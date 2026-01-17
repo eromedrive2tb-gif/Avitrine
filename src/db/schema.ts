@@ -1,4 +1,4 @@
-import { pgTable, serial, text, boolean, integer, json, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, boolean, integer, json, timestamp, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -64,7 +64,9 @@ export const whitelabelPosts = pgTable('whitelabel_posts', {
   folderName: text('folder_name').notNull(),
   title: text('title'),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (t) => ({
+  unq: unique().on(t.whitelabelModelId, t.folderName),
+}));
 
 export const whitelabelPostsRelations = relations(whitelabelPosts, ({ one, many }) => ({
   model: one(whitelabelModels, {
@@ -77,7 +79,7 @@ export const whitelabelPostsRelations = relations(whitelabelPosts, ({ one, many 
 export const whitelabelMedia = pgTable('whitelabel_media', {
   id: serial('id').primaryKey(),
   whitelabelPostId: integer('whitelabel_post_id').references(() => whitelabelPosts.id, { onDelete: 'cascade' }).notNull(),
-  s3Key: text('s3_key').notNull(),
+  s3Key: text('s3_key').notNull().unique(),
   url: text('url'), 
   type: text('type', { enum: ['image', 'video'] }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),

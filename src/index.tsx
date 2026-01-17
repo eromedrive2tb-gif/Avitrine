@@ -13,4 +13,8 @@ app.route('/', publicRoutes);
 app.route('/admin', adminRoutes);
 app.route('/api', apiRoutes);
 
-export default app;
+export default {
+  port: 3000,
+  fetch: app.fetch,
+  idleTimeout: 120, // Increase timeout to 120 seconds
+};
