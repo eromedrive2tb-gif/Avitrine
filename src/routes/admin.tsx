@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminModels } from '../pages/admin/Models';
 import { AdminAds } from '../pages/admin/Ads';
-import { AdminPlans, AdminSettings } from '../pages/admin/Settings';
+import { AdminPlans } from '../pages/admin/Plans';
+import { AdminSettings } from '../pages/admin/Settings';
 import { AdminWhitelabel } from '../pages/admin/Whitelabel';
 import { WhitelabelService, type PaginatedResult } from '../services/s3';
 

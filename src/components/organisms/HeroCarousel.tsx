@@ -1,20 +1,9 @@
 import { FC } from 'hono/jsx';
 import { Button } from '../atoms/Button';
-
-interface HeroSlide {
-  id: number;
-  image: string;
-  title: string;
-  category: string;
-  isLive?: boolean;
-}
+import { MockService } from '../../services/mock';
 
 export const HeroCarousel: FC = () => {
-  const slides: HeroSlide[] = [
-    { id: 1, image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&q=80", title: "ALESSANDRA V.", category: "CAM #1 BRASIL", isLive: true },
-    { id: 2, image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1200&q=80", title: "GAMER NIGHT", category: "EVENTO EXCLUSIVO", isLive: true },
-    { id: 3, image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=1200&q=80", title: "SARAH JONES", category: "LANÇAMENTO 4K", isLive: false },
-  ];
+  const slides = MockService.getHeroSlides();
 
   return (
     <div class="relative w-full h-[45vh] md:h-[380px] rounded-xl overflow-hidden group border border-white/10 bg-black">
@@ -62,48 +51,7 @@ export const HeroCarousel: FC = () => {
       <button onclick="nextSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/50 hover:bg-primary text-white flex items-center justify-center rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">➜</button>
       <button onclick="prevSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/50 hover:bg-primary text-white flex items-center justify-center rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity rotate-180">➜</button>
 
-      {/* Simple Inline JS for Carousel */}
-      <script dangerouslySetInnerHTML={{ __html: `
-        let currentSlide = 0;
-        const totalSlides = ${slides.length};
-        let interval;
-
-        function updateSlides() {
-            document.querySelectorAll('.carousel-slide').forEach((el, idx) => {
-                el.style.opacity = idx === currentSlide ? '1' : '0';
-                el.style.zIndex = idx === currentSlide ? '10' : '0';
-            });
-            document.querySelectorAll('[id^="indicator-"]').forEach((el, idx) => {
-                el.style.backgroundColor = idx === currentSlide ? '#8A2BE2' : 'rgba(255,255,255,0.2)';
-            });
-        }
-
-        function nextSlide() {
-            currentSlide = (currentSlide + 1) % totalSlides;
-            updateSlides();
-        }
-
-        function prevSlide() {
-            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-            updateSlides();
-        }
-
-        function changeSlide(idx) {
-            currentSlide = idx;
-            updateSlides();
-            resetTimer();
-        }
-
-        function resetTimer() {
-            clearInterval(interval);
-            interval = setInterval(nextSlide, 5000);
-        }
-
-        // Init
-        updateSlides();
-        resetTimer();
-      `}} />
-
+      <script src="/static/js/carousel.js" defer></script>
     </div>
   );
 };
