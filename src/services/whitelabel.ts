@@ -152,8 +152,8 @@ export const WhitelabelDbService = {
           const postId = postMap.get(postKey);
           if (!postId) continue;
 
-          const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key}`;
-
+          const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map(part => encodeURIComponent(part)).join('/')}`;
+          
           mediaToInsert.push({
               whitelabelPostId: postId,
               s3Key: item.Key,
