@@ -8,6 +8,7 @@ export const AdminSidebar: FC<{ activePath?: string }> = ({ activePath = '/admin
     ]},
     { section: 'Conteúdo', items: [
       { label: 'Modelos', icon: '👥', path: '/admin/models' },
+      { label: 'Whitelabel (S3)', icon: '☁️', path: '/admin/whitelabel' },
       { label: 'Vídeos', icon: '🎬', path: '/admin/videos' },
       { label: 'Planos', icon: '💎', path: '/admin/plans' }
     ]},
