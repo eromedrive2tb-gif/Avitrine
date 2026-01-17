@@ -17,8 +17,10 @@ export const ModelCard: FC<ModelCardProps> = ({
   views = '1.2k',
   isPromoted = false
 }) => {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
   return (
-    <div class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer transition-all duration-300 ${
+    <a href={`/models/${slug}`} class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer block transition-all duration-300 ${
       isPromoted 
         ? 'border-2 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)]' 
         : 'bg-surface border border-white/5 hover:border-primary/50'
@@ -61,6 +63,6 @@ export const ModelCard: FC<ModelCardProps> = ({
           </span>
         </div>
       </div>
-    </div>
+    </a>
   );
 };

@@ -29,7 +29,9 @@ export const HeroCarousel: FC = () => {
               <h2 class="text-4xl md:text-5xl font-display text-white mb-4 leading-none">{slide.title}</h2>
               <div class="flex gap-3">
                 <Button variant="primary" className="!py-2 !px-6 text-sm">Assistir</Button>
-                <Button variant="outline" className="!py-2 !px-6 text-sm">Perfil</Button>
+                <a href={`/models/${slide.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`}>
+                  <Button variant="outline" className="!py-2 !px-6 text-sm">Perfil</Button>
+                </a>
               </div>
             </div>
           </div>

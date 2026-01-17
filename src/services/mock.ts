@@ -119,5 +119,74 @@ export const MockService = {
     status: i % 3 === 0 ? "Pending" : "Verified",
     earnings: `R$ ${Math.floor(Math.random() * 5000)}`,
     posts: Math.floor(Math.random() * 500)
-  }))
+  })),
+
+  getModelBySlug: (slug: string) => {
+    // Basic mock: match by name (slugified)
+    const name = slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    return {
+      id: 1,
+      name: name || "Fernanda T.",
+      slug: slug,
+      description: "Conteúdo exclusivo todos os dias. Bem-vindo ao meu mundo privado! 🔥",
+      imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80",
+      bannerUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&q=80",
+      category: "Gamer",
+      postsCount: 124,
+      likesCount: "45k",
+      isLive: true,
+      isSubscribed: false
+    };
+  },
+
+  getPostsByModel: (modelId: number) => [
+    {
+      id: 101,
+      title: "Bastidores do ensaio de hoje",
+      content: "Um pouco do que rolou no ensaio de hoje. O que acharam?",
+      mediaUrl: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&q=80",
+      type: 'image',
+      likes: 1200,
+      comments: 45,
+      createdAt: "2 horas atrás",
+      isLocked: false
+    },
+    {
+      id: 102,
+      title: "Vídeo exclusivo para assinantes",
+      content: "Confira o vídeo completo que acabei de postar no feed VIP.",
+      mediaUrl: "https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=800&q=80",
+      type: 'video',
+      likes: 3400,
+      comments: 128,
+      createdAt: "5 horas atrás",
+      isLocked: true
+    },
+    {
+      id: 103,
+      title: "Bom dia!",
+      content: "Acordando inspirada hoje. Prontos para as novidades?",
+      mediaUrl: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800&q=80",
+      type: 'image',
+      likes: 850,
+      comments: 12,
+      createdAt: "1 dia atrás",
+      isLocked: false
+    }
+  ],
+
+  getPostById: (id: number) => ({
+    id,
+    modelId: 1,
+    modelName: "Fernanda T.",
+    modelImageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80",
+    title: "Bastidores do ensaio de hoje",
+    content: "Um pouco do que rolou no ensaio de hoje. O que acharam? Espero que gostem tanto quanto eu gostei de fazer!",
+    mediaUrl: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=1200&q=80",
+    type: 'image',
+    likes: 1200,
+    comments: 45,
+    createdAt: "17 de Janeiro, 2026",
+    isLocked: false
+  })
 };
