@@ -94,14 +94,6 @@ export const WhitelabelService = {
     }
   },
 
-  /**
-   * Função desativada para uso em tempo real.
-   * Retorna 0 para evitar travamentos.
-   */
-  async getGlobalStats() {
-    return { totalModels: 0, cached: true };
-  },
-
   async getFullModelData(folderName: string) {
     const modelPrefix = folderName.endsWith('/') ? folderName : `${folderName}/`;
     let isTruncated = true;

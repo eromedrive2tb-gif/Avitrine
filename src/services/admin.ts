@@ -66,15 +66,4 @@ export const AdminService = {
       newPostsCount
     };
   },
-
-  async getGlobalStats() {
-    const dbPostsPromise = db.select({ count: sql<number>`count(*)` }).from(posts);
-    const [dbStats] = await Promise.all([dbPostsPromise]);
-
-    return {
-      totalModels: "S3 Conectado",
-      totalPosts: dbStats[0]?.count || 0,
-      isEstimated: true
-    };
-  }
 };

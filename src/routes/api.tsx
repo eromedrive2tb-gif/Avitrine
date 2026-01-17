@@ -28,15 +28,7 @@ apiRoutes.post('/admin/whitelabel/activate', async (c) => {
   }
 });
 
-apiRoutes.get('/admin/whitelabel/stats', async (c) => {
-  try {
-    const stats = await AdminService.getGlobalStats();
-    return c.json(stats);
-  } catch(e: any) {
-    console.error("Stats Error:", e);
-    return c.json({ totalModels: 'Erro', totalPosts: 0, error: e.message });
-  }
-});
+
 
 // Auth API Mock
 apiRoutes.post('/login', async (c) => {
