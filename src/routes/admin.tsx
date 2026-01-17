@@ -6,6 +6,7 @@ import { AdminPlans } from '../pages/admin/Plans';
 import { AdminSettings } from '../pages/admin/Settings';
 import { AdminWhitelabel } from '../pages/admin/Whitelabel';
 import { WhitelabelService, type PaginatedResult } from '../services/s3';
+import { WhitelabelDbService } from '../services/whitelabel';
 
 const adminRoutes = new Hono();
 
@@ -16,23 +17,39 @@ adminRoutes.get('/plans', (c) => c.html(<AdminPlans />));
 adminRoutes.get('/settings', (c) => c.html(<AdminSettings />));
 
 // WHITELABEL ROUTES
-// 1. Main View (Paginated)
+// 1. Main View (Paginated via DB)
 adminRoutes.get('/whitelabel', async (c) => {
-  const token = c.req.query('token');
-  let data: PaginatedResult = { 
-    models: [], 
-    nextToken: undefined, 
-    isTruncated: false 
-  };
+  const page = parseInt(c.req.query('page') || '1');
+  let models: any[] = [];
+  let totalPages = 1;
   let error = undefined;
   
   try {
-    data = await WhitelabelService.listModels(token, 12); 
+    const result = await WhitelabelDbService.listModels(page, 12); 
+    models = result.data;
+    totalPages = result.totalPages;
   } catch (e: any) {
     error = e.message;
   }
   
-  return c.html(<AdminWhitelabel models={data.models} nextToken={data.nextToken} error={error} />);
+  return c.html(
+    <AdminWhitelabel 
+      models={models} 
+      currentPage={page}
+      totalPages={totalPages}
+      error={error} 
+    />
+  );
+});
+
+adminRoutes.post('/whitelabel/sync', async (c) => {
+  try {
+    const count = await WhitelabelDbService.syncModelsFromBucket();
+    return c.json({ success: true, count });
+  } catch (e: any) {
+    console.error(e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
 });
 
 export default adminRoutes;

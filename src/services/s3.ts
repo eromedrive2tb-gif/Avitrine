@@ -6,7 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const S3_CONFIG = {
+export const S3_CONFIG = {
   region: "sfo3",
   endpoint: "https://sfo3.digitaloceanspaces.com",
   credentials: {
@@ -16,7 +16,7 @@ const S3_CONFIG = {
   bucket: "bucketcoomerst"
 };
 
-const s3Client = new S3Client({
+export const s3Client = new S3Client({
   region: S3_CONFIG.region,
   endpoint: S3_CONFIG.endpoint,
   credentials: S3_CONFIG.credentials,

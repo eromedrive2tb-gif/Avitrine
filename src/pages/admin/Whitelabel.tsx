@@ -6,11 +6,12 @@ import { WhitelabelTable } from '../../components/organisms/WhitelabelTable';
 
 interface AdminWhitelabelProps {
   models: WhitelabelModel[];
-  nextToken?: string;
+  currentPage?: number;
+  totalPages?: number;
   error?: string;
 }
 
-export const AdminWhitelabel: FC<AdminWhitelabelProps> = ({ models, nextToken, error }) => {
+export const AdminWhitelabel: FC<AdminWhitelabelProps> = ({ models, currentPage = 1, totalPages = 1, error }) => {
   
   return (
     <AdminLayout title="Integração Whitelabel (S3/DigitalOcean)" activePath="/admin/whitelabel">
@@ -19,7 +20,7 @@ export const AdminWhitelabel: FC<AdminWhitelabelProps> = ({ models, nextToken, e
         
         <WhitelabelStatus error={error} />
 
-        <WhitelabelTable models={models} nextToken={nextToken} error={error} />
+        <WhitelabelTable models={models} currentPage={currentPage} totalPages={totalPages} error={error} />
         
         <script src="/static/js/admin.js" defer></script>
       </div>

@@ -1,4 +1,5 @@
-import { pgTable, serial, text, boolean, integer, json, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, boolean, integer, json, timestamp } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -42,3 +43,49 @@ export const adminSettings = pgTable('admin_settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
 });
+
+export const whitelabelModels = pgTable('whitelabel_models', {
+  id: serial('id').primaryKey(),
+  folderName: text('folder_name').notNull().unique(), 
+  thumbnailUrl: text('thumbnail_url'),
+  postCount: integer('post_count').default(0),
+  status: text('status', { enum: ['new', 'active', 'hidden'] }).default('new'),
+  lastSyncedAt: timestamp('last_synced_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const whitelabelModelsRelations = relations(whitelabelModels, ({ many }) => ({
+  posts: many(whitelabelPosts),
+}));
+
+export const whitelabelPosts = pgTable('whitelabel_posts', {
+  id: serial('id').primaryKey(),
+  whitelabelModelId: integer('whitelabel_model_id').references(() => whitelabelModels.id, { onDelete: 'cascade' }).notNull(),
+  folderName: text('folder_name').notNull(),
+  title: text('title'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const whitelabelPostsRelations = relations(whitelabelPosts, ({ one, many }) => ({
+  model: one(whitelabelModels, {
+    fields: [whitelabelPosts.whitelabelModelId],
+    references: [whitelabelModels.id],
+  }),
+  media: many(whitelabelMedia),
+}));
+
+export const whitelabelMedia = pgTable('whitelabel_media', {
+  id: serial('id').primaryKey(),
+  whitelabelPostId: integer('whitelabel_post_id').references(() => whitelabelPosts.id, { onDelete: 'cascade' }).notNull(),
+  s3Key: text('s3_key').notNull(),
+  url: text('url'), 
+  type: text('type', { enum: ['image', 'video'] }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const whitelabelMediaRelations = relations(whitelabelMedia, ({ one }) => ({
+  post: one(whitelabelPosts, {
+    fields: [whitelabelMedia.whitelabelPostId],
+    references: [whitelabelPosts.id],
+  }),
+}));

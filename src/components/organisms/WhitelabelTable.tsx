@@ -3,19 +3,30 @@ import { WhitelabelModel } from '../../services/s3';
 
 interface WhitelabelTableProps {
     models: WhitelabelModel[];
-    nextToken?: string;
+    currentPage?: number;
+    totalPages?: number;
     error?: string;
 }
 
-export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, nextToken, error }) => {
+export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, currentPage = 1, totalPages = 1, error }) => {
     return (
         <div class="rounded-xl border border-white/5 bg-[#121212] overflow-hidden">
             <div class="p-4 border-b border-white/5 flex justify-between items-center bg-[#1a1a1a]">
-                <h3 class="font-bold text-white text-sm">Explorador de Arquivos S3</h3>
-                <div class="flex gap-2">
-                    <span class="text-xs text-gray-500 flex items-center gap-1">
-                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> Live Data
+                <h3 class="font-bold text-white text-sm">Explorador de Arquivos S3 (Cached)</h3>
+                <div class="flex gap-2 items-center">
+                    <span class="text-xs text-gray-500 flex items-center gap-1 mr-4">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> DB Synced
                     </span>
+                    
+                    <button 
+                        hx-post="/admin/whitelabel/sync" 
+                        hx-swap="none"
+                        hx-on="htmx:afterOnLoad: window.location.reload()"
+                        class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-500 transition-colors flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                        Sync Now
+                    </button>
                 </div>
             </div>
 
@@ -24,8 +35,8 @@ export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, nextToken, e
                     <tr>
                         <th class="px-6 py-3 w-10"><input type="checkbox" class="accent-primary" /></th>
                         <th class="px-6 py-3">Capa</th>
-                        <th class="px-6 py-3">ID da Pasta (Bucket Key)</th>
-                        <th class="px-6 py-3">Posts (Subpastas)</th>
+                        <th class="px-6 py-3">ID da Pasta (Model)</th>
+                        <th class="px-6 py-3">Posts</th>
                         <th class="px-6 py-3">Status</th>
                         <th class="px-6 py-3 text-right">Ação</th>
                     </tr>
@@ -34,7 +45,7 @@ export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, nextToken, e
                     {models.length === 0 ? (
                         <tr>
                             <td colspan={6} class="text-center py-12 text-gray-500">
-                                {error ? 'Erro de Conexão.' : 'Carregando dados do bucket...'}
+                                {error ? 'Erro ao carregar dados.' : 'Nenhum modelo encontrado. Clique em Sync.'}
                             </td>
                         </tr>
                     ) : (
@@ -52,13 +63,14 @@ export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, nextToken, e
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="font-mono text-white text-xs block mb-1">{item.folderName}</span>
+                                    <span class="text-[10px] text-gray-600">Última sync: Hoje</span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="bg-white/5 border border-white/5 px-2 py-1 rounded text-xs text-white font-mono">{item.postCount}</span>
+                                    <span class="bg-white/5 border border-white/5 px-2 py-1 rounded text-xs text-white font-mono">{item.postCount || 0}</span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border bg-blue-500/10 text-blue-500 border-blue-500/20">
-                                        Novo
+                                    <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border bg-green-500/10 text-green-500 border-green-500/20">
+                                        {item.status || 'Active'}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
@@ -75,24 +87,30 @@ export const WhitelabelTable: FC<WhitelabelTableProps> = ({ models, nextToken, e
                 </tbody>
             </table>
             
-            {/* Pagination Controls (Adapted for S3 Token) */}
+            {/* Pagination Controls */}
             <div class="px-6 py-4 border-t border-white/5 bg-[#1a1a1a] flex items-center justify-between">
                 <div class="text-xs text-gray-500">
-                    Visualizando <span class="font-bold text-white">{models.length}</span> itens desta página
+                    Página <span class="font-bold text-white">{currentPage}</span> de <span class="font-bold text-white">{totalPages}</span>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a href="/admin/whitelabel" class="px-3 py-1.5 rounded bg-[#050505] border border-white/10 text-xs text-white hover:border-primary transition-colors">
-                        ⟵ Início
-                    </a>
+                    {currentPage > 1 ? (
+                         <a href={`/admin/whitelabel?page=${currentPage - 1}`} class="px-3 py-1.5 rounded bg-[#050505] border border-white/10 text-xs text-white hover:border-primary transition-colors">
+                            ⟵ Anterior
+                        </a>
+                    ) : (
+                        <button disabled class="px-3 py-1.5 rounded bg-[#050505] border border-white/5 text-xs text-gray-600 cursor-not-allowed">
+                            ⟵ Anterior
+                        </button>
+                    )}
                     
-                    {nextToken ? (
-                         <a href={`/admin/whitelabel?token=${nextToken}`} class="px-4 py-1.5 rounded bg-primary text-white text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-colors">
-                            Carregar Mais ⟶
+                    {currentPage < totalPages ? (
+                         <a href={`/admin/whitelabel?page=${currentPage + 1}`} class="px-4 py-1.5 rounded bg-primary text-white text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-colors">
+                            Próximo ⟶
                         </a>
                     ) : (
                         <button disabled class="px-4 py-1.5 rounded bg-[#050505] border border-white/5 text-xs text-gray-600 cursor-not-allowed uppercase tracking-widest">
-                            Fim da Lista
+                            Fim
                         </button>
                     )}
                 </div>
