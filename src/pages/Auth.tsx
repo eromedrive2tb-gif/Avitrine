@@ -69,7 +69,7 @@ export const AuthPage: FC<AuthPageProps> = ({ type }) => {
             </div>
 
             {/* Auth Form */}
-            <form class="space-y-5" action={isLogin ? '/api/login' : '/api/register'} method="POST">
+            <form class="space-y-5" action={isLogin ? '/api/login' : '/api/register'} method="post">
               {!isLogin && (
                 <div>
                   <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nome de Usuário</label>

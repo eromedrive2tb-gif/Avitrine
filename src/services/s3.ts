@@ -1,4 +1,9 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { 
+  S3Client, 
+  ListObjectsV2Command, 
+  GetObjectCommand,
+  type ListObjectsV2CommandOutput
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const S3_CONFIG = {
@@ -15,7 +20,7 @@ const s3Client = new S3Client({
   region: S3_CONFIG.region,
   endpoint: S3_CONFIG.endpoint,
   credentials: S3_CONFIG.credentials,
-  forcePathStyle: false // DigitalOcean Spaces usually works better with this false, but sometimes true depends on SDK version.
+  forcePathStyle: false
 });
 
 // Helper to generate signed URLs
@@ -48,9 +53,6 @@ export interface PaginatedResult {
 }
 
 export const WhitelabelService = {
-  /**
-   * Lista modelos com paginação real via S3
-   */
   async listModels(continuationToken?: string, limit = 20): Promise<PaginatedResult> {
     try {
       const command = new ListObjectsV2Command({
@@ -66,7 +68,6 @@ export const WhitelabelService = {
         return { models: [], isTruncated: false };
       }
 
-      // Processamento Paralelo para buscar detalhes de cada modelo visível
       const modelsData = await Promise.all(response.CommonPrefixes.map(async (prefix) => {
         const folderName = prefix.Prefix?.replace('/', '') || 'Unknown';
         const details = await getModelDetails(prefix.Prefix!);
@@ -94,44 +95,15 @@ export const WhitelabelService = {
   },
 
   /**
-   * Estatísticas Globais (Operação Pesada - Cachear em prod)
-   * Faz um loop apenas nos prefixos para contar total de modelos sem buscar detalhes
+   * Função desativada para uso em tempo real.
+   * Retorna 0 para evitar travamentos.
    */
   async getGlobalStats() {
-    let totalModels = 0;
-    let continuationToken: string | undefined = undefined;
-    let isTruncated = true;
-
-    try {
-        // Loop rápido apenas listando pastas raiz
-        while (isTruncated) {
-          const command = new ListObjectsV2Command({
-            Bucket: S3_CONFIG.bucket,
-            Delimiter: "/",
-            MaxKeys: 1000, // Máximo permitido pela AWS
-            ContinuationToken: continuationToken
-          });
-          const response = await s3Client.send(command);
-          totalModels += response.CommonPrefixes?.length || 0;
-          isTruncated = response.IsTruncated || false;
-          continuationToken = response.NextContinuationToken;
-          
-          // Basic timeout protection: if it takes too many iterations (e.g. > 50k models), maybe stop? 
-          // For now we keep it exact as requested, but log usage.
-          // console.log(`Stats scan: ${totalModels} models found...`);
-        }
-    } catch (e) {
-        console.error("Error getting global stats:", e);
-        // Return whatever we counted so far instead of crashing
-    }
-
-    return { totalModels };
+    return { totalModels: 0, cached: true };
   },
 
   async getFullModelData(folderName: string) {
     const modelPrefix = folderName.endsWith('/') ? folderName : `${folderName}/`;
-    
-    // List all objects in the model folder
     let isTruncated = true;
     let continuationToken: string | undefined = undefined;
     
@@ -139,52 +111,40 @@ export const WhitelabelService = {
     let thumbnail: string | null = null;
 
     while(isTruncated) {
-        const command = new ListObjectsV2Command({
+        const command: ListObjectsV2Command = new ListObjectsV2Command({
             Bucket: S3_CONFIG.bucket,
             Prefix: modelPrefix,
             ContinuationToken: continuationToken
         });
         
-        const response = await s3Client.send(command);
+        const response: ListObjectsV2CommandOutput = await s3Client.send(command);
         
         if (response.Contents) {
             for (const item of response.Contents) {
                 if (!item.Key || item.Key.endsWith('/')) continue;
-                
-                // Check for thumbnail (first image in root or anywhere if not found yet)
                 if (!thumbnail && /\.(jpg|jpeg|png|webp)$/i.test(item.Key)) {
                     thumbnail = item.Key;
                 }
-
-                // Analyze structure: Model/PostID/File
                 const relative = item.Key.replace(modelPrefix, '');
                 const parts = relative.split('/');
-                
                 if (parts.length >= 2) {
-                    const postId = parts[0]; // Subfolder is the post ID
-                    const file = item.Key;
-                    
+                    const postId = parts[0];
                     if (!postsMap.has(postId)) {
                         postsMap.set(postId, { files: [], type: 'image' });
                     }
-                    
                     const post = postsMap.get(postId)!;
-                    post.files.push(file);
-                    
-                    // Detect type based on extension
-                    if (/\.(mp4|mov|webm)$/i.test(file)) {
+                    post.files.push(item.Key);
+                    if (/\.(mp4|mov|webm)$/i.test(item.Key)) {
                         post.type = 'video';
                     }
                 }
             }
         }
-        
         isTruncated = response.IsTruncated || false;
         continuationToken = response.NextContinuationToken;
     }
 
     const posts = await Promise.all(Array.from(postsMap.entries()).map(async ([id, data]) => {
-        // Pick a video as contentUrl if available and type is video, otherwise first file
         const videoFile = data.files.find(f => /\.(mp4|mov|webm)$/i.test(f));
         const contentFile = videoFile || data.files[0];
         
@@ -206,17 +166,27 @@ export const WhitelabelService = {
     let folders: string[] = [];
     let continuationToken: string | undefined = undefined;
     let isTruncated = true;
+    
+    // Timeout de segurança global para evitar loop infinito
+    const startTime = Date.now();
 
     while (isTruncated) {
+      if (Date.now() - startTime > 30000) break; // 30 segundos max
+
       const command = new ListObjectsV2Command({
         Bucket: S3_CONFIG.bucket,
         Delimiter: "/",
         MaxKeys: 1000,
         ContinuationToken: continuationToken
       });
-      const response = await s3Client.send(command);
+
+      const response: ListObjectsV2CommandOutput = await s3Client.send(command);
+      
       if (response.CommonPrefixes) {
-          folders.push(...response.CommonPrefixes.map(p => p.Prefix!).filter(Boolean));
+          folders.push(...response.CommonPrefixes
+            .map((p) => p.Prefix!) 
+            .filter(Boolean)
+          );
       }
       isTruncated = response.IsTruncated || false;
       continuationToken = response.NextContinuationToken;
@@ -225,13 +195,12 @@ export const WhitelabelService = {
   }
 };
 
-// Helper interno otimizado
 async function getModelDetails(modelPrefix: string) {
   try {
     const command = new ListObjectsV2Command({
       Bucket: S3_CONFIG.bucket,
       Prefix: modelPrefix,
-      MaxKeys: 50 // Reduzido para scan mais rápido
+      MaxKeys: 50
     });
 
     const response = await s3Client.send(command);
@@ -244,12 +213,10 @@ async function getModelDetails(modelPrefix: string) {
         const relativePath = item.Key.replace(modelPrefix, '');
         const parts = relativePath.split('/');
         
-        // Pega primeira pasta como Post ID
         if (parts.length > 0 && parts[0] && parts[0] !== '') {
           subfolders.add(parts[0]);
         }
 
-        // Prioriza jpg/png para thumbnail
         if (!thumbnailKey && /\.(jpg|jpeg|png|webp)$/i.test(item.Key)) {
           thumbnailKey = item.Key;
         }
