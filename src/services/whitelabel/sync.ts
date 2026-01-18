@@ -1,5 +1,5 @@
 import { s3Client, S3_CONFIG } from '../s3';
-import { ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
 import { S3KeyParser } from './sync/parser';
 import { WhitelabelPersistence } from './sync/persistence';
 
@@ -14,13 +14,13 @@ export const WhitelabelSyncService = {
     const stats = { models: 0, posts: 0, media: 0 };
 
     while (isTruncated) {
-      const command = new ListObjectsV2Command({
+      const command: ListObjectsV2Command = new ListObjectsV2Command({
         Bucket: S3_CONFIG.bucket,
         MaxKeys: 1000, 
         ContinuationToken: continuationToken
       });
 
-      const response = await s3Client.send(command);
+      const response = await s3Client.send(command) as ListObjectsV2CommandOutput;
       if (!response.Contents || response.Contents.length === 0) break;
 
       // 2. Parse Items
@@ -123,6 +123,20 @@ export const WhitelabelSyncService = {
       for (const item of response.Contents) {
           if (!item.Key) continue;
           const parsed = S3KeyParser.parse(item.Key);
+
+          if (parsed.type === 'profile_media') {
+              const modelId = modelMap.get(parsed.modelName);
+              if (!modelId) continue;
+              
+              const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
+              if (parsed.fileName === 'icon.webp') {
+                  await WhitelabelPersistence.updateModelProfile(modelId, { iconUrl: cdnUrl });
+              } else if (parsed.fileName === 'banner.webp') {
+                  await WhitelabelPersistence.updateModelProfile(modelId, { bannerUrl: cdnUrl });
+              }
+              continue;
+          }
+
           if (parsed.type === 'media' && parsed.postName) {
               const modelId = modelMap.get(parsed.modelName);
               if (!modelId) continue;
@@ -131,7 +145,7 @@ export const WhitelabelSyncService = {
               const postId = postMap.get(postKey); // Should exist now
               if (!postId) continue;
 
-              const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map(p => encodeURIComponent(p)).join('/')}`;
+              const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
               
               mediaToInsert.push({
                   whitelabelPostId: postId,
@@ -188,7 +202,7 @@ export const WhitelabelSyncService = {
             Prefix: safePrefix,
             ContinuationToken: continuationToken
         });
-        const response = await s3Client.send(command);
+        const response = await s3Client.send(command) as ListObjectsV2CommandOutput;
         if (!response.Contents) break;
 
         // Reuse the logic? 
@@ -227,6 +241,20 @@ export const WhitelabelSyncService = {
         for (const item of response.Contents) {
             if (!item.Key) continue;
             const parsed = S3KeyParser.parse(item.Key);
+
+            if (parsed.type === 'profile_media') {
+                const modelId = modelMap.get(parsed.modelName);
+                if (!modelId) continue;
+                
+                const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
+                if (parsed.fileName === 'icon.webp') {
+                    await WhitelabelPersistence.updateModelProfile(modelId, { iconUrl: cdnUrl });
+                } else if (parsed.fileName === 'banner.webp') {
+                    await WhitelabelPersistence.updateModelProfile(modelId, { bannerUrl: cdnUrl });
+                }
+                continue;
+            }
+
             if (parsed.type === 'media' && parsed.postName) {
                 const modelId = modelMap.get(parsed.modelName);
                 if (!modelId) continue;
@@ -235,7 +263,7 @@ export const WhitelabelSyncService = {
                 const postId = postMap.get(postKey);
                 if (!postId) continue;
 
-                const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map(p => encodeURIComponent(p)).join('/')}`;
+                const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
                 mediaToInsert.push({
                     whitelabelPostId: postId,
                     s3Key: item.Key,

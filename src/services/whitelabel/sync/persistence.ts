@@ -40,6 +40,13 @@ export const WhitelabelPersistence = {
           set: { url: sql`excluded.url` }
       });
   },
+
+  async updateModelProfile(modelId: number, data: { iconUrl?: string, bannerUrl?: string }) {
+      if (!data.iconUrl && !data.bannerUrl) return;
+      await db.update(whitelabelModels)
+          .set(data)
+          .where(sql`${whitelabelModels.id} = ${modelId}`);
+  },
   
   async updateAggregates(specificModelId?: number) {
      const whereClause = specificModelId ? sql`WHERE id = ${specificModelId}` : sql``;

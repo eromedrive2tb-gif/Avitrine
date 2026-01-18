@@ -48,6 +48,8 @@ export const whitelabelModels = pgTable('whitelabel_models', {
   id: serial('id').primaryKey(),
   folderName: text('folder_name').notNull().unique(), 
   thumbnailUrl: text('thumbnail_url'),
+  iconUrl: text('icon_url'),
+  bannerUrl: text('banner_url'),
   postCount: integer('post_count').default(0),
   status: text('status', { enum: ['new', 'active', 'hidden'] }).default('new'),
   lastSyncedAt: timestamp('last_synced_at').defaultNow(),
