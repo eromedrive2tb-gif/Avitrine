@@ -1,0 +1,260 @@
+import { s3Client, S3_CONFIG } from '../s3';
+import { ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3KeyParser } from './sync/parser';
+import { WhitelabelPersistence } from './sync/persistence';
+
+export const WhitelabelSyncService = {
+  async syncAllModels() {
+    let continuationToken: string | undefined = undefined;
+    let isTruncated = true;
+    
+    // 1. Load State
+    const modelMap = await WhitelabelPersistence.fetchKnownModels();
+    const postMap = await WhitelabelPersistence.fetchKnownPosts();
+    const stats = { models: 0, posts: 0, media: 0 };
+
+    while (isTruncated) {
+      const command = new ListObjectsV2Command({
+        Bucket: S3_CONFIG.bucket,
+        MaxKeys: 1000, 
+        ContinuationToken: continuationToken
+      });
+
+      const response = await s3Client.send(command);
+      if (!response.Contents || response.Contents.length === 0) break;
+
+      // 2. Parse Items
+      const newModels = new Map<string, any>();
+      const newPosts = new Map<string, any>();
+      const mediaToInsert: any[] = [];
+
+      for (const item of response.Contents) {
+        if (!item.Key) continue;
+        const parsed = S3KeyParser.parse(item.Key);
+        
+        if (parsed.type === 'unknown') continue;
+
+        // Model Detection
+        if (!modelMap.has(parsed.modelName) && !newModels.has(parsed.modelName)) {
+           newModels.set(parsed.modelName, {
+               folderName: parsed.modelName,
+               status: 'new',
+               lastSyncedAt: new Date()
+           });
+        }
+
+        const modelId = modelMap.get(parsed.modelName);
+        if (!modelId) continue; // Will handle in next pass if just created, or assume strict order
+
+        // Post Detection
+        if (parsed.type === 'media' && parsed.postName) {
+            const postKey = `${modelId}:${parsed.postName}`;
+            if (!postMap.has(postKey) && !newPosts.has(postKey)) {
+                newPosts.set(postKey, {
+                    whitelabelModelId: modelId,
+                    folderName: parsed.postName,
+                    title: parsed.postName
+                });
+            }
+
+            // Media Detection
+            // We need post ID, which might not exist yet if it's in newPosts
+            // We collect media but need to resolve PostID later. 
+            // Actually, we must Insert Posts first.
+        }
+      }
+
+      // 3. Persist Models
+      if (newModels.size > 0) {
+          const inserted = await WhitelabelPersistence.insertModels(Array.from(newModels.values()));
+          inserted.forEach(m => {
+              modelMap.set(m.folderName, m.id);
+              stats.models++;
+          });
+      }
+
+      // 4. Persist Posts (Now that we have all Model IDs)
+      // Re-scan for posts is inefficient? No, we have newPosts map.
+      // But we need to update newPosts with valid Model IDs if they were just created.
+      // Actually, since we updated modelMap, we can iterate newPosts and ensure IDs are correct.
+      // The map keys were built using modelId? 
+      // Wait, if modelId was undefined in Parse loop, we skipped it.
+      // So we missed posts for NEW models in the first pass of the loop.
+      // FIX: In a stream, if a model is new, we need to insert it immediately or buffer.
+      // Given Drizzle batching, we should probably buffer everything then insert in order.
+      
+      // Since 'modelMap' is updated, we need to re-evaluate the "skipped" items?
+      // Or just accept that for this batch (1000 keys), if the model folder key comes *after* the file key (unlikely in S3 alphabetical), we might miss it?
+      // S3 lists alphabetically: Model/ comes before Model/Post/.
+      // So we should find the model folder or files first.
+      
+      // However, if we missed the `modelId` in the first loop because it wasn't in map, we need to recover it.
+      // We can iterate `response.Contents` TWICE. 
+      // Pass 1: Models. Pass 2: Posts & Media.
+      
+      // Pass 2: Posts
+      for (const item of response.Contents) {
+          if (!item.Key) continue;
+          const parsed = S3KeyParser.parse(item.Key);
+          if (parsed.type === 'media' && parsed.postName) {
+              const modelId = modelMap.get(parsed.modelName); // Should exist now if inserted in Pass 1
+              if (!modelId) continue;
+
+              const postKey = `${modelId}:${parsed.postName}`;
+              if (!postMap.has(postKey) && !newPosts.has(postKey)) {
+                  newPosts.set(postKey, {
+                      whitelabelModelId: modelId,
+                      folderName: parsed.postName,
+                      title: parsed.postName
+                  });
+              }
+          }
+      }
+
+      if (newPosts.size > 0) {
+          const inserted = await WhitelabelPersistence.insertPosts(Array.from(newPosts.values()));
+          inserted.forEach(p => {
+              postMap.set(`${p.whitelabelModelId}:${p.folderName}`, p.id);
+              stats.posts++;
+          });
+      }
+
+      // Pass 3: Media (Now that we have Post IDs)
+      for (const item of response.Contents) {
+          if (!item.Key) continue;
+          const parsed = S3KeyParser.parse(item.Key);
+          if (parsed.type === 'media' && parsed.postName) {
+              const modelId = modelMap.get(parsed.modelName);
+              if (!modelId) continue;
+              
+              const postKey = `${modelId}:${parsed.postName}`;
+              const postId = postMap.get(postKey); // Should exist now
+              if (!postId) continue;
+
+              const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map(p => encodeURIComponent(p)).join('/')}`;
+              
+              mediaToInsert.push({
+                  whitelabelPostId: postId,
+                  s3Key: item.Key,
+                  url: cdnUrl,
+                  type: parsed.isVideo ? 'video' : 'image'
+              });
+          }
+      }
+
+      if (mediaToInsert.length > 0) {
+          await WhitelabelPersistence.insertMedia(mediaToInsert);
+          stats.media += mediaToInsert.length;
+      }
+
+      isTruncated = response.IsTruncated || false;
+      continuationToken = response.NextContinuationToken;
+    }
+    
+    await WhitelabelPersistence.updateAggregates();
+    return stats;
+  },
+
+  async syncModelDetails(folderName: string) {
+      // Reuse similar logic or call syncAllModels with prefix?
+      // Simplified for "Extreme SRP": just reimplement the loop for specific prefix is safer/cleaner than abstracting too much.
+      // Or extract the "Processing Loop" above into a function `processBatch(items, state)`.
+      // Let's do that for maximum DRY.
+      return this._syncPrefix(folderName);
+  },
+
+  async _syncPrefix(prefix: string) {
+    const modelMap = await WhitelabelPersistence.fetchKnownModels();
+    const postMap = await WhitelabelPersistence.fetchKnownPosts();
+    
+    // Normalize prefix
+    const safePrefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
+    
+    // Ensure Model Exists first (manual check as it might not be in the S3 listing if we list subfolder)
+    // Actually, listing "ModelName/" should return "ModelName/" as 1st key if it exists?
+    // Let's just force ensure the model exists.
+    const folderName = safePrefix.replace('/', '');
+    if (!modelMap.has(folderName)) {
+        const [m] = await WhitelabelPersistence.insertModels([{ folderName, status: 'new', lastSyncedAt: new Date() }]);
+        modelMap.set(m.folderName, m.id);
+    }
+
+    let continuationToken: string | undefined = undefined;
+    let isTruncated = true;
+
+    while (isTruncated) {
+        const command: ListObjectsV2Command = new ListObjectsV2Command({
+            Bucket: S3_CONFIG.bucket,
+            Prefix: safePrefix,
+            ContinuationToken: continuationToken
+        });
+        const response = await s3Client.send(command);
+        if (!response.Contents) break;
+
+        // Reuse the logic? 
+        // We can copy-paste the "Pass 2" and "Pass 3" logic since we know Model exists.
+        // For DRY, extracting `processBatch(items, maps)` would be best.
+        // But for now, I will inline to ensure correctness within this file scope.
+        
+        const newPosts = new Map<string, any>();
+        const mediaToInsert: any[] = [];
+        
+        // Pass 2: Posts
+        for (const item of response.Contents) {
+            if (!item.Key) continue;
+            const parsed = S3KeyParser.parse(item.Key);
+            if (parsed.type === 'media' && parsed.postName) {
+                const modelId = modelMap.get(parsed.modelName);
+                if (!modelId) continue;
+
+                const postKey = `${modelId}:${parsed.postName}`;
+                if (!postMap.has(postKey) && !newPosts.has(postKey)) {
+                    newPosts.set(postKey, {
+                        whitelabelModelId: modelId,
+                        folderName: parsed.postName,
+                        title: parsed.postName
+                    });
+                }
+            }
+        }
+        
+        if (newPosts.size > 0) {
+            const inserted = await WhitelabelPersistence.insertPosts(Array.from(newPosts.values()));
+            inserted.forEach(p => postMap.set(`${p.whitelabelModelId}:${p.folderName}`, p.id));
+        }
+
+        // Pass 3: Media
+        for (const item of response.Contents) {
+            if (!item.Key) continue;
+            const parsed = S3KeyParser.parse(item.Key);
+            if (parsed.type === 'media' && parsed.postName) {
+                const modelId = modelMap.get(parsed.modelName);
+                if (!modelId) continue;
+                
+                const postKey = `${modelId}:${parsed.postName}`;
+                const postId = postMap.get(postKey);
+                if (!postId) continue;
+
+                const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map(p => encodeURIComponent(p)).join('/')}`;
+                mediaToInsert.push({
+                    whitelabelPostId: postId,
+                    s3Key: item.Key,
+                    url: cdnUrl,
+                    type: parsed.isVideo ? 'video' : 'image'
+                });
+            }
+        }
+
+        if (mediaToInsert.length > 0) {
+            await WhitelabelPersistence.insertMedia(mediaToInsert);
+        }
+
+        isTruncated = response.IsTruncated || false;
+        continuationToken = response.NextContinuationToken;
+    }
+
+    const modelId = modelMap.get(folderName);
+    await WhitelabelPersistence.updateAggregates(modelId);
+    return { success: true };
+  }
+};

@@ -5,7 +5,6 @@ import { AdminAds } from '../pages/admin/Ads';
 import { AdminPlans } from '../pages/admin/Plans';
 import { AdminSettings } from '../pages/admin/Settings';
 import { AdminWhitelabel } from '../pages/admin/Whitelabel';
-import { WhitelabelService, type PaginatedResult } from '../services/s3';
 import { WhitelabelDbService } from '../services/whitelabel';
 
 const adminRoutes = new Hono();
