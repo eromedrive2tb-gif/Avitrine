@@ -147,6 +147,13 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
                         </>
                     )}
                   </div>
+
+                  {post.title && (
+                    <div class="px-4 pb-3">
+                      <p class="text-sm text-gray-200 leading-relaxed">{post.title}</p>
+                    </div>
+                  )}
+
                   
                   <div class="p-4 flex items-center gap-6 border-t border-white/5">
                     <button class="flex items-center gap-2 text-gray-400">
@@ -249,6 +256,8 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
                             </div>
                             <a href="/posts/\${post.id}" class="text-xs font-bold text-primary hover:text-white transition-colors">Ver Post ➜</a>
                         </div>
+
+                        \${post.title ? \`<div class="px-4 pb-3"><p class="text-sm text-gray-200 leading-relaxed">\${post.title}</p></div>\` : ''}
 
                         <div class="post-carousel relative aspect-square bg-black group" data-post-id="\${post.id}">
                             \${slidesHtml}
