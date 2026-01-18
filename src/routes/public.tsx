@@ -106,12 +106,36 @@ publicRoutes.get('/', async (c) => {
   }
 });
 
+publicRoutes.get('/models/:slug', async (c) => {
+  const slug = c.req.param('slug');
+
+  // Busca a modelo
+  const model = await db.select().from(whitelabelModels)
+    .where(eq(whitelabelModels.folderName, slug))
+    .limit(1).then(res => res[0]);
+
+  if (!model) return c.notFound();
+
+  // Busca os primeiros 20 posts para o SSR (primeiro carregamento)
+  const initialPosts = await db.select().from(whitelabelPosts)
+    .where(eq(whitelabelPosts.whitelabelModelId, model.id))
+    .orderBy(desc(whitelabelPosts.id))
+    .limit(20);
+
+  // Formata os posts iniciais (mesma lógica da CDN)
+  const formattedPosts = initialPosts.map(post => {
+    const media = typeof post.mediaCdns === 'string' ? JSON.parse(post.mediaCdns) : post.mediaCdns;
+    return {
+      ...post,
+      thumbnail: media?.images?.[0] ? `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${model.folderName}/${encodeURIComponent(post.folderName)}/${encodeURIComponent(media.images[0].split('/').pop() || '')}` : null
+    };
+  });
+
+  return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} />);
+});
+
 // Outras rotas...
 publicRoutes.get('/models', (c) => c.html(<ModelsPage />));
-publicRoutes.get('/models/:slug', (c) => {
-  const slug = c.req.param('slug');
-  return c.html(<ModelProfilePage slug={slug} />);
-});
 publicRoutes.get('/posts/:id', (c) => {
   const id = c.req.param('id');
   return c.html(<PostDetailPage id={id} />);

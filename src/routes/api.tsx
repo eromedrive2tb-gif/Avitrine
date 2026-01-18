@@ -112,52 +112,48 @@ apiRoutes.get('/models', async (c) => {
   }
 });
 
-/**
- * GET /api/models/:modelName/posts
- * Busca posts de uma modelo específica com paginação e ordenação desc
- */
+// Função auxiliar para garantir link da CDN
+function formatCdn(path: string | null) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const safePath = path.split('/').map(p => encodeURIComponent(p)).join('/');
+  return `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${safePath}`;
+}
+
 apiRoutes.get('/models/:modelName/posts', async (c) => {
   const modelName = c.req.param('modelName');
-  const pageParam = c.req.query('page');
-  const page = pageParam ? Math.max(1, parseInt(pageParam)) : 1;
-  const limit = 20; // Mantendo o padrão de 20 itens por página para evitar travar
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = 20;
   const offset = (page - 1) * limit;
 
   try {
-    // PASSO 1: Encontrar o ID da modelo pelo nome da pasta (slug)
-    const model = await db.select({ id: whitelabelModels.id })
-      .from(whitelabelModels)
+    const model = await db.select().from(whitelabelModels)
       .where(eq(whitelabelModels.folderName, modelName))
-      .limit(1)
-      .then(res => res[0]);
+      .limit(1).then(res => res[0]);
 
-    if (!model) {
-      return c.json({ error: 'Modelo não encontrada' }, 404);
-    }
+    if (!model) return c.json({ error: '404' }, 404);
 
-    // PASSO 2: Buscar as rows inteiras dos posts ordenados por ID DESC
-    // A paginação é crucial aqui pois a tabela tem +76k rows
-    const posts = await db.select()
-      .from(whitelabelPosts)
+    const posts = await db.select().from(whitelabelPosts)
       .where(eq(whitelabelPosts.whitelabelModelId, model.id))
       .orderBy(desc(whitelabelPosts.id))
       .limit(limit)
       .offset(offset);
 
-    // Retorna os dados seguindo a estrutura de meta-dados da api de models
-    return c.json({
-      data: posts,
-      meta: {
-        page,
-        limit,
-        count: posts.length,
-        modelId: model.id
-      }
+    // Formata as URLs dentro do JSON mediaCdns antes de enviar
+    const formattedPosts = posts.map(post => {
+      const media = typeof post.mediaCdns === 'string' ? JSON.parse(post.mediaCdns) : post.mediaCdns;
+      return {
+        ...post,
+        mediaCdns: {
+          images: (media?.images || []).map((img: string) => formatCdn(img)),
+          videos: (media?.videos || []).map((vid: string) => formatCdn(vid))
+        }
+      };
     });
 
-  } catch (err: any) {
-    console.error(`Erro ao buscar posts da modelo ${modelName}:`, err);
-    return c.json({ error: 'Erro interno ao processar a requisição.' }, 500);
+    return c.json({ data: formattedPosts, meta: { page, limit, count: formattedPosts.length } });
+  } catch (err) {
+    return c.json({ error: 'err' }, 500);
   }
 });
 
