@@ -6,6 +6,34 @@ import { whitelabelModels, whitelabelPosts, whitelabelMedia } from '../db/schema
 // Adicionado 'eq' aos imports
 import { inArray, desc, sql, and, eq } from 'drizzle-orm';
 
+// Adicione os imports necessários no topo se não houver
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { s3Client, S3_CONFIG } from '../services/s3';
+
+// 1. Adicione a função signS3Key (a mesma da public.tsx) para usar na API
+async function signS3Key(key: string | null) {
+  if (!key) return null;
+  try {
+    let finalKey = key;
+    if (key.startsWith('http')) {
+      const url = new URL(key);
+      finalKey = decodeURIComponent(url.pathname.substring(1));
+    }
+    if (finalKey.includes('%%')) {
+        finalKey = finalKey.replace(/%%/g, '%25');
+    }
+    const command = new GetObjectCommand({
+      Bucket: S3_CONFIG.bucket,
+      Key: finalKey,
+    });
+    return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  } catch (error) {
+    console.error(`Erro ao assinar chave ${key}:`, error);
+    return null;
+  }
+}
+
 const apiRoutes = new Hono();
 
 // Admin API
@@ -120,6 +148,7 @@ function formatCdn(path: string | null) {
   return `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${safePath}`;
 }
 
+// 2. Atualize a rota de posts da modelo para assinar os arquivos
 apiRoutes.get('/models/:modelName/posts', async (c) => {
   const modelName = c.req.param('modelName');
   const page = parseInt(c.req.query('page') || '1');
@@ -139,21 +168,25 @@ apiRoutes.get('/models/:modelName/posts', async (c) => {
       .limit(limit)
       .offset(offset);
 
-    // Formata as URLs dentro do JSON mediaCdns antes de enviar
-    const formattedPosts = posts.map(post => {
+    // 3. OTIMIZAÇÃO: Assina todas as mídias antes de enviar o JSON
+    const formattedPosts = await Promise.all(posts.map(async (post) => {
       const media = typeof post.mediaCdns === 'string' ? JSON.parse(post.mediaCdns) : post.mediaCdns;
+      
+      const signedImages = await Promise.all((media?.images || []).map((img: string) => signS3Key(img)));
+      const signedVideos = await Promise.all((media?.videos || []).map((vid: string) => signS3Key(vid)));
+
       return {
         ...post,
         mediaCdns: {
-          images: (media?.images || []).map((img: string) => formatCdn(img)),
-          videos: (media?.videos || []).map((vid: string) => formatCdn(vid))
+          images: signedImages,
+          videos: signedVideos
         }
       };
-    });
+    }));
 
     return c.json({ data: formattedPosts, meta: { page, limit, count: formattedPosts.length } });
   } catch (err) {
-    return c.json({ error: 'err' }, 500);
+    return c.json({ error: 'Erro ao carregar posts' }, 500);
   }
 });
 

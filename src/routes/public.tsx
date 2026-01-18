@@ -116,20 +116,28 @@ publicRoutes.get('/models/:slug', async (c) => {
 
   if (!model) return c.notFound();
 
-  // Busca os primeiros 20 posts para o SSR (primeiro carregamento)
+  // 1. Assina a thumbnail do perfil da modelo
+  model.thumbnailUrl = await signS3Key(model.thumbnailUrl);
+
+  // Busca os primeiros 20 posts
   const initialPosts = await db.select().from(whitelabelPosts)
     .where(eq(whitelabelPosts.whitelabelModelId, model.id))
     .orderBy(desc(whitelabelPosts.id))
     .limit(20);
 
-  // Formata os posts iniciais (mesma lógica da CDN)
-  const formattedPosts = initialPosts.map(post => {
+  // 2. Assina as thumbnails dos posts iniciais
+  const formattedPosts = await Promise.all(initialPosts.map(async (post) => {
     const media = typeof post.mediaCdns === 'string' ? JSON.parse(post.mediaCdns) : post.mediaCdns;
+    
+    // Pega a primeira imagem para ser a thumbnail do post
+    const firstImage = media?.images?.[0] || null;
+
     return {
       ...post,
-      thumbnail: media?.images?.[0] ? `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${model.folderName}/${encodeURIComponent(post.folderName)}/${encodeURIComponent(media.images[0].split('/').pop() || '')}` : null
+      // Usamos a função signS3Key para gerar o link temporário válido
+      thumbnail: await signS3Key(firstImage)
     };
-  });
+  }));
 
   return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} />);
 });
