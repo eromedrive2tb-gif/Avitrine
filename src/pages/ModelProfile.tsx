@@ -84,39 +84,81 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
 
           {/* Feed de Posts com Infinite Scroll */}
           <div id="posts-feed" class="mt-6 space-y-8">
-            {initialPosts.map(post => (
-              <div class="bg-[#0f0f0f] rounded-2xl overflow-hidden border border-white/5 shadow-sm">
-                <div class="p-4 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/20">
-                    <img src={model.thumbnailUrl} class="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p class="text-sm font-bold capitalize">{displayName}</p>
-                    <p class="text-[10px] text-gray-500 uppercase">{post.createdAt || 'Recente'}</p>
-                  </div>
-                </div>
+            {initialPosts.map(post => {
+              const images = (post.mediaCdns?.images || []).map((url: string) => ({ type: 'image', url }));
+              const videos = (post.mediaCdns?.videos || []).map((url: string) => ({ type: 'video', url }));
+              // Combine images and videos. You might want to sort them if needed.
+              const mediaItems = [...images, ...videos];
+              
+              // Fallback if empty
+              if (mediaItems.length === 0) {
+                 mediaItems.push({ type: 'image', url: post.thumbnail || '/static/img/placeholder.jpg' });
+              }
 
-                <a href={`/posts/${post.id}`} class="block relative aspect-square bg-black group">
-                  <img 
-                    src={post.thumbnail} 
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                    loading="lazy" 
-                  />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                       <span class="bg-white text-black px-4 py-2 rounded-full text-[10px] font-black uppercase">Ver completo</span>
+              return (
+                <div class="bg-[#0f0f0f] rounded-2xl overflow-hidden border border-white/5 shadow-sm">
+                  <div class="p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/20">
+                        <img src={model.thumbnailUrl} class="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                        <p class="text-sm font-bold capitalize">{displayName}</p>
+                        <p class="text-[10px] text-gray-500 uppercase">{post.createdAt || 'Recente'}</p>
+                        </div>
+                    </div>
+                    <a href={`/posts/${post.id}`} class="text-xs font-bold text-primary hover:text-white transition-colors">Ver Post ➜</a>
                   </div>
-                </a>
-                
-                <div class="p-4 flex items-center gap-6 border-t border-white/5">
-                  <button class="flex items-center gap-2 text-gray-400">
-                    <span>❤️</span> <span class="text-xs font-bold">{post.likes || 0}</span>
-                  </button>
-                  <button class="flex items-center gap-2 text-gray-400">
-                    <span>💬</span> <span class="text-xs font-bold">{post.comments || 0}</span>
-                  </button>
+
+                  <div class="post-carousel relative aspect-square bg-black group" data-post-id={post.id}>
+                    {/* Slides */}
+                    {mediaItems.map((item: any, idx: number) => (
+                        <div class={`carousel-item absolute inset-0 w-full h-full transition-opacity duration-300 ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+                            {item.type === 'video' ? (
+                                <div class="w-full h-full relative">
+                                    <video src={item.url} class="w-full h-full object-cover" loop playsInline></video>
+                                    <div class="play-button absolute inset-0 flex items-center justify-center cursor-pointer bg-black/20 hover:bg-black/30 transition-colors z-20">
+                                        <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center pl-1 group-hover:scale-110 transition-transform">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <img src={item.url} class="w-full h-full object-cover" loading="lazy" />
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Controls */}
+                    {mediaItems.length > 1 && (
+                        <>
+                            <button class="carousel-prev absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-primary text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-30 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <button class="carousel-next absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-primary text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-30 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                            
+                            <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-30 pointer-events-none">
+                                {mediaItems.map((_: any, i: number) => (
+                                    <button class={`carousel-dot w-1.5 h-1.5 rounded-full transition-all pointer-events-auto cursor-pointer ${i === 0 ? 'bg-white w-4' : 'bg-white/50 hover:bg-white'}`}></button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                  </div>
+                  
+                  <div class="p-4 flex items-center gap-6 border-t border-white/5">
+                    <button class="flex items-center gap-2 text-gray-400">
+                      <span>❤️</span> <span class="text-xs font-bold">{post.likes || 0}</span>
+                    </button>
+                    <button class="flex items-center gap-2 text-gray-400">
+                      <span>💬</span> <span class="text-xs font-bold">{post.comments || 0}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Sentinel (Gatilho do Scroll) */}
@@ -125,6 +167,8 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
           </div>
         </div>
       </div>
+
+      <script src="/static/js/post-carousel.js"></script>
 
       {/* Script do Cliente para Carregamento Infinito */}
       <script dangerouslySetInnerHTML={{ __html: `
@@ -146,31 +190,87 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
               
               if (result.data && result.data.length > 0) {
                 result.data.forEach(post => {
-                  const thumb = (post.mediaCdns && post.mediaCdns.images && post.mediaCdns.images[0]) 
-                                ? post.mediaCdns.images[0] 
-                                : (post.thumbnail || "/static/img/placeholder.jpg");
-                                
-                  const postHtml = \`
-                    <div class="bg-[#0f0f0f] rounded-2xl overflow-hidden border border-white/5 shadow-sm">
-                       <div class="p-4 flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/20">
-                             <img src="\${modelThumb}" class="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                             <p class="text-sm font-bold capitalize">\${modelSlug}</p>
-                             <p class="text-[10px] text-gray-500 uppercase">Recente</p>
-                          </div>
-                       </div>
-                       <a href="/posts/\${post.id}" class="block relative aspect-square bg-black group">
-                          <img src="\${thumb}" class="w-full h-full object-cover" loading="lazy" />
-                          <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-                               <span class="bg-white text-black px-4 py-2 rounded-full text-[10px] font-black uppercase">Ver completo</span>
-                          </div>
-                       </a>
-                    </div>
-                  \`;
-                  feed.insertAdjacentHTML('beforeend', postHtml);
+                    const images = (post.mediaCdns && post.mediaCdns.images || []).map(url => ({ type: 'image', url }));
+                    const videos = (post.mediaCdns && post.mediaCdns.videos || []).map(url => ({ type: 'video', url }));
+                    let mediaItems = [...images, ...videos];
+                    
+                    if (mediaItems.length === 0) {
+                        mediaItems.push({ type: 'image', url: post.thumbnail || "/static/img/placeholder.jpg" });
+                    }
+
+                    // Generate Slides HTML
+                    const slidesHtml = mediaItems.map((item, idx) => {
+                        const opacityClass = idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none';
+                        const content = item.type === 'video' 
+                            ? \`<div class="w-full h-full relative">
+                                  <video src="\${item.url}" class="w-full h-full object-cover" loop playsinline></video>
+                                  <div class="play-button absolute inset-0 flex items-center justify-center cursor-pointer bg-black/20 hover:bg-black/30 transition-colors z-20">
+                                      <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center pl-1 group-hover:scale-110 transition-transform">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none"><path d="M8 5v14l11-7z"/></svg>
+                                      </div>
+                                  </div>
+                               </div>\`
+                            : \`<img src="\${item.url}" class="w-full h-full object-cover" loading="lazy" />\`;
+                            
+                        return \`<div class="carousel-item absolute inset-0 w-full h-full transition-opacity duration-300 \${opacityClass}">\${content}</div>\`;
+                    }).join('');
+
+                    // Generate Controls HTML
+                    let controlsHtml = '';
+                    if (mediaItems.length > 1) {
+                        const dotsHtml = mediaItems.map((_, i) => 
+                            \`<button class="carousel-dot w-1.5 h-1.5 rounded-full transition-all pointer-events-auto cursor-pointer \${i === 0 ? 'bg-white w-4' : 'bg-white/50 hover:bg-white'}"></button>\`
+                        ).join('');
+
+                        controlsHtml = \`
+                            <button class="carousel-prev absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-primary text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-30 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <button class="carousel-next absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-primary text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-30 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                            <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-30 pointer-events-none">
+                                \${dotsHtml}
+                            </div>
+                        \`;
+                    }
+
+                    const postHtml = \`
+                        <div class="bg-[#0f0f0f] rounded-2xl overflow-hidden border border-white/5 shadow-sm">
+                        <div class="p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/20">
+                                    <img src="\${modelThumb}" class="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold capitalize">\${modelSlug}</p>
+                                    <p class="text-[10px] text-gray-500 uppercase">Recente</p>
+                                </div>
+                            </div>
+                            <a href="/posts/\${post.id}" class="text-xs font-bold text-primary hover:text-white transition-colors">Ver Post ➜</a>
+                        </div>
+
+                        <div class="post-carousel relative aspect-square bg-black group" data-post-id="\${post.id}">
+                            \${slidesHtml}
+                            \${controlsHtml}
+                        </div>
+                        
+                        <div class="p-4 flex items-center gap-6 border-t border-white/5">
+                            <button class="flex items-center gap-2 text-gray-400">
+                            <span>❤️</span> <span class="text-xs font-bold">\${post.likes || 0}</span>
+                            </button>
+                            <button class="flex items-center gap-2 text-gray-400">
+                            <span>💬</span> <span class="text-xs font-bold">\${post.comments || 0}</span>
+                            </button>
+                        </div>
+                        </div>
+                    \`;
+                    feed.insertAdjacentHTML('beforeend', postHtml);
                 });
+                
+                // Initialize new carousels
+                if (window.initPostCarousels) window.initPostCarousels();
+                
                 loading = false;
               } else {
                 sentinel.innerHTML = "<p class='text-gray-500 text-sm font-medium'>Fim do conteúdo.</p>";
