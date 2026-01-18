@@ -13,6 +13,9 @@ class PostCarousel {
     }
 
     init() {
+        // Debug
+        console.log('Carousel init:', this.element, 'Slides:', this.totalSlides);
+
         // If only 1 slide, hide controls
         if (this.totalSlides <= 1) {
             if (this.prevBtn) this.prevBtn.style.display = 'none';
@@ -113,11 +116,11 @@ class PostCarousel {
 
         this.dots.forEach((dot, index) => {
             if (index === this.currentIndex) {
-                dot.classList.add('bg-white', 'scale-125');
-                dot.classList.remove('bg-white/50');
+                dot.classList.add('bg-primary', 'scale-125');
+                dot.classList.remove('bg-white/20');
             } else {
-                dot.classList.remove('bg-white', 'scale-125');
-                dot.classList.add('bg-white/50');
+                dot.classList.remove('bg-primary', 'scale-125');
+                dot.classList.add('bg-white/20');
             }
         });
     }

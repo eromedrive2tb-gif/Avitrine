@@ -29,7 +29,7 @@ export const S3KeyParser = {
     if (parts.length >= 3) {
       const postName = parts[1];
       const fileName = parts.slice(2).join('/');
-      const isVideo = /\.(mp4|mov|webm)$/i.test(fileName);
+      const isVideo = /\.(mp4|mov|webm|m4v|mkv|avi|wmv|flv)$/i.test(fileName);
       const isImage = !isVideo; // Simplification or add specific check
 
       return { 
