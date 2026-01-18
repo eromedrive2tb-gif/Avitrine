@@ -111,16 +111,16 @@
   flex-direction: column;
   background-color: #000; /* Safety background */
   border-radius: 20px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid #8A2BE2; /* Fixed Active Border */
   overflow: hidden;
   margin-bottom: 2rem;
   transition: transform 0.2s ease, border-color 0.2s ease;
+  transform: translateY(-2px); /* Fixed Active Lift */
+  box-shadow: 0 4px 20px rgba(138, 43, 226, 0.15); /* Fixed Active Shadow */
 }
 
 .premium-stack-card:hover {
-  border-color: #8A2BE2;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(138, 43, 226, 0.15);
+  /* Removed hover dependency */
 }
 
 .stack-header {

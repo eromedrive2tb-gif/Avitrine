@@ -63,7 +63,7 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
 
                     if (mediaItems.length === 0) mediaItems.push({ type: 'image', url: post.thumbnail || post.thumbnailUrl || "/static/img/placeholder.jpg" });
 
-                    // Replicating STACKED CARD Structure using Concatenation to avoid escaping hell
+                    // Clean structure without 'post-card' JS logic needed anymore
                     let postHtml = '<div class="premium-stack-card group">';
                     
                     // 1. Header
