@@ -83,6 +83,8 @@ export const WhitelabelModelQueries = {
     if (!model) return null;
 
     model.thumbnailUrl = await signS3Key(model.thumbnailUrl);
+    model.iconUrl = await signS3Key(model.iconUrl);
+    model.bannerUrl = await signS3Key(model.bannerUrl);
     return model;
   },
 

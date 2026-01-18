@@ -16,7 +16,7 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
   const displayName = model.name || folderName;
 
   // Banner superior estilo Netflix
-  const bannerUrl = model.coverUrl || model.thumbnailUrl || '/static/img/placeholder_model.jpg';
+  const bannerUrl = model.bannerUrl || model.thumbnailUrl || '/static/img/placeholder_model.jpg';
 
   return (
     <Layout title={`${displayName} (@${folderName}) - Perfil Exclusivo`}>

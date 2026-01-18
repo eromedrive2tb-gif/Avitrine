@@ -15,8 +15,8 @@ export const ProfileSummary: FC<ProfileSummaryProps> = ({ model, displayName }) 
       <div class="flex flex-col md:flex-row md:items-end gap-6">
         {/* Avatar Profile */}
         <div class="relative shrink-0 group">
-          <div class="rounded-3xl border-[6px] border-[#050505] overflow-hidden bg-gray-900 shadow-2xl transition-transform group-hover:scale-[1.02]">
-            <Avatar src={model.thumbnailUrl || '/static/img/placeholder_model.jpg'} alt={displayName} size="lg" className="w-32 h-32 md:w-44 md:h-44" />
+          <div>
+            <Avatar src={model.iconUrl || model.thumbnailUrl || '/static/img/placeholder_model.jpg'} alt={displayName} size="lg" className="w-32 h-32 md:w-44 md:h-44" />
           </div>
           {model.isLive && (
              <div class="absolute -bottom-2 left-1/2 -translate-x-1/2">
