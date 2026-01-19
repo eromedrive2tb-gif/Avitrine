@@ -94,15 +94,14 @@ apiRoutes.post('/login', async (c) => {
         role: user.role
     };
 
-    const token = await sign(tokenPayload, JWT_SECRET);
-    setCookie(c, 'auth_token', token, { 
-        httpOnly: true, 
-        path: '/', 
-        maxAge: 60 * 60 * 24 * 7,
-        sameSite: 'Lax',
-        secure: process.env.NODE_ENV === 'production'
-    });
-
+        const token = await sign(tokenPayload, JWT_SECRET, 'HS256');
+        setCookie(c, 'auth_token', token, {
+            httpOnly: true,
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7,
+            sameSite: 'Lax',
+            secure: process.env.NODE_ENV === 'production'
+        });
     return c.redirect('/');
   } catch (err) {
     console.error("Login error:", err);
@@ -126,15 +125,14 @@ apiRoutes.post('/register', async (c) => {
           role: user.role
       };
 
-      const token = await sign(tokenPayload, JWT_SECRET);
-      setCookie(c, 'auth_token', token, { 
-          httpOnly: true, 
-          path: '/', 
-          maxAge: 60 * 60 * 24 * 7,
-          sameSite: 'Lax',
-          secure: process.env.NODE_ENV === 'production'
-      });
-      
+          const token = await sign(tokenPayload, JWT_SECRET, 'HS256');
+          setCookie(c, 'auth_token', token, {
+              httpOnly: true,
+              path: '/',
+              maxAge: 60 * 60 * 24 * 7,
+              sameSite: 'Lax',
+              secure: process.env.NODE_ENV === 'production'
+          });      
       return c.redirect('/plans');
   } catch (err: any) {
       return c.redirect(`/register?error=${encodeURIComponent(err.message)}`);
@@ -146,7 +144,7 @@ apiRoutes.post('/subscribe', async (c) => {
     if (!token) return c.redirect('/login');
 
     try {
-        const payload = await verify(token, JWT_SECRET);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
         const body = await c.req.parseBody();
         const planId = parseInt(body['planId'] as string);
 

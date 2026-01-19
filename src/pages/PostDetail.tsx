@@ -4,13 +4,14 @@ import { MockService } from '../services/mock';
 
 interface PostDetailPageProps {
   id: string;
+  user?: any;
 }
 
-export const PostDetailPage: FC<PostDetailPageProps> = ({ id }) => {
+export const PostDetailPage: FC<PostDetailPageProps> = ({ id, user }) => {
   const post = MockService.getPostById(parseInt(id));
 
   return (
-    <Layout title={`${post.title} - ${post.modelName} | CreatorFlix`}>
+    <Layout title={`${post.title} - ${post.modelName} | CreatorFlix`} user={user}>
       <div class="max-w-4xl mx-auto min-h-screen pb-20 p-4">
         
         {/* Navigation / Header */}

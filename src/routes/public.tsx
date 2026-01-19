@@ -9,17 +9,27 @@ import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { db } from '../db';
-import { plans } from '../db/schema';
+import { plans, users } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 const publicRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 async function getUser(c: any) {
     const token = getCookie(c, 'auth_token');
-    if (!token) return null;
+    if (!token) {
+        // console.log("Cookie auth_token não encontrado");
+        return null;
+    }
     try {
-        return await verify(token, JWT_SECRET);
-    } catch {
+        const payload = await verify(token, JWT_SECRET, 'HS256');
+        // console.log("Usuário verificado:", payload.email);
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, payload.id as number)
+        });
+        return user || null;
+    } catch (e) {
+        console.error("Falha na verificação do JWT:", e);
         return null;
     }
 }
@@ -48,7 +58,7 @@ publicRoutes.get('/models/:slug', async (c) => {
   // Busca os primeiros 20 posts com thumbnails assinadas
   const formattedPosts = await WhitelabelDbService.getModelPosts(model.id, 1, 20);
 
-  return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} />);
+  return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} user={user} />);
 });
 
 // Outras rotas...
@@ -60,6 +70,7 @@ publicRoutes.get('/models', async (c) => {
   return c.html(
     <ModelsPage 
       models={result.data} 
+      user={user}
       pagination={{
         currentPage: result.page,
         totalPages: result.totalPages,
@@ -72,9 +83,10 @@ publicRoutes.get('/models', async (c) => {
     />
   );
 });
-publicRoutes.get('/posts/:id', (c) => {
+publicRoutes.get('/posts/:id', async (c) => {
+  const user = await getUser(c);
   const id = c.req.param('id');
-  return c.html(<PostDetailPage id={id} />);
+  return c.html(<PostDetailPage id={id} user={user} />);
 });
 
 publicRoutes.get('/plans', async (c) => {
@@ -99,10 +111,10 @@ publicRoutes.get('/plans', async (c) => {
           };
       });
 
-      return c.html(<PlansPage plans={uiPlans} />);
+      return c.html(<PlansPage plans={uiPlans} user={user} />);
   } catch (err) {
       console.error("Error fetching plans:", err);
-      return c.html(<PlansPage plans={[]} />);
+      return c.html(<PlansPage plans={[]} user={user} />);
   }
 });
 

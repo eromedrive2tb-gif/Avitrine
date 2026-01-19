@@ -4,11 +4,12 @@ import { PlanCard } from '../components/molecules/PlanCard';
 
 interface PlansPageProps {
   plans: any[];
+  user?: any;
 }
 
-export const PlansPage: FC<PlansPageProps> = ({ plans }) => {
+export const PlansPage: FC<PlansPageProps> = ({ plans, user }) => {
   return (
-    <Layout title="Planos VIP - CreatorFlix">
+    <Layout title="Planos VIP - CreatorFlix" user={user}>
       <section class="min-h-screen py-20 relative overflow-hidden flex items-center justify-center bg-[#050505]">
         {/* Ambient Light */}
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>

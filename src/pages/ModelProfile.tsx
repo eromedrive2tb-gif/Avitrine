@@ -9,9 +9,10 @@ import { PostFeed } from '../components/organisms/PostFeed';
 interface ModelProfilePageProps {
   model: any;
   initialPosts: any[];
+  user?: any;
 }
 
-export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPosts }) => {
+export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPosts, user }) => {
   const folderName = model.folderName;
   const displayName = model.name || folderName;
 
@@ -19,7 +20,7 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
   const bannerUrl = model.bannerUrl || model.thumbnailUrl || '/static/img/placeholder_model.jpg';
 
   return (
-    <Layout title={`${displayName} (@${folderName}) - Perfil Exclusivo`}>
+    <Layout title={`${displayName} (@${folderName}) - Perfil Exclusivo`} user={user}>
       <div class="relative min-h-screen bg-[#050505] text-white font-sans pb-20">
         
         {/* Cinematic Header / Hero Section */}

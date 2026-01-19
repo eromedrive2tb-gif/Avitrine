@@ -10,13 +10,14 @@ import { MockService } from '../services/mock';
 interface ModelsPageProps {
   models: any[];
   pagination: any;
+  user?: any;
 }
 
-export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination }) => {
+export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user }) => {
   const sponsoredModels = MockService.getVipModels();
 
   return (
-    <Layout title="Explorar Modelos - CreatorFlix">
+    <Layout title="Explorar Modelos - CreatorFlix" user={user}>
       <FilterBar />
 
       <div class="max-w-[1600px] mx-auto px-4 md:px-6 py-6 min-h-screen">
