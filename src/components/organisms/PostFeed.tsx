@@ -29,7 +29,7 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
             let page = 1;
             let loading = false;
             const modelSlug = "${model.folderName}";
-            const modelThumb = "${model.thumbnailUrl}";
+            const modelIcon = "${model.iconUrl || model.thumbnailUrl}";
             const displayName = "${displayName}";
             const feed = document.getElementById('posts-feed');
             const sentinel = document.getElementById('infinite-sentinel');
@@ -80,7 +80,7 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
                         postHtml +=       '<div class="relative group w-11 h-11 !rounded-full ring-2 ring-[#2a2a2a]">';
                         postHtml +=         '<div class="absolute -inset-0.5 bg-gradient-to-tr from-[#8A2BE2] to-[#00F0FF] rounded-full opacity-0 group-hover:opacity-75 blur transition-opacity duration-300"></div>';
                         postHtml +=         '<div class="relative overflow-hidden object-cover w-full h-full rounded-full ring-2 ring-[#121212] !rounded-full ring-2 ring-[#2a2a2a]">';
-                        postHtml +=             '<img src="' + modelThumb + '" class="w-full h-full object-cover rounded-full" />';
+                        postHtml +=             '<img src="' + modelIcon + '" class="w-full h-full object-cover rounded-full" />';
                         postHtml +=         '</div>';
                         postHtml +=       '</div>';
                         postHtml +=     '</div>';

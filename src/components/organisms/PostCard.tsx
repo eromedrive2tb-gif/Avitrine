@@ -32,7 +32,7 @@ export const PostCard: FC<PostCardProps> = ({ post, model, displayName }) => {
       <div class="stack-header">
         <div class="flex items-center gap-3">
           <div class="relative">
-            <Avatar src={model.thumbnailUrl} alt={displayName} size="sm" className="!rounded-full ring-2 ring-[#2a2a2a]" />
+            <Avatar src={model.iconUrl || model.thumbnailUrl} alt={displayName} size="sm" className="!rounded-full ring-2 ring-[#2a2a2a]" />
           </div>
           <div class="flex flex-col">
             <p class="text-sm font-bold text-gray-100 hover:text-[#8A2BE2] transition-colors cursor-pointer">{displayName}</p>
