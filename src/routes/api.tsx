@@ -1,12 +1,43 @@
 import { Hono } from 'hono';
 import { setCookie, getCookie } from 'hono/cookie';
 import { sign, verify } from 'hono/jwt';
+import { db } from '../db';
+import { plans, subscriptions, users } from '../db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AuthService } from '../services/auth';
 
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+
+// Admin Plan Update
+apiRoutes.post('/admin/plans/update', async (c) => {
+  const body = await c.req.parseBody();
+  const id = parseInt(body['id'] as string);
+  const priceRaw = body['price'] as string;
+  const checkoutUrl = body['checkoutUrl'] as string;
+
+  if (!id) return c.redirect('/admin/plans?error=Invalid ID');
+
+  // Convert "29.90" or "29,90" to 2990
+  const cleanPrice = priceRaw.replace(',', '.');
+  const priceInCents = Math.round(parseFloat(cleanPrice) * 100);
+
+  try {
+    await db.update(plans)
+        .set({ 
+            price: priceInCents,
+            checkoutUrl: checkoutUrl
+        })
+        .where(eq(plans.id, id));
+    
+    return c.redirect('/admin/plans?success=Updated');
+  } catch (e) {
+    console.error(e);
+    return c.redirect('/admin/plans?error=Database Error');
+  }
+});
 
 // Admin API
 apiRoutes.post('/admin/whitelabel/activate', async (c) => {
@@ -157,6 +188,113 @@ apiRoutes.post('/subscribe', async (c) => {
         console.error("Subscribe error:", err);
         return c.redirect('/login');
     }
+});
+
+// Webhook for Payment Success
+apiRoutes.post('/webhook/dias/payment-sucess', async (c) => {
+  console.log("👉 Webhook Hit: /webhook/dias/payment-sucess");
+  try {
+    const rawBody = await c.req.text();
+    console.log("📦 Raw Body:", rawBody);
+    
+    const payload = JSON.parse(rawBody);
+    console.log("✅ Payload Parsed:", payload);
+
+    const { status, id, externalRef, amount, payer } = payload;
+    const transactionId = externalRef || id;
+
+    console.log(`ℹ️ Processing Transaction: ${transactionId} | Status: ${status}`);
+
+    if (status === 'PENDING') {
+      console.log(`🔍 Searching user: ${payer?.email}`);
+      
+      // Use standard select instead of query builder to avoid potential overhead/locks
+      const foundUsers = await db.select().from(users).where(eq(users.email, payer.email)).limit(1);
+      const user = foundUsers[0];
+
+      if (!user) {
+        console.error(`❌ Webhook Error: User not found for email ${payer.email}`);
+        return c.json({ error: 'User not found' }, 404);
+      }
+      console.log(`👤 User Found: ${user.id}`);
+
+      // Identify Plan by finding the closest price
+      console.log(`🔍 Finding closest plan for amount: ${amount}`);
+      const allPlans = await db.select().from(plans);
+      let plan = null;
+      
+      if (allPlans.length > 0) {
+        plan = allPlans.reduce((prev, curr) => {
+          return (Math.abs(curr.price - amount) < Math.abs(prev.price - amount) ? curr : prev);
+        });
+      }
+      
+      console.log(`📋 Closest Plan Found: ${plan?.name} (ID: ${plan?.id}, Price: ${plan?.price})`);
+
+      // 3. Create Pending Subscription
+      await db.insert(subscriptions).values({
+        userId: user.id,
+        planId: plan ? plan.id : null, 
+        externalId: transactionId,
+        status: 'pending',
+        startDate: null,
+        endDate: null
+      });
+
+      console.log(`[Webhook] Pending subscription created for ${payer.email} (Tx: ${transactionId})`);
+      return c.json({ received: true });
+    }
+
+    if (status === 'PAID') {
+      console.log(`🔍 Searching subscription: ${transactionId}`);
+      
+      // 1. Find Pending Subscription
+      const foundSubs = await db.select().from(subscriptions).where(eq(subscriptions.externalId, transactionId)).limit(1);
+      const sub = foundSubs[0];
+
+      if (!sub) {
+        console.error(`Webhook Error: Subscription not found for Tx ${transactionId}`);
+        return c.json({ error: 'Subscription not found' }, 404);
+      }
+      console.log(`🎫 Subscription Found: ${sub.id}`);
+
+      // 2. Calculate Dates
+      const startDate = new Date();
+      let durationDays = 30; // Default
+      
+      if (sub.planId) {
+         const foundPlans = await db.select().from(plans).where(eq(plans.id, sub.planId)).limit(1);
+         if (foundPlans[0]) durationDays = foundPlans[0].duration;
+      }
+
+      const endDate = new Date();
+      endDate.setDate(startDate.getDate() + durationDays);
+
+      // 3. Update Subscription
+      await db.update(subscriptions)
+        .set({
+          status: 'active',
+          startDate: startDate,
+          endDate: endDate
+        })
+        .where(eq(subscriptions.id, sub.id));
+
+      // 4. Update User Status
+      await db.update(users)
+        .set({ subscriptionStatus: 1 })
+        .where(eq(users.id, sub.userId));
+
+      console.log(`[Webhook] Subscription activated for user ${sub.userId} (Tx: ${transactionId})`);
+      return c.json({ received: true });
+    }
+
+    console.log("⚠️ Status ignored:", status);
+    return c.json({ ignored: true });
+
+  } catch (err: any) {
+    console.error("❌ Webhook Fatal Error:", err);
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 apiRoutes.post('/logout', (c) => {

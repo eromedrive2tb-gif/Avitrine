@@ -92,22 +92,31 @@ publicRoutes.get('/posts/:id', async (c) => {
 publicRoutes.get('/plans', async (c) => {
   const user = await getUser(c);
   try {
-      const dbPlans = await db.select().from(plans).orderBy(plans.price);
+      const dbPlans = await db.select().from(plans).orderBy(plans.duration);
       
+      const COMMON_FEATURES = [
+        "Acesso Ilimitado a todas as Modelos",
+        "Conteúdo Exclusivo em 4K",
+        "Chat Direto (VIP)",
+        "Novas Modelos toda semana",
+        "Cancelamento Fácil"
+      ];
+
       const uiPlans = dbPlans.map(p => {
-          const isHighlighted = p.name.toLowerCase().includes('anual') || p.name.toLowerCase().includes('trimestral');
-          const isOutline = p.name.toLowerCase().includes('semanal');
+          const isAnnual = p.duration === 365;
+          const isWeekly = p.duration === 7;
           
           return {
             id: p.id,
             name: p.name,
             price: (p.price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
             currency: 'R$',
-            period: p.duration === 7 ? '/semana' : p.duration === 30 ? '/mês' : `/${p.duration} dias`,
-            features: Array.isArray(p.benefits) ? p.benefits : [],
-            highlighted: isHighlighted,
-            variant: isHighlighted ? 'primary' : isOutline ? 'outline' : 'secondary',
-            badge: isHighlighted ? 'MAIS POPULAR' : undefined,
+            period: p.duration === 7 ? '/semana' : p.duration === 30 ? '/mês' : '/ano',
+            features: COMMON_FEATURES,
+            highlighted: isAnnual,
+            variant: isAnnual ? 'primary' : isWeekly ? 'outline' : 'secondary',
+            badge: isAnnual ? 'MELHOR VALOR' : undefined,
+            checkoutUrl: p.checkoutUrl
           };
       });
 

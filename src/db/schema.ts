@@ -45,9 +45,10 @@ export const subscriptions = pgTable('subscriptions', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id).notNull(),
   planId: integer('plan_id').references(() => plans.id),
-  startDate: timestamp('start_date').notNull(),
-  endDate: timestamp('end_date').notNull(),
-  status: text('status', { enum: ['active', 'expired'] }).default('active'),
+  externalId: text('external_id'), // ID da transação no gateway
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  status: text('status', { enum: ['active', 'expired', 'pending'] }).default('pending'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

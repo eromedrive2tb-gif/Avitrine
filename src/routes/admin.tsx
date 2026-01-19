@@ -1,4 +1,7 @@
 import { Hono } from 'hono';
+import { db } from '../db';
+import { plans } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminModels } from '../pages/admin/Models';
 import { AdminAds } from '../pages/admin/Ads';
@@ -12,7 +15,30 @@ const adminRoutes = new Hono();
 adminRoutes.get('/', (c) => c.html(<AdminDashboard />));
 adminRoutes.get('/models', (c) => c.html(<AdminModels />));
 adminRoutes.get('/ads', (c) => c.html(<AdminAds />));
-adminRoutes.get('/plans', (c) => c.html(<AdminPlans />));
+adminRoutes.get('/plans', async (c) => {
+  // Ensure default plans exist
+  const existingPlans = await db.select().from(plans);
+  const requiredPlans = [
+    { duration: 7, name: 'Semanal (Trial)', price: 990 },
+    { duration: 30, name: 'Mensal', price: 2990 },
+    { duration: 365, name: 'Anual', price: 19990 }
+  ];
+
+  for (const req of requiredPlans) {
+     if (!existingPlans.find(p => p.duration === req.duration)) {
+        await db.insert(plans).values({
+            name: req.name,
+            duration: req.duration,
+            price: req.price,
+            benefits: [],
+            ctaText: 'Assinar Agora'
+        });
+     }
+  }
+
+  const allPlans = await db.select().from(plans).orderBy(plans.duration);
+  return c.html(<AdminPlans plans={allPlans} />);
+});
 adminRoutes.get('/settings', (c) => c.html(<AdminSettings />));
 
 // WHITELABEL ROUTES
