@@ -54,7 +54,7 @@ export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId }) =>
           </div>
           
           {/* Multi-photo indicator badge (like Instagram) */}
-          <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full text-[10px] font-bold text-white border border-white/10 z-30">
+          <div class="carousel-counter absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full text-[10px] font-bold text-white border border-white/10 z-30">
             1/{mediaItems.length}
           </div>
         </>

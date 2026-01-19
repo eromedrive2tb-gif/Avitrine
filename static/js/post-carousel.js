@@ -1,20 +1,24 @@
-
 class PostCarousel {
     constructor(element) {
         this.element = element;
         this.slides = element.querySelectorAll('.carousel-item');
         this.dots = element.querySelectorAll('.carousel-dot');
+        this.counter = element.querySelector('.carousel-counter');
         this.prevBtn = element.querySelector('.carousel-prev');
         this.nextBtn = element.querySelector('.carousel-next');
         this.currentIndex = 0;
         this.totalSlides = this.slides.length;
+        
+        // Touch state
+        this.touchStartX = 0;
+        this.touchEndX = 0;
         
         this.init();
     }
 
     init() {
         // Debug
-        console.log('Carousel init:', this.element, 'Slides:', this.totalSlides);
+        // console.log('Carousel init:', this.element, 'Slides:', this.totalSlides);
 
         // If only 1 slide, hide controls
         if (this.totalSlides <= 1) {
@@ -50,8 +54,28 @@ class PostCarousel {
             });
         });
 
+        // Swipe Support
+        this.element.addEventListener('touchstart', (e) => {
+            this.touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        this.element.addEventListener('touchend', (e) => {
+            this.touchEndX = e.changedTouches[0].screenX;
+            this.handleSwipe();
+        }, { passive: true });
+
         this.initVideoControls();
         this.update(); // Set initial state
+    }
+
+    handleSwipe() {
+        const threshold = 50; 
+        if (this.touchEndX < this.touchStartX - threshold) {
+            this.next();
+        }
+        if (this.touchEndX > this.touchStartX + threshold) {
+            this.prev();
+        }
     }
 
     initVideoControls() {
@@ -78,8 +102,6 @@ class PostCarousel {
                  };
 
                  playBtn.addEventListener('click', togglePlay);
-                 // We don't add click on video because native controls will handle it once enabled
-                 // But we want to handle the initial click if we are overlaying
                  
                  video.addEventListener('pause', () => {
                      playBtn.style.opacity = '1';
@@ -123,6 +145,11 @@ class PostCarousel {
                 dot.classList.add('bg-white/20');
             }
         });
+
+        // Update Counter
+        if (this.counter) {
+            this.counter.textContent = `${this.currentIndex + 1}/${this.totalSlides}`;
+        }
     }
 
     next() {

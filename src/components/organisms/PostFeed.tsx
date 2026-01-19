@@ -130,7 +130,7 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
                             }).join('');
                             postHtml += '</div>';
                             
-                            postHtml += '<div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full text-[10px] font-bold text-white border border-white/10 z-30">';
+                            postHtml += '<div class="carousel-counter absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full text-[10px] font-bold text-white border border-white/10 z-30">';
                             postHtml +=   '1/' + mediaItems.length;
                             postHtml += '</div>';
                         }
