@@ -21,12 +21,49 @@ export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId }) =>
       {mediaItems.map((item, idx) => (
         <div class={`carousel-item absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
           {item.type === 'video' ? (
-            <div class="w-full h-full relative">
-              <video src={item.url} class="w-full h-full object-cover" loop playsInline muted></video>
-              <div class="play-button absolute inset-0 flex items-center justify-center cursor-pointer bg-black/10 hover:bg-black/30 transition-colors z-20">
-                <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center pl-1 scale-90 group-hover:scale-100 transition-all shadow-[0_0_20px_rgba(0,0,0,0.3)] border border-white/30">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            <div class="custom-video-wrapper w-full h-full relative group/video no-context-menu" onContextMenu={(e: any) => e.preventDefault()}>
+              <video 
+                src={item.url} 
+                class="w-full h-full object-cover" 
+                loop 
+                playsInline 
+                muted
+                onContextMenu={(e: any) => e.preventDefault()}
+              ></video>
+              
+              {/* Click Overlay to Play/Pause */}
+              <div class="video-overlay absolute inset-0 cursor-pointer z-10"></div>
+
+              {/* Center Play Animation Icon (Hidden by default, shown on pause) */}
+              <div class="play-state-icon absolute inset-0 flex items-center justify-center pointer-events-none z-20 transition-opacity duration-200">
+                <div class="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center pl-1 border border-white/10 shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" class="opacity-90"><path d="M8 5v14l11-7z"/></svg>
                 </div>
+              </div>
+
+              {/* Bottom Controls Bar */}
+              <div class="video-controls absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/video:opacity-100 transition-opacity duration-300 z-30 flex items-center gap-3">
+                 {/* Play/Pause Small Toggle */}
+                 <button class="control-play-btn text-white hover:text-primary transition-colors">
+                    <svg class="icon-play w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="icon-pause w-5 h-5 hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                 </button>
+
+                 {/* Scrubber */}
+                 <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value="0" 
+                    step="0.1"
+                    class="video-scrubber flex-1 h-1 bg-white/30 rounded-full appearance-none outline-none"
+                 />
+
+                 {/* Mute Toggle */}
+                 <button class="control-mute-btn text-white hover:text-primary transition-colors">
+                    <svg class="icon-muted w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="23" x2="1" y1="9" y2="9" transform="rotate(45 12 12)"/></svg>
+                    <svg class="icon-unmuted w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                 </button>
               </div>
             </div>
           ) : (

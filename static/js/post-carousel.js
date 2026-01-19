@@ -80,41 +80,94 @@ class PostCarousel {
 
     initVideoControls() {
         this.slides.forEach(slide => {
-             const video = slide.querySelector('video');
-             const playBtn = slide.querySelector('.play-button');
-             
-             if (video && playBtn) {
-                 const togglePlay = (e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                     
-                     if (video.paused) {
-                         video.play();
-                         playBtn.style.opacity = '0';
-                         playBtn.style.pointerEvents = 'none';
-                         video.setAttribute('controls', 'true');
-                     } else {
-                         video.pause();
-                         playBtn.style.opacity = '1';
-                         playBtn.style.pointerEvents = 'auto';
-                         video.removeAttribute('controls');
-                     }
-                 };
+             const wrapper = slide.querySelector('.custom-video-wrapper');
+             if (!wrapper) return;
 
-                 playBtn.addEventListener('click', togglePlay);
-                 
-                 video.addEventListener('pause', () => {
-                     playBtn.style.opacity = '1';
-                     playBtn.style.pointerEvents = 'auto';
-                     video.removeAttribute('controls');
+             const video = wrapper.querySelector('video');
+             const overlay = wrapper.querySelector('.video-overlay');
+             const playStateIcon = wrapper.querySelector('.play-state-icon');
+             
+             // Controls
+             const playBtn = wrapper.querySelector('.control-play-btn');
+             const scrubber = wrapper.querySelector('.video-scrubber');
+             const muteBtn = wrapper.querySelector('.control-mute-btn');
+             
+             // Icons
+             const iconPlay = playBtn?.querySelector('.icon-play');
+             const iconPause = playBtn?.querySelector('.icon-pause');
+             const iconMuted = muteBtn?.querySelector('.icon-muted');
+             const iconUnmuted = muteBtn?.querySelector('.icon-unmuted');
+
+             if (!video) return;
+
+             const updatePlayState = (playing) => {
+                 if (playing) {
+                     if (playStateIcon) {
+                        playStateIcon.style.opacity = '0';
+                        playStateIcon.style.transform = 'scale(1.5)';
+                        setTimeout(() => playStateIcon.style.display = 'none', 200);
+                     }
+                     if (iconPlay) iconPlay.classList.add('hidden');
+                     if (iconPause) iconPause.classList.remove('hidden');
+                 } else {
+                     if (playStateIcon) {
+                        playStateIcon.style.display = 'flex';
+                        playStateIcon.offsetHeight; // Force reflow
+                        playStateIcon.style.opacity = '1';
+                        playStateIcon.style.transform = 'scale(1)';
+                     }
+                     if (iconPlay) iconPlay.classList.remove('hidden');
+                     if (iconPause) iconPause.classList.add('hidden');
+                 }
+             };
+
+             const togglePlay = (e) => {
+                 if(e) { e.preventDefault(); e.stopPropagation(); }
+                 if (video.paused) {
+                     video.play();
+                     updatePlayState(true);
+                 } else {
+                     video.pause();
+                     updatePlayState(false);
+                 }
+             };
+
+             const toggleMute = (e) => {
+                 if(e) { e.preventDefault(); e.stopPropagation(); }
+                 video.muted = !video.muted;
+                 if (video.muted) {
+                     if (iconMuted) iconMuted.classList.remove('hidden');
+                     if (iconUnmuted) iconUnmuted.classList.add('hidden');
+                 } else {
+                     if (iconMuted) iconMuted.classList.add('hidden');
+                     if (iconUnmuted) iconUnmuted.classList.remove('hidden');
+                 }
+             };
+
+             // Event Listeners
+             if (overlay) overlay.addEventListener('click', togglePlay);
+             if (playBtn) playBtn.addEventListener('click', togglePlay);
+             if (muteBtn) muteBtn.addEventListener('click', toggleMute);
+
+             // Scrubber Logic
+             if (scrubber) {
+                 video.addEventListener('timeupdate', () => {
+                     const percent = (video.currentTime / video.duration) * 100;
+                     scrubber.value = percent || 0;
+                     // Update track fill
+                     scrubber.style.background = `linear-gradient(to right, #8A2BE2 0%, #8A2BE2 ${percent}%, rgba(255,255,255,0.2) ${percent}%, rgba(255,255,255,0.2) 100%)`;
                  });
-                 
-                 video.addEventListener('play', () => {
-                     playBtn.style.opacity = '0';
-                     playBtn.style.pointerEvents = 'none';
-                     video.setAttribute('controls', 'true');
+
+                 scrubber.addEventListener('input', (e) => {
+                     const time = (e.target.value / 100) * video.duration;
+                     video.currentTime = time;
                  });
              }
+
+             // Ensure context menu is blocked
+             video.addEventListener('contextmenu', e => e.preventDefault());
+             wrapper.addEventListener('contextmenu', e => e.preventDefault());
+             if (overlay) overlay.addEventListener('contextmenu', e => e.preventDefault());
         });
     }
 
