@@ -1,6 +1,6 @@
 import { db } from '../../../db';
 import { whitelabelModels, whitelabelPosts, whitelabelMedia } from '../../../db/schema';
-import { sql } from 'drizzle-orm';
+import { sql, inArray } from 'drizzle-orm';
 
 export const WhitelabelPersistence = {
   async fetchKnownModels() {
@@ -22,12 +22,24 @@ export const WhitelabelPersistence = {
       .returning({ id: whitelabelModels.id, folderName: whitelabelModels.folderName });
   },
 
+  async deleteModels(modelIds: number[]) {
+    if (modelIds.length === 0) return;
+    await db.delete(whitelabelModels)
+      .where(inArray(whitelabelModels.id, modelIds));
+  },
+
   async insertPosts(posts: any[]) {
     if (posts.length === 0) return [];
     return await db.insert(whitelabelPosts)
       .values(posts)
       .onConflictDoNothing()
       .returning({ id: whitelabelPosts.id, whitelabelModelId: whitelabelPosts.whitelabelModelId, folderName: whitelabelPosts.folderName });
+  },
+
+  async deletePosts(postIds: number[]) {
+    if (postIds.length === 0) return;
+    await db.delete(whitelabelPosts)
+      .where(inArray(whitelabelPosts.id, postIds));
   },
 
   async insertMedia(mediaItems: any[]) {

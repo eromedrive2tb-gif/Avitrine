@@ -11,7 +11,10 @@ export const WhitelabelSyncService = {
     // 1. Load State
     const modelMap = await WhitelabelPersistence.fetchKnownModels();
     const postMap = await WhitelabelPersistence.fetchKnownPosts();
-    const stats = { models: 0, posts: 0, media: 0 };
+    const stats = { models: 0, posts: 0, media: 0, deletedModels: 0, deletedPosts: 0 };
+
+    const seenModels = new Set<string>();
+    const seenPosts = new Set<string>();
 
     while (isTruncated) {
       const command: ListObjectsV2Command = new ListObjectsV2Command({
@@ -34,6 +37,9 @@ export const WhitelabelSyncService = {
         
         if (parsed.type === 'unknown') continue;
 
+        // Track Seen Models
+        seenModels.add(parsed.modelName);
+
         // Model Detection
         if (!modelMap.has(parsed.modelName) && !newModels.has(parsed.modelName)) {
            newModels.set(parsed.modelName, {
@@ -44,9 +50,9 @@ export const WhitelabelSyncService = {
         }
 
         const modelId = modelMap.get(parsed.modelName);
-        if (!modelId) continue; // Will handle in next pass if just created, or assume strict order
+        if (!modelId) continue; // Will handle in next pass if just created
 
-        // Post Detection
+        // Post Detection (Initial check, real processing in Pass 2)
         if (parsed.type === 'media' && parsed.postName) {
             const postKey = `${modelId}:${parsed.postName}`;
             if (!postMap.has(postKey) && !newPosts.has(postKey)) {
@@ -56,11 +62,6 @@ export const WhitelabelSyncService = {
                     title: parsed.postName
                 });
             }
-
-            // Media Detection
-            // We need post ID, which might not exist yet if it's in newPosts
-            // We collect media but need to resolve PostID later. 
-            // Actually, we must Insert Posts first.
         }
       }
 
@@ -73,34 +74,19 @@ export const WhitelabelSyncService = {
           });
       }
 
-      // 4. Persist Posts (Now that we have all Model IDs)
-      // Re-scan for posts is inefficient? No, we have newPosts map.
-      // But we need to update newPosts with valid Model IDs if they were just created.
-      // Actually, since we updated modelMap, we can iterate newPosts and ensure IDs are correct.
-      // The map keys were built using modelId? 
-      // Wait, if modelId was undefined in Parse loop, we skipped it.
-      // So we missed posts for NEW models in the first pass of the loop.
-      // FIX: In a stream, if a model is new, we need to insert it immediately or buffer.
-      // Given Drizzle batching, we should probably buffer everything then insert in order.
-      
-      // Since 'modelMap' is updated, we need to re-evaluate the "skipped" items?
-      // Or just accept that for this batch (1000 keys), if the model folder key comes *after* the file key (unlikely in S3 alphabetical), we might miss it?
-      // S3 lists alphabetically: Model/ comes before Model/Post/.
-      // So we should find the model folder or files first.
-      
-      // However, if we missed the `modelId` in the first loop because it wasn't in map, we need to recover it.
-      // We can iterate `response.Contents` TWICE. 
-      // Pass 1: Models. Pass 2: Posts & Media.
-      
-      // Pass 2: Posts
+      // Pass 2: Posts (Re-scan to ensure Model IDs are available for everything)
       for (const item of response.Contents) {
           if (!item.Key) continue;
           const parsed = S3KeyParser.parse(item.Key);
+          
           if (parsed.type === 'media' && parsed.postName) {
               const modelId = modelMap.get(parsed.modelName); // Should exist now if inserted in Pass 1
               if (!modelId) continue;
 
+              // Track Seen Posts
               const postKey = `${modelId}:${parsed.postName}`;
+              seenPosts.add(postKey);
+
               if (!postMap.has(postKey) && !newPosts.has(postKey)) {
                   newPosts.set(postKey, {
                       whitelabelModelId: modelId,
@@ -119,7 +105,7 @@ export const WhitelabelSyncService = {
           });
       }
 
-      // Pass 3: Media (Now that we have Post IDs)
+      // Pass 3: Media
       for (const item of response.Contents) {
           if (!item.Key) continue;
           const parsed = S3KeyParser.parse(item.Key);
@@ -164,6 +150,47 @@ export const WhitelabelSyncService = {
       isTruncated = response.IsTruncated || false;
       continuationToken = response.NextContinuationToken;
     }
+
+    // 4. Handle Deletions
+    const modelsToDelete: number[] = [];
+    for (const [folderName, id] of modelMap) {
+        if (!seenModels.has(folderName)) {
+            modelsToDelete.push(id);
+        }
+    }
+
+    if (modelsToDelete.length > 0) {
+        await WhitelabelPersistence.deleteModels(modelsToDelete);
+        stats.deletedModels = modelsToDelete.length;
+    }
+
+    const postsToDelete: number[] = [];
+    for (const [key, id] of postMap) {
+        // Only delete posts if their model still exists (otherwise cascade delete or model delete handles it)
+        // But to be safe and clean, we check if the post was seen.
+        // Note: If model is deleted, its posts shouldn't be in seenPosts (because we wouldn't find them in S3).
+        // However, we should filter out posts belonging to models we just deleted to avoid DB errors if using foreign keys without CASCADE (though Drizzle usually needs explicit handling).
+        // Assuming database handles FK or we just delete safely.
+        
+        // Actually, if we delete the model, the posts might be deleted automatically if defined with CASCADE.
+        // If not, we must delete them. 
+        // Let's assume we need to delete them.
+        if (!seenPosts.has(key)) {
+             postsToDelete.push(id);
+        }
+    }
+    
+    // Filter out posts that belong to models we are already deleting?
+    // Not strictly necessary if `delete` is idempotent or handles missing records gracefully.
+    // But `postsToDelete` might include posts from `modelsToDelete`. 
+    // If we delete models first, then posts... 
+    // If DB has ON DELETE CASCADE, `deletePosts` for those might do nothing or fail if ID is gone.
+    // Let's just run it. Drizzle `delete` where ID matches should be fine.
+    
+    if (postsToDelete.length > 0) {
+        await WhitelabelPersistence.deletePosts(postsToDelete);
+        stats.deletedPosts = postsToDelete.length;
+    }
     
     await WhitelabelPersistence.updateAggregates();
     return stats;
@@ -195,6 +222,7 @@ export const WhitelabelSyncService = {
 
     let continuationToken: string | undefined = undefined;
     let isTruncated = true;
+    const seenPosts = new Set<string>();
 
     while (isTruncated) {
         const command: ListObjectsV2Command = new ListObjectsV2Command({
@@ -222,6 +250,8 @@ export const WhitelabelSyncService = {
                 if (!modelId) continue;
 
                 const postKey = `${modelId}:${parsed.postName}`;
+                seenPosts.add(postKey);
+
                 if (!postMap.has(postKey) && !newPosts.has(postKey)) {
                     newPosts.set(postKey, {
                         whitelabelModelId: modelId,
@@ -282,6 +312,22 @@ export const WhitelabelSyncService = {
     }
 
     const modelId = modelMap.get(folderName);
+
+    // Deletion Logic for this prefix
+    if (modelId) {
+        const postsToDelete: number[] = [];
+        for (const [key, id] of postMap) {
+            if (key.startsWith(`${modelId}:`)) {
+                if (!seenPosts.has(key)) {
+                    postsToDelete.push(id);
+                }
+            }
+        }
+        if (postsToDelete.length > 0) {
+            await WhitelabelPersistence.deletePosts(postsToDelete);
+        }
+    }
+
     await WhitelabelPersistence.updateAggregates(modelId);
     return { success: true };
   }
