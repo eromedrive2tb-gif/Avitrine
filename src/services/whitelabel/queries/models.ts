@@ -4,50 +4,8 @@ import { desc, count, inArray, eq, and, sql } from 'drizzle-orm';
 import { signS3Key } from '../../s3';
 
 export const WhitelabelModelQueries = {
-  async list(page: number = 1, limit: number = 20) {
-    const offset = (page - 1) * limit;
-
-    const [items, total] = await Promise.all([
-      db.select()
-        .from(whitelabelModels)
-        .orderBy(desc(whitelabelModels.createdAt))
-        .limit(limit)
-        .offset(offset),
-      db.select({ count: count() }).from(whitelabelModels)
-    ]);
-
-    const enrichedItems = await Promise.all(items.map(async (model) => {
-        if (model.thumbnailUrl) {
-           return { ...model, thumbnailUrl: await signS3Key(model.thumbnailUrl) };
-        }
-        return model;
-    }));
-
-    return {
-      data: enrichedItems,
-      total: total[0].count,
-      page,
-      limit,
-      totalPages: Math.ceil(total[0].count / limit)
-    };
-  },
-
-  async getTopWithThumbnails(page: number = 1, limit: number = 20) {
-    const offset = (page - 1) * limit;
-
-    const models = await db.select({
-      id: whitelabelModels.id,
-      name: whitelabelModels.folderName,
-      postCount: whitelabelModels.postCount,
-      thumbnailUrl: whitelabelModels.thumbnailUrl,
-    })
-    .from(whitelabelModels)
-    .orderBy(desc(whitelabelModels.postCount))
-    .limit(limit)
-    .offset(offset);
-
+  async _enrichWithThumbnails(models: any[]) {
     if (models.length === 0) return [];
-
     const modelIds = models.map(m => m.id);
     
     const thumbnails = await db.selectDistinctOn([whitelabelPosts.whitelabelModelId], {
@@ -73,6 +31,46 @@ export const WhitelabelModelQueries = {
         thumbnailUrl: await signS3Key(keyToSign)
       };
     }));
+  },
+
+  async list(page: number = 1, limit: number = 20) {
+    const offset = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      db.select()
+        .from(whitelabelModels)
+        .orderBy(desc(whitelabelModels.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db.select({ count: count() }).from(whitelabelModels)
+    ]);
+
+    const enrichedItems = await WhitelabelModelQueries._enrichWithThumbnails(items);
+
+    return {
+      data: enrichedItems,
+      total: total[0].count,
+      page,
+      limit,
+      totalPages: Math.ceil(total[0].count / limit)
+    };
+  },
+
+  async getTopWithThumbnails(page: number = 1, limit: number = 20) {
+    const offset = (page - 1) * limit;
+
+    const models = await db.select({
+      id: whitelabelModels.id,
+      name: whitelabelModels.folderName,
+      postCount: whitelabelModels.postCount,
+      thumbnailUrl: whitelabelModels.thumbnailUrl,
+    })
+    .from(whitelabelModels)
+    .orderBy(desc(whitelabelModels.postCount))
+    .limit(limit)
+    .offset(offset);
+
+    return await WhitelabelModelQueries._enrichWithThumbnails(models);
   },
 
   async getBySlug(slug: string) {

@@ -1,14 +1,18 @@
 import { FC } from 'hono/jsx';
 import { Layout } from '../components/templates/Layout';
-import { ModelCard } from '../components/molecules/ModelCard';
+import { WhiteLabelModelCard } from '../components/molecules/WhiteLabelModelCard';
 import { AdBanner } from '../components/molecules/AdBanner';
 import { NativeAdBlock } from '../components/molecules/NativeAdBlock';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { Pagination } from '../components/molecules/Pagination';
 import { MockService } from '../services/mock';
 
-export const ModelsPage: FC = () => {
-  const { section1, section2 } = MockService.getAllModels();
+interface ModelsPageProps {
+  models: any[];
+  pagination: any;
+}
+
+export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination }) => {
   const sponsoredModels = MockService.getVipModels();
 
   return (
@@ -26,22 +30,24 @@ export const ModelsPage: FC = () => {
                 imageUrl="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=1200&q=80"
           />
 
-          {/* Grid Section 1 */}
+          {/* Grid Section */}
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-             {section1.map(m => <ModelCard {...m} />)}
+             {models.map(m => (
+                 <WhiteLabelModelCard 
+                    id={m.id}
+                    name={m.folderName || m.name}
+                    postCount={m.postCount || 0}
+                    thumbnailUrl={m.thumbnailUrl}
+                 />
+             ))}
           </div>
 
           {/* Native Ad Block Separator */}
-          <div class="py-2">
+          <div class="py-6">
              <NativeAdBlock title="Recomendado para Você" models={sponsoredModels} />
           </div>
 
-          {/* Grid Section 2 (With Injected Post Ad) */}
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-             {section2.map(m => <ModelCard {...m} />)}
-          </div>
-
-          <Pagination />
+          <Pagination {...pagination} />
 
       </div>
     </Layout>
