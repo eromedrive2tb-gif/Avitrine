@@ -8,7 +8,7 @@ interface PlanFeature {
 }
 
 interface PlanProps {
-  id: string;
+  id: string | number;
   name: string;
   price: string;
   currency: string;
@@ -22,6 +22,7 @@ interface PlanProps {
 }
 
 export const PlanCard: FC<PlanProps> = ({
+  id,
   name,
   price,
   currency,
@@ -64,9 +65,12 @@ export const PlanCard: FC<PlanProps> = ({
             ))}
           </div>
 
-          <Button variant="primary" className="w-full !bg-gradient-to-r !from-gold !to-[#B8860B] !text-black hover:!brightness-110 !font-bold !text-lg !py-4 shadow-[0_0_20px_rgba(255,215,0,0.3)] border-none">
-            ASSINAR {name}
-          </Button>
+          <form action="/api/subscribe" method="POST">
+             <input type="hidden" name="planId" value={id} />
+             <Button type="submit" variant="primary" className="w-full !bg-gradient-to-r !from-gold !to-[#B8860B] !text-black hover:!brightness-110 !font-bold !text-lg !py-4 shadow-[0_0_20px_rgba(255,215,0,0.3)] border-none">
+                ASSINAR {name}
+             </Button>
+          </form>
           <p class="text-center text-xs text-gray-500 mt-4">Renovação automática. Cancele a qualquer momento.</p>
         </div>
       </div>
@@ -87,9 +91,12 @@ export const PlanCard: FC<PlanProps> = ({
           </li>
         ))}
       </ul>
-      <Button variant={variant as any} className={`w-full ${variant === 'outline' ? 'border-gray-700 text-gray-400 hover:text-white hover:border-white' : ''}`}>
-        Selecionar {name}
-      </Button>
+      <form action="/api/subscribe" method="POST">
+          <input type="hidden" name="planId" value={id} />
+          <Button type="submit" variant={variant as any} className={`w-full ${variant === 'outline' ? 'border-gray-700 text-gray-400 hover:text-white hover:border-white' : ''}`}>
+            Selecionar {name}
+          </Button>
+      </form>
     </div>
   );
 };

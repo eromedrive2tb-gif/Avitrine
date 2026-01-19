@@ -1,8 +1,12 @@
 import { Hono } from 'hono';
+import { setCookie, getCookie } from 'hono/cookie';
+import { sign, verify } from 'hono/jwt';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
+import { AuthService } from '../services/auth';
 
 const apiRoutes = new Hono();
+const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 // Admin API
 apiRoutes.post('/admin/whitelabel/activate', async (c) => {
@@ -69,13 +73,103 @@ apiRoutes.get('/models/:modelName/posts', async (c) => {
   }
 });
 
-// Auth API Mock
+// Auth API
 apiRoutes.post('/login', async (c) => {
-  return c.redirect('/admin');
+  const body = await c.req.parseBody();
+  const email = body['email'] as string;
+  const password = body['password'] as string;
+
+  try {
+    const user = await AuthService.login(email, password);
+    if (!user) {
+        return c.redirect('/login?error=Credenciais inválidas');
+    }
+
+    await AuthService.checkSubscriptionStatus(user.id);
+
+    const tokenPayload = {
+        id: user.id,
+        email: user.email,
+        name: user.name || user.email.split('@')[0],
+        role: user.role
+    };
+
+    const token = await sign(tokenPayload, JWT_SECRET);
+    setCookie(c, 'auth_token', token, { 
+        httpOnly: true, 
+        path: '/', 
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: 'Lax',
+        secure: process.env.NODE_ENV === 'production'
+    });
+
+    return c.redirect('/');
+  } catch (err) {
+    console.error("Login error:", err);
+    return c.redirect('/login?error=Erro no servidor');
+  }
 });
 
 apiRoutes.post('/register', async (c) => {
-    return c.redirect('/plans');
+  const body = await c.req.parseBody();
+  const email = body['email'] as string;
+  const password = body['password'] as string;
+  const name = body['name'] as string;
+  
+  try {
+      const user = await AuthService.register(email, password, name);
+      
+      const tokenPayload = {
+          id: user.id,
+          email: user.email,
+          name: user.name || user.email.split('@')[0],
+          role: user.role
+      };
+
+      const token = await sign(tokenPayload, JWT_SECRET);
+      setCookie(c, 'auth_token', token, { 
+          httpOnly: true, 
+          path: '/', 
+          maxAge: 60 * 60 * 24 * 7,
+          sameSite: 'Lax',
+          secure: process.env.NODE_ENV === 'production'
+      });
+      
+      return c.redirect('/plans');
+  } catch (err: any) {
+      return c.redirect(`/register?error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+apiRoutes.post('/subscribe', async (c) => {
+    const token = getCookie(c, 'auth_token');
+    if (!token) return c.redirect('/login');
+
+    try {
+        const payload = await verify(token, JWT_SECRET);
+        const body = await c.req.parseBody();
+        const planId = parseInt(body['planId'] as string);
+
+        if (!planId) return c.json({ error: 'Plan ID required' }, 400);
+
+        await AuthService.createSubscription(payload.id as number, planId);
+        
+        return c.redirect('/admin');
+    } catch (err) {
+        console.error("Subscribe error:", err);
+        return c.redirect('/login');
+    }
+});
+
+apiRoutes.post('/logout', (c) => {
+  setCookie(c, 'auth_token', '', { 
+      httpOnly: true, 
+      path: '/', 
+      maxAge: 0,
+      sameSite: 'Lax',
+      secure: process.env.NODE_ENV === 'production'
+  });
+  return c.redirect('/login');
 });
 
 export default apiRoutes;

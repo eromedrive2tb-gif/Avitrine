@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { getCookie } from 'hono/cookie';
+import { verify } from 'hono/jwt';
 import { HomePage } from '../pages/Home';
 import { ModelsPage } from '../pages/Models';
 import { PlansPage } from '../pages/Plans';
@@ -6,22 +8,37 @@ import { AuthPage } from '../pages/Auth';
 import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 import { WhitelabelDbService } from '../services/whitelabel';
+import { db } from '../db';
+import { plans } from '../db/schema';
 
 const publicRoutes = new Hono();
+const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+
+async function getUser(c: any) {
+    const token = getCookie(c, 'auth_token');
+    if (!token) return null;
+    try {
+        return await verify(token, JWT_SECRET);
+    } catch {
+        return null;
+    }
+}
 
 // ROTA HOME
 publicRoutes.get('/', async (c) => {
+  const user = await getUser(c);
   try {
     const signedModels = await WhitelabelDbService.getTopModelsWithThumbnails(1, 20);
     const safeModels = signedModels.map(m => ({ ...m, postCount: m.postCount || 0 }));
-    return c.html(<HomePage models={safeModels} />);
+    return c.html(<HomePage models={safeModels} user={user} />);
   } catch (e) {
     console.error("Erro na Home:", e);
-    return c.html(<HomePage models={[]} />);
+    return c.html(<HomePage models={[]} user={user} />);
   }
 });
 
 publicRoutes.get('/models/:slug', async (c) => {
+  const user = await getUser(c);
   const slug = c.req.param('slug');
 
   const model = await WhitelabelDbService.getModelBySlug(slug);
@@ -36,6 +53,7 @@ publicRoutes.get('/models/:slug', async (c) => {
 
 // Outras rotas...
 publicRoutes.get('/models', async (c) => {
+  const user = await getUser(c);
   const page = parseInt(c.req.query('page') || '1') || 1;
   const result = await WhitelabelDbService.listModels(page, 20);
   
@@ -58,7 +76,36 @@ publicRoutes.get('/posts/:id', (c) => {
   const id = c.req.param('id');
   return c.html(<PostDetailPage id={id} />);
 });
-publicRoutes.get('/plans', (c) => c.html(<PlansPage />));
+
+publicRoutes.get('/plans', async (c) => {
+  const user = await getUser(c);
+  try {
+      const dbPlans = await db.select().from(plans).orderBy(plans.price);
+      
+      const uiPlans = dbPlans.map(p => {
+          const isHighlighted = p.name.toLowerCase().includes('anual') || p.name.toLowerCase().includes('trimestral');
+          const isOutline = p.name.toLowerCase().includes('semanal');
+          
+          return {
+            id: p.id,
+            name: p.name,
+            price: (p.price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            currency: 'R$',
+            period: p.duration === 7 ? '/semana' : p.duration === 30 ? '/mês' : `/${p.duration} dias`,
+            features: Array.isArray(p.benefits) ? p.benefits : [],
+            highlighted: isHighlighted,
+            variant: isHighlighted ? 'primary' : isOutline ? 'outline' : 'secondary',
+            badge: isHighlighted ? 'MAIS POPULAR' : undefined,
+          };
+      });
+
+      return c.html(<PlansPage plans={uiPlans} />);
+  } catch (err) {
+      console.error("Error fetching plans:", err);
+      return c.html(<PlansPage plans={[]} />);
+  }
+});
+
 publicRoutes.get('/login', (c) => c.html(<AuthPage type="login" />));
 publicRoutes.get('/register', (c) => c.html(<AuthPage type="register" />));
 

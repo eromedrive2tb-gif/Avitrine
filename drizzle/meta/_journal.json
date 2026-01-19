@@ -8,6 +8,27 @@
       "when": 1768778573147,
       "tag": "0000_special_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768840404767,
+      "tag": "0001_chunky_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768840438028,
+      "tag": "0002_sparkling_madripoor",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768842793938,
+      "tag": "0003_deep_thunderbird",
+      "breakpoints": true
     }
   ]
 }

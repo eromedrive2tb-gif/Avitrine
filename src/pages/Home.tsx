@@ -16,16 +16,17 @@ interface HomePageProps {
     postCount: number;
     thumbnailUrl: string | null;
   }[];
+  user?: any;
 }
 
-export const HomePage: FC<HomePageProps> = ({ models }) => {
+export const HomePage: FC<HomePageProps> = ({ models, user }) => {
   const trendingModels = MockService.getTrendingModels();
   // const feedModels = MockService.getFeedModels(); // REMOVIDO: Agora usamos props.models
   const sponsoredModels = MockService.getSponsoredModels();
   const tags = MockService.getTags();
 
   return (
-    <Layout>
+    <Layout user={user}>
       <div class="max-w-[1600px] mx-auto pb-20 p-4 md:p-6">
         
         {/* TOP SECTION: Carousel + Side Ads/Trending */}

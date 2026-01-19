@@ -5,9 +5,14 @@ import { Sidebar } from '../organisms/Sidebar';
 interface LayoutProps extends PropsWithChildren {
   title?: string;
   isAdmin?: boolean;
+  user?: {
+    name: string;
+    email: string;
+    role: string;
+  } | null;
 }
 
-export const Layout: FC<LayoutProps> = ({ children, title = "CreatorFlix - Premium Content", isAdmin = false }) => {
+export const Layout: FC<LayoutProps> = ({ children, title = "CreatorFlix - Premium Content", isAdmin = false, user }) => {
   return (
     <html lang="pt-BR">
       <head>
@@ -26,7 +31,7 @@ export const Layout: FC<LayoutProps> = ({ children, title = "CreatorFlix - Premi
       </head>
       <body class="bg-[#050505] text-white font-sans min-h-screen antialiased selection:bg-primary selection:text-white overflow-x-hidden">
         
-        <Navbar isAdmin={isAdmin} />
+        <Navbar isAdmin={isAdmin} user={user} />
         
         <Sidebar />
 

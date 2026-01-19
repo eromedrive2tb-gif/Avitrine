@@ -1,11 +1,12 @@
 import { FC } from 'hono/jsx';
 import { Layout } from '../components/templates/Layout';
 import { PlanCard } from '../components/molecules/PlanCard';
-import { MockService } from '../services/mock';
 
-export const PlansPage: FC = () => {
-  const plans = MockService.getPlans();
+interface PlansPageProps {
+  plans: any[];
+}
 
+export const PlansPage: FC<PlansPageProps> = ({ plans }) => {
   return (
     <Layout title="Planos VIP - CreatorFlix">
       <section class="min-h-screen py-20 relative overflow-hidden flex items-center justify-center bg-[#050505]">

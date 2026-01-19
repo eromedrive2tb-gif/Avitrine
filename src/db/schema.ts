@@ -3,10 +3,11 @@ import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
+  name: text('name'),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
   role: text('role', { enum: ['admin', 'user'] }).default('user'),
-  subscriptionStatus: boolean('subscription_status').default(false),
+  subscriptionStatus: integer('subscription_status').default(0),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -34,9 +35,20 @@ export const plans = pgTable('plans', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   price: integer('price').notNull(), // Centavos
+  duration: integer('duration').notNull(), // Em dias
   benefits: json('benefits_json'),
   ctaText: text('cta_text'),
   checkoutUrl: text('checkout_url'),
+});
+
+export const subscriptions = pgTable('subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  planId: integer('plan_id').references(() => plans.id),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  status: text('status', { enum: ['active', 'expired'] }).default('active'),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 export const adminSettings = pgTable('admin_settings', {
