@@ -5,7 +5,7 @@ export const AgeVerificationModal: FC = () => {
     <div 
       id="age-verification-modal"
       class="fixed inset-0 hidden items-center justify-center p-4"
-      style="z-index: 9999;"
+      style="z-index: 999999 !important;"
     >
       {/* Backdrop with Blur */}
       <div class="absolute inset-0 bg-black/95 backdrop-blur-md transition-opacity duration-300"></div>

@@ -32,6 +32,7 @@ export const Layout: FC<LayoutProps> = ({ children, title = "CreatorFlix - Premi
         `}} />
       </head>
       <body class="bg-[#050505] text-white font-sans min-h-screen antialiased selection:bg-primary selection:text-white overflow-x-hidden">
+        <AgeVerificationModal />
         
         <Navbar isAdmin={isAdmin} user={user} />
         
@@ -46,7 +47,6 @@ export const Layout: FC<LayoutProps> = ({ children, title = "CreatorFlix - Premi
           </footer>
         </main>
         
-        <AgeVerificationModal />
         <SupportDropdown />
 
       </body>

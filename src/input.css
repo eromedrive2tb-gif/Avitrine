@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@theme {
+  --color-void: #050505;
+  --color-surface: #2a2a2a;
+  --color-primary: #8A2BE2;
+  --color-accent: #00F0FF;
+  --color-gold: #FFD700;
+  --color-gold-dark: #B8860B;
+
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --shadow-neon-purple: 0 0 10px rgba(138, 43, 226, 0.5), 0 0 20px rgba(138, 43, 226, 0.3);
+  --shadow-neon-blue: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3);
+  --shadow-neon-gold: 0 0 15px rgba(255, 215, 0, 0.4), 0 0 30px rgba(255, 215, 0, 0.2);
+}
+
 @layer components {
     .premium-stack-card {
         @apply bg-[#1a1a1a] border border-white/5 rounded-2xl overflow-hidden mb-6 shadow-2xl;
