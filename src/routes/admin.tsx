@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminModels } from '../pages/admin/Models';
 import { AdminAds } from '../pages/admin/Ads';
+import { AdminAdsCreate } from '../pages/admin/AdsCreate';
 import { AdminPlans } from '../pages/admin/Plans';
 import { AdminSettings } from '../pages/admin/Settings';
 import { AdminWhitelabel } from '../pages/admin/Whitelabel';
@@ -16,6 +17,7 @@ const adminRoutes = new Hono();
 adminRoutes.get('/', (c) => c.html(<AdminDashboard />));
 adminRoutes.get('/models', (c) => c.html(<AdminModels />));
 adminRoutes.get('/ads', (c) => c.html(<AdminAds />));
+adminRoutes.get('/ads/new', (c) => c.html(<AdminAdsCreate />));
 adminRoutes.get('/plans', async (c) => {
   // Ensure default plans exist
   const existingPlans = await db.select().from(plans);

@@ -2,8 +2,12 @@ import { FC } from 'hono/jsx';
 import { Button } from '../atoms/Button';
 import { MockService } from '../../services/mock';
 
-export const HeroCarousel: FC = () => {
-  const slides = MockService.getHeroSlides();
+interface HeroCarouselProps {
+  slides?: any[];
+}
+
+export const HeroCarousel: FC<HeroCarouselProps> = ({ slides: customSlides }) => {
+  const slides = customSlides || MockService.getHeroSlides();
 
   return (
     <div class="relative w-full h-[45vh] md:h-[380px] rounded-xl overflow-hidden group border border-white/10 bg-black">
