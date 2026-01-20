@@ -9,7 +9,7 @@ import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { db } from '../db';
-import { plans, users } from '../db/schema';
+import { plans, users, subscriptions } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 const publicRoutes = new Hono();
@@ -25,8 +25,22 @@ async function getUser(c: any) {
         const payload = await verify(token, JWT_SECRET, 'HS256');
         // console.log("Usuário verificado:", payload.email);
         const user = await db.query.users.findFirst({
-            where: eq(users.id, payload.id as number)
+            where: eq(users.id, payload.id as number),
+            with: {
+                subscription: {
+                    where: eq(subscriptions.status, 'active'),
+                    with: {
+                        plan: true
+                    }
+                }
+            }
         });
+
+        if (user && user.subscription && Array.isArray(user.subscription)) {
+            // @ts-ignore - drizzle with multiple might return array
+            user.subscription = user.subscription[0];
+        }
+
         return user || null;
     } catch (e) {
         console.error("Falha na verificação do JWT:", e);

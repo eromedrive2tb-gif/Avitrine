@@ -7,6 +7,7 @@ interface NavbarProps {
     name: string;
     email: string;
     role: string;
+    subscriptionStatus?: number;
   } | null;
 }
 
@@ -46,9 +47,11 @@ export const Navbar: FC<NavbarProps> = ({ isAdmin = false, user }) => {
 
         {/* Right: Actions */}
         <div class="flex items-center gap-3">
-          <a href="/plans" class="hidden md:flex items-center gap-1 text-[#FFD700] text-xs font-bold border border-[#FFD700]/30 px-3 py-1.5 rounded-full hover:bg-[#FFD700]/10 transition-colors">
-            <span>💎</span> SEJA VIP
-          </a>
+          {(!user || user.subscriptionStatus !== 1) && (
+            <a href="/plans" class="hidden md:flex items-center gap-1 text-[#FFD700] text-xs font-bold border border-[#FFD700]/30 px-3 py-1.5 rounded-full hover:bg-[#FFD700]/10 transition-colors">
+              <span>💎</span> SEJA VIP
+            </a>
+          )}
           
           <div class="h-6 w-px bg-white/10 mx-2 hidden md:block"></div>
           
@@ -80,7 +83,7 @@ export const Navbar: FC<NavbarProps> = ({ isAdmin = false, user }) => {
                     )}
 
                     <div class="border-t border-white/5 mt-2 pt-2">
-                         <form action="/api/logout" method="POST">
+                         <form action="/api/logout" method="post">
                             <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-white/5 transition-colors">
                                 🚪 Deslogar
                             </button>

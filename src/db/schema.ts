@@ -1,6 +1,8 @@
 import { pgTable, serial, text, boolean, integer, json, timestamp, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
+// --- TABLES ---
+
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: text('name'),
@@ -8,26 +10,6 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   role: text('role', { enum: ['admin', 'user'] }).default('user'),
   subscriptionStatus: integer('subscription_status').default(0),
-  createdAt: timestamp('created_at').defaultNow(),
-});
-
-export const models = pgTable('models', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  iconUrl: text('icon_url'),
-  bannerUrl: text('banner_url'),
-  isFeatured: boolean('is_featured').default(false),
-  isAdvertiser: boolean('is_advertiser').default(false),
-  createdAt: timestamp('created_at').defaultNow(),
-});
-
-export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
-  modelId: integer('model_id').references(() => models.id),
-  title: text('title'),
-  contentUrl: text('content_url').notNull(),
-  type: text('type', { enum: ['image', 'video'] }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -52,6 +34,26 @@ export const subscriptions = pgTable('subscriptions', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const models = pgTable('models', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  iconUrl: text('icon_url'),
+  bannerUrl: text('banner_url'),
+  isFeatured: boolean('is_featured').default(false),
+  isAdvertiser: boolean('is_advertiser').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  modelId: integer('model_id').references(() => models.id),
+  title: text('title'),
+  contentUrl: text('content_url').notNull(),
+  type: text('type', { enum: ['image', 'video'] }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const adminSettings = pgTable('admin_settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
@@ -69,10 +71,6 @@ export const whitelabelModels = pgTable('whitelabel_models', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const whitelabelModelsRelations = relations(whitelabelModels, ({ many }) => ({
-  posts: many(whitelabelPosts),
-}));
-
 export const whitelabelPosts = pgTable('whitelabel_posts', {
   id: serial('id').primaryKey(),
   whitelabelModelId: integer('whitelabel_model_id').references(() => whitelabelModels.id, { onDelete: 'cascade' }).notNull(),
@@ -84,14 +82,6 @@ export const whitelabelPosts = pgTable('whitelabel_posts', {
   unq: unique().on(t.whitelabelModelId, t.folderName),
 }));
 
-export const whitelabelPostsRelations = relations(whitelabelPosts, ({ one, many }) => ({
-  model: one(whitelabelModels, {
-    fields: [whitelabelPosts.whitelabelModelId],
-    references: [whitelabelModels.id],
-  }),
-  media: many(whitelabelMedia),
-}));
-
 export const whitelabelMedia = pgTable('whitelabel_media', {
   id: serial('id').primaryKey(),
   whitelabelPostId: integer('whitelabel_post_id').references(() => whitelabelPosts.id, { onDelete: 'cascade' }).notNull(),
@@ -100,6 +90,38 @@ export const whitelabelMedia = pgTable('whitelabel_media', {
   type: text('type', { enum: ['image', 'video'] }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+// --- RELATIONS ---
+
+export const usersRelations = relations(users, ({ one }) => ({
+  subscription: one(subscriptions, {
+    fields: [users.id],
+    references: [subscriptions.userId],
+  }),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptions.userId],
+    references: [users.id],
+  }),
+  plan: one(plans, {
+    fields: [subscriptions.planId],
+    references: [plans.id],
+  }),
+}));
+
+export const whitelabelModelsRelations = relations(whitelabelModels, ({ many }) => ({
+  posts: many(whitelabelPosts),
+}));
+
+export const whitelabelPostsRelations = relations(whitelabelPosts, ({ one, many }) => ({
+  model: one(whitelabelModels, {
+    fields: [whitelabelPosts.whitelabelModelId],
+    references: [whitelabelModels.id],
+  }),
+  media: many(whitelabelMedia),
+}));
 
 export const whitelabelMediaRelations = relations(whitelabelMedia, ({ one }) => ({
   post: one(whitelabelPosts, {
