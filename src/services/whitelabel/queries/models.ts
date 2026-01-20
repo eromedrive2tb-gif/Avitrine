@@ -39,7 +39,7 @@ export const WhitelabelModelQueries = {
     const [items, total] = await Promise.all([
       db.select()
         .from(whitelabelModels)
-        .orderBy(desc(whitelabelModels.createdAt))
+        .orderBy(desc(whitelabelModels.createdAt), desc(whitelabelModels.id))
         .limit(limit)
         .offset(offset),
       db.select({ count: count() }).from(whitelabelModels)
@@ -66,7 +66,7 @@ export const WhitelabelModelQueries = {
       thumbnailUrl: whitelabelModels.thumbnailUrl,
     })
     .from(whitelabelModels)
-    .orderBy(desc(whitelabelModels.postCount))
+    .orderBy(desc(whitelabelModels.postCount), desc(whitelabelModels.id))
     .limit(limit)
     .offset(offset);
 
