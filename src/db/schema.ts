@@ -91,6 +91,14 @@ export const whitelabelMedia = pgTable('whitelabel_media', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const supportContacts = pgTable('support_contacts', {
+  id: serial('id').primaryKey(),
+  platform: text('platform').notNull(), // 'whatsapp', 'telegram'
+  url: text('url').notNull(),
+  isActive: boolean('is_active').default(true),
+  updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
+});
+
 // --- RELATIONS ---
 
 export const usersRelations = relations(users, ({ one }) => ({
