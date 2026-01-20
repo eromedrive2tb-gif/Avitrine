@@ -1,6 +1,7 @@
 import { FC, PropsWithChildren } from 'hono/jsx';
 import { Navbar } from '../organisms/Navbar';
 import { Sidebar } from '../organisms/Sidebar';
+import { SupportDropdown } from '../atoms/SupportDropdown';
 
 interface LayoutProps extends PropsWithChildren {
   title?: string;
@@ -43,6 +44,8 @@ export const Layout: FC<LayoutProps> = ({ children, title = "CreatorFlix - Premi
              <p>&copy; 2024 CreatorFlix Inc. All rights reserved. 18+ Only.</p>
           </footer>
         </main>
+        
+        <SupportDropdown />
 
       </body>
     </html>
