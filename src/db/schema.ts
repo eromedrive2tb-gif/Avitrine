@@ -21,6 +21,17 @@ export const plans = pgTable('plans', {
   benefits: json('benefits_json'),
   ctaText: text('cta_text'),
   checkoutUrl: text('checkout_url'),
+  // Internal Checkout Flags
+  acceptsPix: boolean('accepts_pix').default(true),
+  acceptsCard: boolean('accepts_card').default(true),
+});
+
+export const paymentGateways = pgTable('payment_gateways', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(), // 'Dias Marketplace' | 'JunglePay'
+  publicKey: text('public_key'),
+  secretKey: text('secret_key'),
+  isActive: boolean('is_active').default(false),
 });
 
 export const subscriptions = pgTable('subscriptions', {

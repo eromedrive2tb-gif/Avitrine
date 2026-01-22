@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { db } from '../db';
-import { plans, supportContacts } from '../db/schema';
+import { plans, supportContacts, paymentGateways } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminModels } from '../pages/admin/Models';
@@ -10,6 +10,7 @@ import { AdminPlans } from '../pages/admin/Plans';
 import { AdminSettings } from '../pages/admin/Settings';
 import { AdminWhitelabel } from '../pages/admin/Whitelabel';
 import { AdminSupport } from '../pages/admin/Support';
+import { AdminFinance } from '../pages/admin/Finance';
 import { WhitelabelDbService } from '../services/whitelabel';
 
 const adminRoutes = new Hono();
@@ -40,8 +41,29 @@ adminRoutes.get('/plans', async (c) => {
   }
 
   const allPlans = await db.select().from(plans).orderBy(plans.duration);
-  return c.html(<AdminPlans plans={allPlans} />);
+  const gateways = await db.select().from(paymentGateways).where(eq(paymentGateways.isActive, true));
+  const activeGateway = gateways[0]?.name || 'Dias Marketplace';
+  
+  return c.html(<AdminPlans plans={allPlans} activeGateway={activeGateway} />);
 });
+
+adminRoutes.get('/finance', async (c) => {
+  let gateways = await db.select().from(paymentGateways);
+  
+  if (gateways.length === 0) {
+      await db.insert(paymentGateways).values([
+          { name: 'Dias Marketplace', isActive: true },
+          { name: 'JunglePay', isActive: false }
+      ]);
+      gateways = await db.select().from(paymentGateways);
+  }
+
+  const activeGateway = gateways.find(g => g.isActive)?.name || 'Dias Marketplace';
+  const success = c.req.query('success') === 'true';
+
+  return c.html(<AdminFinance gateways={gateways} activeGatewayName={activeGateway} success={success} />);
+});
+
 adminRoutes.get('/settings', (c) => c.html(<AdminSettings />));
 
 // SUPPORT ROUTES

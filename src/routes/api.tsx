@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { setCookie, getCookie } from 'hono/cookie';
 import { sign, verify } from 'hono/jwt';
 import { db } from '../db';
-import { plans, subscriptions, users } from '../db/schema';
+import { plans, subscriptions, users, paymentGateways } from '../db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
@@ -11,12 +11,60 @@ import { AuthService } from '../services/auth';
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
+// Admin Finance Routes
+apiRoutes.post('/admin/finance/gateway', async (c) => {
+  const body = await c.req.parseBody();
+  const gatewayName = body['gatewayName'] as string;
+
+  // Deactivate all
+  await db.update(paymentGateways).set({ isActive: false });
+  
+  // Activate selected (Upsert logic)
+  const result = await db.update(paymentGateways)
+      .set({ isActive: true })
+      .where(eq(paymentGateways.name, gatewayName))
+      .returning();
+
+  if (result.length === 0) {
+      await db.insert(paymentGateways).values({
+          name: gatewayName,
+          isActive: true
+      });
+  }
+  
+  return c.redirect('/admin/finance?success=true');
+});
+
+apiRoutes.post('/admin/finance/junglepay', async (c) => {
+  const body = await c.req.parseBody();
+  const pk = body['publicKey'] as string;
+  const sk = body['secretKey'] as string;
+
+  const result = await db.update(paymentGateways)
+      .set({ publicKey: pk, secretKey: sk })
+      .where(eq(paymentGateways.name, 'JunglePay'))
+      .returning();
+
+  if (result.length === 0) {
+       await db.insert(paymentGateways).values({
+          name: 'JunglePay',
+          publicKey: pk,
+          secretKey: sk,
+          isActive: false 
+      });
+  }
+
+  return c.redirect('/admin/finance?success=true');
+});
+
 // Admin Plan Update
 apiRoutes.post('/admin/plans/update', async (c) => {
   const body = await c.req.parseBody();
   const id = parseInt(body['id'] as string);
   const priceRaw = body['price'] as string;
   const checkoutUrl = body['checkoutUrl'] as string;
+  const acceptsPix = body['acceptsPix'] === 'true';
+  const acceptsCard = body['acceptsCard'] === 'true';
 
   if (!id) return c.redirect('/admin/plans?error=Invalid ID');
 
@@ -28,7 +76,9 @@ apiRoutes.post('/admin/plans/update', async (c) => {
     await db.update(plans)
         .set({ 
             price: priceInCents,
-            checkoutUrl: checkoutUrl
+            checkoutUrl: checkoutUrl,
+            acceptsPix: acceptsPix,
+            acceptsCard: acceptsCard
         })
         .where(eq(plans.id, id));
     

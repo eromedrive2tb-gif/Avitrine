@@ -36,6 +36,13 @@
       "when": 1768897716839,
       "tag": "0004_mixed_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769117349219,
+      "tag": "0005_furry_catseye",
+      "breakpoints": true
     }
   ]
 }
