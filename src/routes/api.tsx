@@ -7,6 +7,7 @@ import { eq, sql } from 'drizzle-orm';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AuthService } from '../services/auth';
+import { JunglePayService, type PixChargeRequest, type PixChargeResult } from '../services/junglepay';
 
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -34,6 +35,137 @@ apiRoutes.post('/checkout/process', async (c) => {
     } catch (e: any) {
         console.error("Checkout Process Error:", e);
         return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// --- Endpoint RPC: Gerar Cobrança PIX via JunglePay ---
+apiRoutes.post('/checkout/pix', async (c) => {
+    try {
+        const body = await c.req.json() as PixChargeRequest;
+
+        // Validação básica dos campos obrigatórios
+        const requiredFields = ['customerName', 'customerEmail', 'customerDocument', 'totalAmount', 'planId'];
+        for (const field of requiredFields) {
+            if (!(field in body) || body[field as keyof PixChargeRequest] === undefined || body[field as keyof PixChargeRequest] === '') {
+                return c.json<PixChargeResult>({
+                    success: false,
+                    error: `Campo obrigatório ausente: ${field}`,
+                    code: 'INVALID_DATA'
+                }, 400);
+            }
+        }
+
+        // Chamar o service JunglePay
+        const result = await JunglePayService.createPixCharge({
+            customerName: body.customerName,
+            customerEmail: body.customerEmail,
+            customerDocument: body.customerDocument,
+            customerPhone: body.customerPhone || '',
+            totalAmount: Number(body.totalAmount),
+            planId: Number(body.planId),
+            orderBump: Boolean(body.orderBump)
+        });
+
+        if (!result.success) {
+            const statusCode = result.code === 'INVALID_DATA' ? 400 : 
+                               result.code === 'GATEWAY_NOT_CONFIGURED' ? 503 : 
+                               result.code === 'GATEWAY_INACTIVE' ? 503 : 500;
+            return c.json<PixChargeResult>(result, statusCode);
+        }
+
+        return c.json<PixChargeResult>(result);
+
+    } catch (e: any) {
+        console.error("[PIX Checkout] Error:", e);
+        return c.json<PixChargeResult>({
+            success: false,
+            error: `Erro interno: ${e.message}`,
+            code: 'API_ERROR'
+        }, 500);
+    }
+});
+
+// --- Webhook JunglePay ---
+apiRoutes.post('/webhook/junglepay', async (c) => {
+    console.log("👉 Webhook Hit: /webhook/junglepay");
+    try {
+        const rawBody = await c.req.text();
+        console.log("📦 Raw Body:", rawBody);
+        
+        const payload = JSON.parse(rawBody);
+        console.log("✅ Payload Parsed:", payload);
+
+        // Verificar se é uma atualização de transação
+        if (payload.type !== 'transaction') {
+            console.log("⚠️ Tipo ignorado:", payload.type);
+            return c.json({ ignored: true });
+        }
+
+        const transaction = payload.data;
+        const { status, id, customer, amount } = transaction;
+
+        console.log(`ℹ️ Processing JunglePay Transaction: ${id} | Status: ${status}`);
+
+        if (status === 'paid') {
+            // Buscar usuário pelo email
+            const foundUsers = await db.select().from(users).where(eq(users.email, customer.email)).limit(1);
+            const user = foundUsers[0];
+
+            if (!user) {
+                console.log(`ℹ️ User not found for email ${customer.email}, creating new user...`);
+                // Opcionalmente criar usuário ou apenas logar
+                return c.json({ received: true, message: 'User not found' });
+            }
+
+            // Buscar plano pelo valor mais próximo
+            const allPlans = await db.select().from(plans);
+            let plan = null;
+            if (allPlans.length > 0) {
+                plan = allPlans.reduce((prev, curr) => {
+                    return (Math.abs(curr.price - amount) < Math.abs(prev.price - amount) ? curr : prev);
+                });
+            }
+
+            // Criar ou ativar subscription
+            const startDate = new Date();
+            const durationDays = plan?.duration || 30;
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + durationDays);
+
+            await db.insert(subscriptions).values({
+                userId: user.id,
+                planId: plan?.id || null,
+                externalId: String(id),
+                status: 'active',
+                startDate: startDate,
+                endDate: endDate
+            });
+
+            // Atualizar status do usuário
+            await db.update(users)
+                .set({ subscriptionStatus: 1 })
+                .where(eq(users.id, user.id));
+
+            // Atualizar checkout se existir
+            await db.update(checkouts)
+                .set({ status: 'paid' })
+                .where(eq(checkouts.customerEmail, customer.email));
+
+            console.log(`[JunglePay Webhook] Subscription activated for user ${user.id} (Tx: ${id})`);
+            return c.json({ received: true, activated: true });
+        }
+
+        if (status === 'waiting_payment') {
+            console.log(`[JunglePay Webhook] Transaction ${id} waiting for payment`);
+            return c.json({ received: true });
+        }
+
+        console.log("⚠️ Status não processado:", status);
+        return c.json({ ignored: true });
+
+    } catch (err: any) {
+        console.error("❌ JunglePay Webhook Error:", err);
+        return c.json({ error: err.message }, 500);
     }
 });
 

@@ -161,23 +161,41 @@ async function processCheckout() {
     const totalAmount = orderBump ? state.basePrice + state.bumpPrice : state.basePrice;
 
     try {
-        const res = await fetch('/api/checkout/process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                planId, email, name, cpf, phone, paymentMethod, orderBump, totalAmount
-            })
-        });
-        const data = await res.json();
-        
-        if(data.success) {
-            goToStep(3);
-            if(paymentMethod === 'pix') {
-                const pixContainer = document.getElementById('pix-code-container');
-                if(pixContainer) pixContainer.classList.remove('hidden');
+        // Se for PIX, usar o novo endpoint da JunglePay
+        if (paymentMethod === 'pix') {
+            const pixResult = await processPixPayment({
+                customerName: name,
+                customerEmail: email,
+                customerDocument: cpf,
+                customerPhone: phone,
+                totalAmount: totalAmount,
+                planId: parseInt(planId),
+                orderBump: orderBump
+            });
+
+            if (pixResult.success) {
+                // Exibir QR Code e copia-e-cola do PIX
+                displayPixPayment(pixResult);
+                goToStep(3);
+            } else {
+                throw new Error(pixResult.error || 'Erro ao gerar PIX');
             }
         } else {
-            throw new Error(data.error || 'Erro desconhecido');
+            // Fluxo antigo para cartão de crédito
+            const res = await fetch('/api/checkout/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    planId, email, name, cpf, phone, paymentMethod, orderBump, totalAmount
+                })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                goToStep(3);
+            } else {
+                throw new Error(data.error || 'Erro desconhecido');
+            }
         }
     } catch (e) {
         console.error(e);
@@ -189,10 +207,95 @@ async function processCheckout() {
     }
 }
 
+// --- PIX Payment via JunglePay ---
+async function processPixPayment(data) {
+    const res = await fetch('/api/checkout/pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    return result;
+}
+
+function displayPixPayment(pixData) {
+    const pixContainer = document.getElementById('pix-code-container');
+    const pixQrCode = document.getElementById('pix-qrcode');
+    const pixCopyCode = document.getElementById('pix-copy-code');
+    const pixExpiration = document.getElementById('pix-expiration');
+    
+    if (pixContainer) {
+        pixContainer.classList.remove('hidden');
+    }
+
+    // Exibir QR Code usando API externa
+    if (pixQrCode && pixData.pixQrCode) {
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixData.pixQrCode)}`;
+        pixQrCode.innerHTML = `<img src="${qrCodeUrl}" alt="QR Code PIX" class="w-full h-full object-contain" />`;
+    }
+
+    // Código copia-e-cola
+    if (pixCopyCode && pixData.pixQrCode) {
+        pixCopyCode.value = pixData.pixQrCode;
+        pixCopyCode.setAttribute('data-pix-code', pixData.pixQrCode);
+    }
+
+    // Data de expiração
+    if (pixExpiration && pixData.expirationDate) {
+        const expDate = new Date(pixData.expirationDate + 'T23:59:59');
+        pixExpiration.innerText = expDate.toLocaleDateString('pt-BR');
+    }
+
+    // Armazenar transactionId para polling de status
+    if (pixData.transactionId) {
+        window.currentPixTransactionId = pixData.transactionId;
+        startPixStatusPolling(pixData.transactionId);
+    }
+
+    console.log('[PIX] Dados exibidos:', {
+        transactionId: pixData.transactionId,
+        qrCodeLength: pixData.pixQrCode?.length,
+        expiration: pixData.expirationDate
+    });
+}
+
+// Função para copiar código PIX
+function copyPixCode() {
+    const pixCopyCode = document.getElementById('pix-copy-code');
+    const pixCode = pixCopyCode?.getAttribute('data-pix-code') || pixCopyCode?.value;
+    
+    if (pixCode) {
+        navigator.clipboard.writeText(pixCode).then(() => {
+            const btn = document.getElementById('btn-copy-pix');
+            if (btn) {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copiado!';
+                btn.classList.add('bg-green-600');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('bg-green-600');
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('Erro ao copiar:', err);
+            alert('Erro ao copiar código PIX');
+        });
+    }
+}
+
+// Polling para verificar status do pagamento (opcional)
+function startPixStatusPolling(transactionId) {
+    // Implementar polling a cada 5 segundos para verificar se o PIX foi pago
+    // Por enquanto apenas loga
+    console.log('[PIX] Monitorando transação:', transactionId);
+}
+
 // Expor globalmente para o HTML chamar onclick
 window.goToStep = goToStep;
 window.processCheckout = processCheckout;
 window.initPrices = initPrices;
+window.copyPixCode = copyPixCode;
 
 // Setup step navigation helper (placeholder if needed)
 function setupStepNavigation() {}
