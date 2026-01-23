@@ -43,6 +43,13 @@
       "when": 1769117349219,
       "tag": "0005_furry_catseye",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769172535715,
+      "tag": "0006_overconfident_titania",
+      "breakpoints": true
     }
   ]
 }

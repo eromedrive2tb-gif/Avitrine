@@ -110,12 +110,40 @@ export const supportContacts = pgTable('support_contacts', {
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
 });
 
+export const checkouts = pgTable('checkouts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id), // Pode ser nulo se não logado, mas idealmente capturamos
+  planId: integer('plan_id').references(() => plans.id).notNull(),
+  status: text('status', { enum: ['pending', 'paid', 'failed', 'abandoned'] }).default('pending'),
+  paymentMethod: text('payment_method', { enum: ['pix', 'credit_card'] }),
+  orderBump: boolean('order_bump').default(false),
+  totalAmount: integer('total_amount').notNull(), // Em centavos, valor final
+  customerName: text('customer_name'),
+  customerEmail: text('customer_email'),
+  customerDocument: text('customer_document'),
+  customerPhone: text('customer_phone'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
+});
+
 // --- RELATIONS ---
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   subscription: one(subscriptions, {
     fields: [users.id],
     references: [subscriptions.userId],
+  }),
+  checkouts: many(checkouts),
+}));
+
+export const checkoutsRelations = relations(checkouts, ({ one }) => ({
+  user: one(users, {
+    fields: [checkouts.userId],
+    references: [users.id],
+  }),
+  plan: one(plans, {
+    fields: [checkouts.planId],
+    references: [plans.id],
   }),
 }));
 

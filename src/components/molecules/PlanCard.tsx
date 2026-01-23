@@ -37,18 +37,13 @@ export const PlanCard: FC<PlanProps> = ({
   checkoutUrl
 }) => {
   const ButtonComponent = () => (
-      checkoutUrl ? (
-        <Button href={checkoutUrl} variant={highlighted ? 'primary' : variant as any} className={highlighted ? "w-full !bg-gradient-to-r !from-gold !to-[#B8860B] !text-black hover:!brightness-110 !font-bold !text-lg !py-4 shadow-[0_0_20px_rgba(255,215,0,0.3)] border-none" : `w-full ${variant === 'outline' ? 'border-gray-700 text-gray-400 hover:text-white hover:border-white' : ''}`}>
-            {highlighted ? `ASSINAR ${name}` : `Selecionar ${name}`}
-        </Button>
-      ) : (
-        <form action="/api/subscribe" method="POST" class="w-full">
-            <input type="hidden" name="planId" value={id} />
-            <Button type="submit" variant={highlighted ? 'primary' : variant as any} className={highlighted ? "w-full !bg-gradient-to-r !from-gold !to-[#B8860B] !text-black hover:!brightness-110 !font-bold !text-lg !py-4 shadow-[0_0_20px_rgba(255,215,0,0.3)] border-none" : `w-full ${variant === 'outline' ? 'border-gray-700 text-gray-400 hover:text-white hover:border-white' : ''}`}>
-                {highlighted ? `ASSINAR ${name}` : `Selecionar ${name}`}
-            </Button>
-        </form>
-      )
+    <Button 
+      href={`/checkout?planId=${id}`} 
+      variant={highlighted ? 'primary' : variant as any} 
+      className={highlighted ? "w-full !bg-gradient-to-r !from-gold !to-[#B8860B] !text-black hover:!brightness-110 !font-bold !text-lg !py-4 shadow-[0_0_20px_rgba(255,215,0,0.3)] border-none" : `w-full ${variant === 'outline' ? 'border-gray-700 text-gray-400 hover:text-white hover:border-white' : ''}`}
+    >
+        {highlighted ? `ASSINAR ${name}` : `Selecionar ${name}`}
+    </Button>
   );
 
   if (highlighted) {

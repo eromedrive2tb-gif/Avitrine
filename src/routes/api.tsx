@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { setCookie, getCookie } from 'hono/cookie';
 import { sign, verify } from 'hono/jwt';
 import { db } from '../db';
-import { plans, subscriptions, users, paymentGateways } from '../db/schema';
+import { plans, subscriptions, users, paymentGateways, checkouts } from '../db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
@@ -10,6 +10,32 @@ import { AuthService } from '../services/auth';
 
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+
+// Checkout Process
+apiRoutes.post('/checkout/process', async (c) => {
+    try {
+        const body = await c.req.json(); 
+        const { planId, paymentMethod, orderBump, email, name, cpf, phone, totalAmount } = body;
+
+        // Create Checkout Record
+        const [checkout] = await db.insert(checkouts).values({
+            planId: parseInt(planId),
+            paymentMethod,
+            orderBump,
+            totalAmount: parseInt(totalAmount),
+            customerName: name,
+            customerEmail: email,
+            customerDocument: cpf,
+            customerPhone: phone,
+            status: 'pending'
+        }).returning();
+
+        return c.json({ success: true, checkoutId: checkout.id });
+    } catch (e: any) {
+        console.error("Checkout Process Error:", e);
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
 
 // Admin Finance Routes
 apiRoutes.post('/admin/finance/gateway', async (c) => {

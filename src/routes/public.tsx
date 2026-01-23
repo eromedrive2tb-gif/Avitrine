@@ -9,8 +9,10 @@ import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { db } from '../db';
-import { plans, users, subscriptions } from '../db/schema';
+import { plans, users, subscriptions, paymentGateways } from '../db/schema';
 import { eq } from 'drizzle-orm';
+
+import { CheckoutPage } from '../pages/Checkout';
 
 const publicRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -139,6 +141,27 @@ publicRoutes.get('/plans', async (c) => {
       console.error("Error fetching plans:", err);
       return c.html(<PlansPage plans={[]} user={user} />);
   }
+});
+
+publicRoutes.get('/checkout', async (c) => {
+  const user = await getUser(c);
+  const planId = c.req.query('planId');
+  if (!planId) {
+      return c.redirect('/plans');
+  }
+  
+  const plan = await db.query.plans.findFirst({
+      where: eq(plans.id, parseInt(planId))
+  });
+
+  if (!plan) return c.redirect('/plans');
+
+  // Busca o gateway ativo
+  const activeGateway = await db.query.paymentGateways.findFirst({
+      where: eq(paymentGateways.isActive, true)
+  });
+
+  return c.html(<CheckoutPage plan={plan} user={user} gateway={activeGateway} />);
 });
 
 publicRoutes.get('/login', (c) => c.html(<AuthPage type="login" />));
