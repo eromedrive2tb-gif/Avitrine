@@ -1,5 +1,6 @@
 import { FC } from 'hono/jsx';
 import { AdminLayout } from '../../components/templates/AdminLayout';
+import { TransactionsTable, type CheckoutTransaction, type SubscriptionTransaction } from '../../components/organisms/TransactionsTable';
 
 interface PaymentGateway {
   id: number;
@@ -13,9 +14,28 @@ interface AdminFinanceProps {
   gateways: PaymentGateway[];
   activeGatewayName: string;
   success?: boolean;
+  checkouts?: CheckoutTransaction[];
+  subscriptions?: SubscriptionTransaction[];
+  pagination?: {
+    page: number;
+    totalPages: number;
+    total: number;
+  };
+  filters?: {
+    status?: string;
+    search?: string;
+  };
 }
 
-export const AdminFinance: FC<AdminFinanceProps> = ({ gateways, activeGatewayName, success }) => {
+export const AdminFinance: FC<AdminFinanceProps> = ({ 
+  gateways, 
+  activeGatewayName, 
+  success,
+  checkouts = [],
+  subscriptions = [],
+  pagination = { page: 1, totalPages: 1, total: 0 },
+  filters = {}
+}) => {
   const diasGateway = gateways.find(g => g.name === 'Dias Marketplace');
   const jungleGateway = gateways.find(g => g.name === 'JunglePay');
 
@@ -23,7 +43,7 @@ export const AdminFinance: FC<AdminFinanceProps> = ({ gateways, activeGatewayNam
     <AdminLayout title="Financeiro" activePath="/admin/finance">
       <div class="mb-8">
          <h1 class="text-3xl font-bold mb-2">Configuração de Pagamentos</h1>
-         <p class="text-gray-400">Gerencie os gateways de pagamento e chaves de API.</p>
+         <p class="text-gray-400">Gerencie os gateways de pagamento e visualize transações.</p>
       </div>
 
       {success && (
@@ -59,10 +79,7 @@ export const AdminFinance: FC<AdminFinanceProps> = ({ gateways, activeGatewayNam
           </form>
         </div>
 
-        {/* JunglePay Configuration Card - Only show inputs if we want to edit them, regardless of active state usually, but let's show them always or conditional? 
-            Requirement says: "Se JunglePay for selecionada, exibir campos". 
-            Let's show the config card always but maybe highlight if active.
-        */}
+        {/* JunglePay Configuration Card */}
         <div class={`p-6 rounded-xl bg-surface border ${activeGatewayName === 'JunglePay' ? 'border-primary/50' : 'border-white/5'} relative transition-colors`}>
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-bold text-xl text-white">Configuração JunglePay</h3>
@@ -106,6 +123,15 @@ export const AdminFinance: FC<AdminFinanceProps> = ({ gateways, activeGatewayNam
           </form>
         </div>
       </div>
+
+      {/* Transactions Table */}
+      <TransactionsTable 
+        gatewayType={activeGatewayName as 'JunglePay' | 'Dias Marketplace'}
+        checkouts={checkouts}
+        subscriptions={subscriptions}
+        pagination={pagination}
+        filters={filters}
+      />
     </AdminLayout>
   );
 };

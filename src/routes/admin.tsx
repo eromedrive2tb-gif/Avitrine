@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { db } from '../db';
-import { plans, supportContacts, paymentGateways } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { plans, supportContacts, paymentGateways, checkouts, subscriptions, users } from '../db/schema';
+import { eq, desc, like, or, sql } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminModels } from '../pages/admin/Models';
 import { AdminAds } from '../pages/admin/Ads';
@@ -61,7 +61,128 @@ adminRoutes.get('/finance', async (c) => {
   const activeGateway = gateways.find(g => g.isActive)?.name || 'Dias Marketplace';
   const success = c.req.query('success') === 'true';
 
-  return c.html(<AdminFinance gateways={gateways} activeGatewayName={activeGateway} success={success} />);
+  // Pagination params
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const limit = 20;
+  const offset = (page - 1) * limit;
+
+  // Filter params
+  const statusFilter = c.req.query('status') || '';
+  const searchFilter = c.req.query('search') || '';
+
+  let checkoutsList: any[] = [];
+  let subscriptionsList: any[] = [];
+  let total = 0;
+
+  if (activeGateway === 'JunglePay') {
+    // Buscar checkouts com join de planos
+    let query = db
+      .select({
+        id: checkouts.id,
+        customerName: checkouts.customerName,
+        customerEmail: checkouts.customerEmail,
+        customerDocument: checkouts.customerDocument,
+        customerPhone: checkouts.customerPhone,
+        totalAmount: checkouts.totalAmount,
+        paymentMethod: checkouts.paymentMethod,
+        status: checkouts.status,
+        orderBump: checkouts.orderBump,
+        planName: plans.name,
+        createdAt: checkouts.createdAt
+      })
+      .from(checkouts)
+      .leftJoin(plans, eq(checkouts.planId, plans.id))
+      .orderBy(desc(checkouts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Aplicar filtros
+    const conditions = [];
+    if (statusFilter) {
+      conditions.push(eq(checkouts.status, statusFilter as any));
+    }
+    if (searchFilter) {
+      conditions.push(
+        or(
+          like(checkouts.customerName, `%${searchFilter}%`),
+          like(checkouts.customerEmail, `%${searchFilter}%`),
+          like(checkouts.customerDocument, `%${searchFilter}%`)
+        )
+      );
+    }
+
+    if (conditions.length > 0) {
+      // @ts-ignore - drizzle typing issue
+      query = query.where(conditions.length === 1 ? conditions[0] : sql`${conditions[0]} AND ${conditions[1]}`);
+    }
+
+    checkoutsList = await query;
+
+    // Contar total
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(checkouts);
+    total = Number(countResult[0]?.count || 0);
+
+  } else {
+    // Buscar subscriptions com join de users e planos
+    let query = db
+      .select({
+        id: subscriptions.id,
+        userName: users.name,
+        userEmail: users.email,
+        planName: plans.name,
+        planPrice: plans.price,
+        startDate: subscriptions.startDate,
+        endDate: subscriptions.endDate,
+        status: subscriptions.status,
+        externalId: subscriptions.externalId,
+        createdAt: subscriptions.createdAt
+      })
+      .from(subscriptions)
+      .leftJoin(users, eq(subscriptions.userId, users.id))
+      .leftJoin(plans, eq(subscriptions.planId, plans.id))
+      .orderBy(desc(subscriptions.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Aplicar filtros
+    const conditions = [];
+    if (statusFilter) {
+      conditions.push(eq(subscriptions.status, statusFilter as any));
+    }
+    if (searchFilter) {
+      conditions.push(
+        or(
+          like(users.name, `%${searchFilter}%`),
+          like(users.email, `%${searchFilter}%`)
+        )
+      );
+    }
+
+    if (conditions.length > 0) {
+      // @ts-ignore - drizzle typing issue
+      query = query.where(conditions.length === 1 ? conditions[0] : sql`${conditions[0]} AND ${conditions[1]}`);
+    }
+
+    subscriptionsList = await query;
+
+    // Contar total
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(subscriptions);
+    total = Number(countResult[0]?.count || 0);
+  }
+
+  const totalPages = Math.ceil(total / limit);
+
+  return c.html(
+    <AdminFinance 
+      gateways={gateways} 
+      activeGatewayName={activeGateway} 
+      success={success}
+      checkouts={checkoutsList}
+      subscriptions={subscriptionsList}
+      pagination={{ page, totalPages, total }}
+      filters={{ status: statusFilter, search: searchFilter }}
+    />
+  );
 });
 
 adminRoutes.get('/settings', (c) => c.html(<AdminSettings />));
