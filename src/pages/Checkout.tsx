@@ -13,13 +13,16 @@ interface CheckoutPageProps {
     duration: number;
   };
   user?: any;
-  gateway?: any;
+  gateway?: {
+    publicKey?: string | null;
+  };
 }
 
 export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => {
   const formattedPrice = (plan.price / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const orderBumpPrice = 1990;
   const orderBumpFormatted = (orderBumpPrice / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const junglePayPublicKey = gateway?.publicKey || '';
 
   return (
     <html lang="pt-BR" class="dark">
@@ -35,10 +38,19 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => 
         {/* Scripts de Terceiros */}
         <script src="https://unpkg.com/imask"></script>
         
+        {/* JunglePay SDK para tokenização de cartão */}
+        <script src="https://api.junglepagamentos.com/v1/js"></script>
+        
         {/* Core Logic do Checkout (Modularizado) */}
         <script src="/static/js/checkout-core.js" defer></script>
       </head>
-      <body class="min-h-screen bg-[#050505] selection:bg-primary selection:text-white overflow-x-hidden" onload={`initPrices(${plan.price}, ${orderBumpPrice})`}>
+      <body 
+        class="min-h-screen bg-[#050505] selection:bg-primary selection:text-white overflow-x-hidden" 
+        onload={`initCheckout(${plan.price}, ${orderBumpPrice}, '${junglePayPublicKey}')`}
+        data-plan-price={plan.price}
+        data-bump-price={orderBumpPrice}
+        data-junglepay-pk={junglePayPublicKey}
+      >
         
         {/* Ambient Glow */}
         <div class="fixed top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-primary/10 via-transparent to-transparent pointer-events-none z-0"></div>
@@ -53,7 +65,7 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => 
               
               <StepIdentification user={user} />
               
-              <StepPayment orderBumpFormatted={orderBumpFormatted} />
+              <StepPayment orderBumpFormatted={orderBumpFormatted} planPrice={plan.price} />
               
               <StepSuccess />
 

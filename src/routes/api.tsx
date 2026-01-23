@@ -7,7 +7,7 @@ import { eq, sql } from 'drizzle-orm';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AuthService } from '../services/auth';
-import { JunglePayService, type PixChargeRequest, type PixChargeResult } from '../services/junglepay';
+import { JunglePayService, type PixChargeRequest, type PixChargeResult, type CardChargeRequest, type CardChargeResult } from '../services/junglepay';
 
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -78,6 +78,56 @@ apiRoutes.post('/checkout/pix', async (c) => {
     } catch (e: any) {
         console.error("[PIX Checkout] Error:", e);
         return c.json<PixChargeResult>({
+            success: false,
+            error: `Erro interno: ${e.message}`,
+            code: 'API_ERROR'
+        }, 500);
+    }
+});
+
+// --- Endpoint RPC: Cobrança Cartão de Crédito via JunglePay ---
+apiRoutes.post('/checkout/card', async (c) => {
+    try {
+        const body = await c.req.json() as CardChargeRequest;
+
+        // Validação básica dos campos obrigatórios
+        const requiredFields = ['customerName', 'customerEmail', 'customerDocument', 'totalAmount', 'planId', 'cardHash'];
+        for (const field of requiredFields) {
+            if (!(field in body) || body[field as keyof CardChargeRequest] === undefined || body[field as keyof CardChargeRequest] === '') {
+                return c.json<CardChargeResult>({
+                    success: false,
+                    error: `Campo obrigatório ausente: ${field}`,
+                    code: 'INVALID_DATA'
+                }, 400);
+            }
+        }
+
+        // Chamar o service JunglePay
+        const result = await JunglePayService.createCardCharge({
+            customerName: body.customerName,
+            customerEmail: body.customerEmail,
+            customerDocument: body.customerDocument,
+            customerPhone: body.customerPhone || '',
+            totalAmount: Number(body.totalAmount),
+            planId: Number(body.planId),
+            orderBump: Boolean(body.orderBump),
+            cardHash: body.cardHash,
+            installments: Number(body.installments) || 1
+        });
+
+        if (!result.success) {
+            const statusCode = result.code === 'INVALID_DATA' ? 400 : 
+                               result.code === 'GATEWAY_NOT_CONFIGURED' ? 503 : 
+                               result.code === 'GATEWAY_INACTIVE' ? 503 :
+                               result.code === 'CARD_REFUSED' ? 402 : 500;
+            return c.json<CardChargeResult>(result, statusCode);
+        }
+
+        return c.json<CardChargeResult>(result);
+
+    } catch (e: any) {
+        console.error("[Card Checkout] Error:", e);
+        return c.json<CardChargeResult>({
             success: false,
             error: `Erro interno: ${e.message}`,
             code: 'API_ERROR'

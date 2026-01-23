@@ -6,9 +6,17 @@ import { Spinner } from '../atoms/Spinner';
 
 interface StepPaymentProps {
   orderBumpFormatted: string;
+  planPrice?: number; // Preço em centavos para calcular parcelas
 }
 
-export const StepPayment: FC<StepPaymentProps> = ({ orderBumpFormatted }) => {
+export const StepPayment: FC<StepPaymentProps> = ({ orderBumpFormatted, planPrice = 0 }) => {
+  // Gera opções de parcelas (1x a 12x)
+  const installmentOptions = Array.from({ length: 12 }, (_, i) => {
+    const installment = i + 1;
+    const value = planPrice / 100 / installment;
+    return { value: installment, label: `${installment}x de R$ ${value.toFixed(2).replace('.', ',')}` };
+  });
+
   return (
     <div id="step-2" class="step-content">
         <div class="glass-card p-8 rounded-2xl border border-white/10">
@@ -39,10 +47,23 @@ export const StepPayment: FC<StepPaymentProps> = ({ orderBumpFormatted }) => {
 
             {/* Credit Card Fields */}
             <div id="card-fields" class="hidden space-y-5 mb-8 pt-6 border-t border-white/10 animate-[fadeIn_0.3s_ease]">
+                <Input id="card_holder" name="card_holder" label="Nome no Cartão" placeholder="Como está impresso no cartão" />
                 <Input id="card_number" name="card_number" label="Número do Cartão" placeholder="0000 0000 0000 0000" />
                 <div class="grid grid-cols-2 gap-5">
                     <Input id="card_expiry" name="card_expiry" label="Validade" placeholder="MM/AA" />
-                    <Input id="card_cvc" name="card_cvc" label="CVC" placeholder="123" />
+                    <Input id="card_cvc" name="card_cvc" label="CVC" placeholder="123" maxLength={4} />
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-300">Parcelas</label>
+                    <select 
+                        id="card_installments" 
+                        name="card_installments"
+                        class="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    >
+                        {installmentOptions.map(opt => (
+                            <option value={opt.value} selected={opt.value === 1}>{opt.label}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
