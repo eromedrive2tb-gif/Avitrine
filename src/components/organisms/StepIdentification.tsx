@@ -9,6 +9,8 @@ interface StepIdentificationProps {
 }
 
 export const StepIdentification: FC<StepIdentificationProps> = ({ user }) => {
+  const isEmailReadOnly = !!user?.email;
+
   return (
     <div id="step-1" class="step-content active">
         <div class="glass-card p-8 rounded-2xl border border-white/10">
@@ -18,7 +20,16 @@ export const StepIdentification: FC<StepIdentificationProps> = ({ user }) => {
             </div>
             
             <div class="space-y-5">
-                <Input id="email" name="email" label="E-mail de Acesso" placeholder="seu@email.com" type="email" value={user?.email} required />
+                <Input 
+                  id="email" 
+                  name="email" 
+                  label="E-mail de Acesso" 
+                  placeholder="seu@email.com" 
+                  type="email" 
+                  value={user?.email} 
+                  required 
+                  readOnly={isEmailReadOnly}
+                />
                 <Input id="name" name="name" label="Nome Completo" placeholder="Nome impresso no cartão" value={user?.name} required />
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
