@@ -392,9 +392,9 @@ function displayCardSuccess(cardData) {
             `;
         }
 
-        // Iniciar polling se tiver checkoutId
+        // Iniciar listener SSE se tiver checkoutId
         if (cardData.checkoutId) {
-            startPaymentStatusPolling(cardData.checkoutId);
+            startPaymentEventListener(cardData.checkoutId);
         }
     }
 
@@ -440,9 +440,9 @@ function displayPixPayment(pixData) {
         window.currentPixTransactionId = pixData.transactionId;
     }
 
-    // Iniciar polling com checkoutId para verificar quando for pago
+    // Iniciar listener SSE com checkoutId para receber notificação quando for pago
     if (pixData.checkoutId) {
-        startPaymentStatusPolling(pixData.checkoutId);
+        startPaymentEventListener(pixData.checkoutId);
     }
 
     console.log('[PIX] Dados exibidos:', {
@@ -478,48 +478,100 @@ function copyPixCode() {
 }
 
 // Polling para verificar status do pagamento
-let pollingInterval = null;
+let eventSource = null;
 let currentCheckoutId = null;
 
-function startPaymentStatusPolling(checkoutId) {
+/**
+ * Inicia a escuta de eventos SSE para notificação de pagamento em tempo real.
+ * O servidor notifica instantaneamente quando o webhook recebe a confirmação.
+ */
+function startPaymentEventListener(checkoutId) {
     if (!checkoutId) {
-        console.log('[Polling] Sem checkoutId, polling não iniciado');
+        console.log('[SSE] Sem checkoutId, listener não iniciado');
         return;
     }
 
+    // Fechar conexão anterior se existir
+    stopPaymentEventListener();
+
     currentCheckoutId = checkoutId;
-    console.log('[Polling] Iniciando polling para checkout:', checkoutId);
+    console.log('[SSE] Conectando ao stream de eventos para checkout:', checkoutId);
 
-    // Verificar a cada 3 segundos
-    pollingInterval = setInterval(async () => {
-        try {
-            const res = await fetch(`/api/checkout/status/${checkoutId}`);
-            const data = await res.json();
+    // Criar conexão SSE
+    eventSource = new EventSource(`/api/checkout/events/${checkoutId}`);
 
-            console.log('[Polling] Status:', data.status, '| isPaid:', data.isPaid);
-
-            if (data.success && data.isPaid) {
-                // Pagamento confirmado!
-                stopPaymentStatusPolling();
-                showPaymentConfirmed(data);
-            }
-        } catch (error) {
-            console.error('[Polling] Erro ao verificar status:', error);
+    // Evento de conexão estabelecida
+    eventSource.addEventListener('connected', (event) => {
+        const data = JSON.parse(event.data);
+        console.log('[SSE] Conectado! Aguardando pagamento...', data);
+        
+        // Atualizar UI para mostrar que está aguardando
+        const checkingStatus = document.getElementById('checking-status');
+        if (checkingStatus) {
+            checkingStatus.innerText = 'Aguardando confirmação do pagamento...';
         }
-    }, 3000);
+    });
 
-    // Parar polling após 10 minutos (600 segundos)
-    setTimeout(() => {
-        stopPaymentStatusPolling();
-        console.log('[Polling] Timeout - polling encerrado após 10 minutos');
-    }, 600000);
+    // Evento de pagamento confirmado (disparado pelo webhook)
+    eventSource.addEventListener('payment_confirmed', (event) => {
+        const data = JSON.parse(event.data);
+        console.log('[SSE] Pagamento confirmado pelo webhook!', data);
+        
+        // Fechar conexão SSE
+        stopPaymentEventListener();
+        
+        // Mostrar estado de pagamento confirmado
+        showPaymentConfirmed(data);
+    });
+
+    // Evento de timeout
+    eventSource.addEventListener('timeout', (event) => {
+        console.log('[SSE] Conexão expirou (timeout)');
+        stopPaymentEventListener();
+        
+        const checkingStatus = document.getElementById('checking-status');
+        if (checkingStatus) {
+            checkingStatus.innerHTML = `
+                Tempo de espera expirado.<br>
+                <a href="javascript:window.location.reload()" class="text-primary underline">Recarregue a página</a> para verificar o status.
+            `;
+        }
+    });
+
+    // Erro na conexão
+    eventSource.onerror = (error) => {
+        console.error('[SSE] Erro na conexão:', error);
+        
+        // Se a conexão foi fechada pelo servidor (normal após timeout)
+        if (eventSource.readyState === EventSource.CLOSED) {
+            console.log('[SSE] Conexão fechada pelo servidor');
+            return;
+        }
+        
+        // Tentar reconectar após 5 segundos
+        setTimeout(() => {
+            if (currentCheckoutId && (!eventSource || eventSource.readyState === EventSource.CLOSED)) {
+                console.log('[SSE] Tentando reconectar...');
+                startPaymentEventListener(currentCheckoutId);
+            }
+        }, 5000);
+    };
+
+    // Heartbeat recebido (mantém conexão viva)
+    eventSource.onmessage = (event) => {
+        // Heartbeats são comentários SSE, não geram eventos onmessage
+        console.log('[SSE] Heartbeat recebido');
+    };
 }
 
-function stopPaymentStatusPolling() {
-    if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-        console.log('[Polling] Polling encerrado');
+/**
+ * Para a escuta de eventos SSE
+ */
+function stopPaymentEventListener() {
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        console.log('[SSE] Listener encerrado');
     }
 }
 

@@ -8,6 +8,7 @@ import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AuthService } from '../services/auth';
 import { JunglePayService, type PixChargeRequest, type PixChargeResult, type CardChargeRequest, type CardChargeResult } from '../services/junglepay';
+import { SSEManager } from '../services/sse';
 
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -135,43 +136,86 @@ apiRoutes.post('/checkout/card', async (c) => {
     }
 });
 
-// --- Endpoint para verificar status do checkout (usado pelo frontend para polling) ---
-apiRoutes.get('/checkout/status/:checkoutId', async (c) => {
-    try {
-        const checkoutId = parseInt(c.req.param('checkoutId'));
-        
-        if (!checkoutId || isNaN(checkoutId)) {
-            return c.json({ success: false, error: 'ID de checkout inválido' }, 400);
-        }
-
-        const [checkout] = await db
-            .select({
-                id: checkouts.id,
-                status: checkouts.status,
-                paymentMethod: checkouts.paymentMethod,
-                customerEmail: checkouts.customerEmail,
-                updatedAt: checkouts.updatedAt
-            })
-            .from(checkouts)
-            .where(eq(checkouts.id, checkoutId))
-            .limit(1);
-
-        if (!checkout) {
-            return c.json({ success: false, error: 'Checkout não encontrado' }, 404);
-        }
-
-        return c.json({
-            success: true,
-            checkoutId: checkout.id,
-            status: checkout.status,
-            paymentMethod: checkout.paymentMethod,
-            isPaid: checkout.status === 'paid'
-        });
-
-    } catch (e: any) {
-        console.error('[Checkout Status] Error:', e);
-        return c.json({ success: false, error: e.message }, 500);
+// --- Endpoint SSE: Stream de eventos de pagamento ---
+apiRoutes.get('/checkout/events/:checkoutId', async (c) => {
+    const checkoutId = parseInt(c.req.param('checkoutId'));
+    
+    if (!checkoutId || isNaN(checkoutId)) {
+        return c.json({ success: false, error: 'ID de checkout inválido' }, 400);
     }
+
+    // Verificar se o checkout existe
+    const [checkout] = await db
+        .select({ id: checkouts.id, status: checkouts.status })
+        .from(checkouts)
+        .where(eq(checkouts.id, checkoutId))
+        .limit(1);
+
+    if (!checkout) {
+        return c.json({ success: false, error: 'Checkout não encontrado' }, 404);
+    }
+
+    // Se já está pago, retornar imediatamente
+    if (checkout.status === 'paid') {
+        return c.json({ 
+            success: true, 
+            checkoutId: checkout.id, 
+            status: 'paid', 
+            isPaid: true,
+            message: 'Pagamento já confirmado'
+        });
+    }
+
+    // Criar stream SSE
+    const stream = new ReadableStream({
+        start(controller) {
+            // Registrar cliente no SSEManager
+            SSEManager.registerClient(checkoutId, controller);
+
+            // Enviar evento inicial de conexão
+            const encoder = new TextEncoder();
+            const connectEvent = `event: connected\ndata: ${JSON.stringify({ checkoutId, status: 'waiting' })}\n\n`;
+            controller.enqueue(encoder.encode(connectEvent));
+
+            // Enviar heartbeat a cada 30 segundos para manter conexão viva
+            const heartbeatInterval = setInterval(() => {
+                SSEManager.sendHeartbeat(controller);
+            }, 30000);
+
+            // Timeout de 15 minutos
+            const timeout = setTimeout(() => {
+                clearInterval(heartbeatInterval);
+                SSEManager.unregisterClient(checkoutId, controller);
+                try {
+                    const timeoutEvent = `event: timeout\ndata: ${JSON.stringify({ message: 'Connection timeout' })}\n\n`;
+                    controller.enqueue(encoder.encode(timeoutEvent));
+                    controller.close();
+                } catch (e) {
+                    // Conexão já fechada
+                }
+            }, 15 * 60 * 1000);
+
+            // Limpar recursos quando o cliente desconectar
+            return () => {
+                clearInterval(heartbeatInterval);
+                clearTimeout(timeout);
+                SSEManager.unregisterClient(checkoutId, controller);
+            };
+        },
+        cancel() {
+            // Cliente fechou a conexão
+            console.log(`[SSE] Client disconnected from checkout ${checkoutId}`);
+        }
+    });
+
+    return new Response(stream, {
+        headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no' // Para nginx
+        }
+    });
 });
 
 // --- Webhook JunglePay ---
@@ -204,7 +248,15 @@ apiRoutes.post('/webhook/junglepay', async (c) => {
                 .returning();
 
             if (updatedCheckouts.length > 0) {
-                console.log(`[JunglePay Webhook] Checkout ${updatedCheckouts[0].id} atualizado para 'paid'`);
+                const updatedCheckout = updatedCheckouts[0];
+                console.log(`[JunglePay Webhook] Checkout ${updatedCheckout.id} atualizado para 'paid'`);
+                
+                // 2. Notificar clientes SSE imediatamente
+                SSEManager.notifyPaymentConfirmed(updatedCheckout.id, {
+                    status: 'paid',
+                    paymentMethod: updatedCheckout.paymentMethod || undefined,
+                    customerEmail: updatedCheckout.customerEmail || undefined
+                });
             }
 
             // 2. Buscar usuário pelo email
