@@ -17,7 +17,7 @@ interface AdminAdsCreateProps {
 const VALID_PLACEMENTS_BY_TYPE = {
   diamond: ['feed_model'],
   diamond_block: ['home_top', 'home_middle', 'models_grid'],
-  banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register', 'model_sidebar'],
+  banner: ['home_top', 'home_bottom', 'login', 'register'],
   spot: ['sidebar', 'model_profile', 'model_sidebar'],
   hero: ['home_top']
 };
@@ -317,7 +317,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
             const validPlacementsByType = {
                 diamond: ['feed_model'],
                 diamond_block: ['home_top', 'home_middle', 'models_grid'],
-                banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register', 'model_sidebar'],
+                banner: ['home_top', 'home_bottom', 'login', 'register'],
                 spot: ['sidebar', 'model_profile', 'model_sidebar'],
                 hero: ['home_top']
             };

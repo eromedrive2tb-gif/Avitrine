@@ -62,8 +62,9 @@ publicRoutes.get('/', async (c) => {
     console.log('[Route] Home ads fetched:', {
       home_top: homeAds.home_top?.length,
       home_middle: homeAds.home_middle?.length,
+      home_bottom: homeAds.home_bottom?.length,
       home_top_types: homeAds.home_top?.map(a => a.type),
-      home_middle_types: homeAds.home_middle?.map(a => a.type)
+      home_bottom_types: homeAds.home_bottom?.map(a => a.type)
     });
     
     const safeModels = signedModels.map(m => ({ ...m, postCount: m.postCount || 0 }));

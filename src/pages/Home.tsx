@@ -35,7 +35,7 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
   const heroAds = ads.home_top?.filter(ad => ad.type === 'hero') || [];
   const topBannerAds = ads.home_top?.filter(ad => ad.type === 'banner') || [];
   const diamondBlockAds = ads.home_top?.filter(ad => ad.type === 'diamond_block') || [];
-  const middleAds = ads.home_middle?.filter(ad => ad.type === 'diamond_block' || ad.type === 'banner') || [];
+  const middleAds = ads.home_middle?.filter(ad => ad.type === 'diamond_block') || [];
   const bottomBannerAds = ads.home_bottom?.filter(ad => ad.type === 'banner') || [];
 
   // Split models for layout
@@ -46,8 +46,9 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
   console.log('[Home] Ads data:', { 
     home_top_count: ads.home_top?.length, 
     home_middle_count: ads.home_middle?.length,
-    diamond_block_home_top: diamondBlockAds.length,
-    middle_ads: middleAds.length
+    home_bottom_count: ads.home_bottom?.length,
+    top_banners: topBannerAds.length,
+    bottom_banners: bottomBannerAds.length
   });
 
   return (
@@ -68,21 +69,23 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
                   modelSlug: ad.link.includes('/models/') ? ad.link.split('/models/')[1] : undefined
                 }))} 
              />
+             
+             {/* TOP BANNER AD - Logo após o Hero Carousel */}
+             {topBannerAds.length > 0 && (
+               <div class="mt-4">
+                 <AdBanner 
+                   title={topBannerAds[0].title}
+                   subtitle={topBannerAds[0].subtitle || ''}
+                   ctaText={topBannerAds[0].ctaText || 'Saiba Mais'}
+                   link={topBannerAds[0].link}
+                   imageUrl={topBannerAds[0].imageUrl}
+                   adId={topBannerAds[0].id}
+                 />
+               </div>
+             )}
           </div>
           <TrendingSideColumn model={trendingModels[0]} sidebarAds={ads.sidebar} />
         </section>
-
-        {/* TOP BANNER AD */}
-        {topBannerAds.length > 0 && (
-          <AdBanner 
-            title={topBannerAds[0].title}
-            subtitle={topBannerAds[0].subtitle || ''}
-            ctaText={topBannerAds[0].ctaText || 'Saiba Mais'}
-            link={topBannerAds[0].link}
-            imageUrl={topBannerAds[0].imageUrl}
-            adId={topBannerAds[0].id}
-          />
-        )}
 
         {/* Filters */}
         <div class="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
@@ -146,29 +149,18 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
             </div>
         </section>
 
-        {/* MIDDLE AD - Diamond Selection Block or Banner */}
+        {/* MIDDLE AD - Diamond Selection Block */}
         {middleAds.length > 0 && (
           <div class="my-10">
-            {middleAds[0].type === 'diamond_block' ? (
-              <NativeAdBlock 
-                title={middleAds[0].title || "Diamond Selection"} 
-                models={middleAds.slice(0, 4).map(ad => ({
-                  name: ad.title,
-                  imageUrl: ad.imageUrl || '',
-                  category: ad.category || 'Destaque',
-                  link: ad.link
-                }))}
-              />
-            ) : (
-              <AdBanner 
-                title={middleAds[0].title}
-                subtitle={middleAds[0].subtitle || ''}
-                ctaText={middleAds[0].ctaText || 'Saiba Mais'}
-                link={middleAds[0].link}
-                imageUrl={middleAds[0].imageUrl}
-                adId={middleAds[0].id}
-              />
-            )}
+            <NativeAdBlock 
+              title={middleAds[0].title || "Diamond Selection"} 
+              models={middleAds.slice(0, 4).map(ad => ({
+                name: ad.title,
+                imageUrl: ad.imageUrl || '',
+                category: ad.category || 'Destaque',
+                link: ad.link
+              }))}
+            />
           </div>
         )}
 

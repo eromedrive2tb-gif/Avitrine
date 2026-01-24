@@ -16,7 +16,7 @@ export const VALID_PLACEMENTS_BY_TYPE: Record<AdType, AdPlacement[]> = {
   diamond_block: ['home_top', 'home_middle', 'models_grid'],
   
   // Banner: qualquer lugar menos feeds de conteúdo
-  banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register', 'model_sidebar'],
+  banner: ['home_top', 'home_bottom', 'login', 'register'],
   
   // Ad Spot Small: apenas áreas laterais ou secundárias
   spot: ['sidebar', 'model_profile', 'model_sidebar'],
