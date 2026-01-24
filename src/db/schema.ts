@@ -115,6 +115,7 @@ export const checkouts = pgTable('checkouts', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id), // Pode ser nulo se não logado, mas idealmente capturamos
   planId: integer('plan_id').references(() => plans.id).notNull(),
+  externalId: text('external_id'), // ID da transação no gateway (JunglePay)
   status: text('status', { enum: ['pending', 'paid', 'failed', 'abandoned'] }).default('pending'),
   paymentMethod: text('payment_method', { enum: ['pix', 'credit_card'] }),
   orderBump: boolean('order_bump').default(false),

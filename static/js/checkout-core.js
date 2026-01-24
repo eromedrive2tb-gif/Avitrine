@@ -352,23 +352,22 @@ async function processCardPayment(data) {
 // --- Exibir sucesso do cartão ---
 function displayCardSuccess(cardData) {
     const pixContainer = document.getElementById('pix-code-container');
+    const pendingState = document.getElementById('payment-pending-state');
+    const confirmedState = document.getElementById('payment-confirmed-state');
+    const confirmedMessage = document.getElementById('confirmed-message');
     
-    // Ocultar container de PIX se visível
+    // Ocultar container de PIX
     if (pixContainer) {
         pixContainer.classList.add('hidden');
     }
 
-    // Exibir mensagem de sucesso do cartão
-    const successTitle = document.querySelector('#step-3 h2');
-    const successMessage = document.querySelector('#step-3 p');
-    
-    if (successTitle) {
-        successTitle.innerText = cardData.status === 'paid' ? 'Pagamento Aprovado!' : 'Processando Pagamento';
-    }
-    
-    if (successMessage) {
-        if (cardData.status === 'paid') {
-            successMessage.innerHTML = `
+    // Se já foi pago, mostrar estado confirmado imediatamente
+    if (cardData.status === 'paid') {
+        if (pendingState) pendingState.classList.add('hidden');
+        if (confirmedState) confirmedState.classList.remove('hidden');
+        
+        if (confirmedMessage) {
+            confirmedMessage.innerHTML = `
                 Seu pagamento foi aprovado!<br>
                 <span class="text-sm text-gray-500">
                     Cartão •••• ${cardData.cardLastDigits} (${cardData.cardBrand})<br>
@@ -376,13 +375,32 @@ function displayCardSuccess(cardData) {
                 </span><br><br>
                 Você receberá o acesso no seu e-mail em instantes.
             `;
-        } else {
-            successMessage.innerText = 'Seu pagamento está sendo processado. Você receberá uma confirmação por e-mail.';
+        }
+    } else {
+        // Se está pendente, mostrar estado pendente e iniciar polling
+        const pendingTitle = document.getElementById('pending-title');
+        const pendingMessage = document.getElementById('pending-message');
+        
+        if (pendingTitle) pendingTitle.innerText = 'Processando Pagamento';
+        if (pendingMessage) {
+            pendingMessage.innerHTML = `
+                Seu pagamento está sendo processado.<br>
+                <span class="text-sm text-gray-500">
+                    Cartão •••• ${cardData.cardLastDigits} (${cardData.cardBrand})
+                </span><br><br>
+                Aguarde a confirmação...
+            `;
+        }
+
+        // Iniciar polling se tiver checkoutId
+        if (cardData.checkoutId) {
+            startPaymentStatusPolling(cardData.checkoutId);
         }
     }
 
     console.log('[Card] Pagamento processado:', {
         transactionId: cardData.transactionId,
+        checkoutId: cardData.checkoutId,
         status: cardData.status,
         brand: cardData.cardBrand,
         lastDigits: cardData.cardLastDigits
@@ -417,14 +435,19 @@ function displayPixPayment(pixData) {
         pixExpiration.innerText = expDate.toLocaleDateString('pt-BR');
     }
 
-    // Armazenar transactionId para polling de status
+    // Armazenar IDs para referência
     if (pixData.transactionId) {
         window.currentPixTransactionId = pixData.transactionId;
-        startPixStatusPolling(pixData.transactionId);
+    }
+
+    // Iniciar polling com checkoutId para verificar quando for pago
+    if (pixData.checkoutId) {
+        startPaymentStatusPolling(pixData.checkoutId);
     }
 
     console.log('[PIX] Dados exibidos:', {
         transactionId: pixData.transactionId,
+        checkoutId: pixData.checkoutId,
         qrCodeLength: pixData.pixQrCode?.length,
         expiration: pixData.expirationDate
     });
@@ -454,11 +477,90 @@ function copyPixCode() {
     }
 }
 
-// Polling para verificar status do pagamento (opcional)
+// Polling para verificar status do pagamento
+let pollingInterval = null;
+let currentCheckoutId = null;
+
+function startPaymentStatusPolling(checkoutId) {
+    if (!checkoutId) {
+        console.log('[Polling] Sem checkoutId, polling não iniciado');
+        return;
+    }
+
+    currentCheckoutId = checkoutId;
+    console.log('[Polling] Iniciando polling para checkout:', checkoutId);
+
+    // Verificar a cada 3 segundos
+    pollingInterval = setInterval(async () => {
+        try {
+            const res = await fetch(`/api/checkout/status/${checkoutId}`);
+            const data = await res.json();
+
+            console.log('[Polling] Status:', data.status, '| isPaid:', data.isPaid);
+
+            if (data.success && data.isPaid) {
+                // Pagamento confirmado!
+                stopPaymentStatusPolling();
+                showPaymentConfirmed(data);
+            }
+        } catch (error) {
+            console.error('[Polling] Erro ao verificar status:', error);
+        }
+    }, 3000);
+
+    // Parar polling após 10 minutos (600 segundos)
+    setTimeout(() => {
+        stopPaymentStatusPolling();
+        console.log('[Polling] Timeout - polling encerrado após 10 minutos');
+    }, 600000);
+}
+
+function stopPaymentStatusPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        console.log('[Polling] Polling encerrado');
+    }
+}
+
+function showPaymentConfirmed(data) {
+    console.log('[Payment] Pagamento confirmado!', data);
+
+    // Ocultar estado pendente
+    const pendingState = document.getElementById('payment-pending-state');
+    if (pendingState) {
+        pendingState.classList.add('hidden');
+    }
+
+    // Mostrar estado confirmado
+    const confirmedState = document.getElementById('payment-confirmed-state');
+    if (confirmedState) {
+        confirmedState.classList.remove('hidden');
+    }
+
+    // Ocultar container do PIX (já foi pago)
+    const pixContainer = document.getElementById('pix-code-container');
+    if (pixContainer) {
+        pixContainer.classList.add('hidden');
+    }
+
+    // Tocar som de sucesso (opcional - pode ser removido)
+    try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQUDE1/WzayGKwABCymLxbm4lEQrNW6e0su/sZxvR0pmiKzB...');
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+    } catch (e) {}
+
+    // Vibrar dispositivo (mobile)
+    if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+    }
+}
+
+// Função antiga mantida por compatibilidade
 function startPixStatusPolling(transactionId) {
-    // Implementar polling a cada 5 segundos para verificar se o PIX foi pago
-    // Por enquanto apenas loga
     console.log('[PIX] Monitorando transação:', transactionId);
+    // O polling real agora usa checkoutId
 }
 
 // Expor globalmente para o HTML chamar onclick

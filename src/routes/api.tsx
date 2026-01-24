@@ -135,6 +135,45 @@ apiRoutes.post('/checkout/card', async (c) => {
     }
 });
 
+// --- Endpoint para verificar status do checkout (usado pelo frontend para polling) ---
+apiRoutes.get('/checkout/status/:checkoutId', async (c) => {
+    try {
+        const checkoutId = parseInt(c.req.param('checkoutId'));
+        
+        if (!checkoutId || isNaN(checkoutId)) {
+            return c.json({ success: false, error: 'ID de checkout inválido' }, 400);
+        }
+
+        const [checkout] = await db
+            .select({
+                id: checkouts.id,
+                status: checkouts.status,
+                paymentMethod: checkouts.paymentMethod,
+                customerEmail: checkouts.customerEmail,
+                updatedAt: checkouts.updatedAt
+            })
+            .from(checkouts)
+            .where(eq(checkouts.id, checkoutId))
+            .limit(1);
+
+        if (!checkout) {
+            return c.json({ success: false, error: 'Checkout não encontrado' }, 404);
+        }
+
+        return c.json({
+            success: true,
+            checkoutId: checkout.id,
+            status: checkout.status,
+            paymentMethod: checkout.paymentMethod,
+            isPaid: checkout.status === 'paid'
+        });
+
+    } catch (e: any) {
+        console.error('[Checkout Status] Error:', e);
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
 // --- Webhook JunglePay ---
 apiRoutes.post('/webhook/junglepay', async (c) => {
     console.log("👉 Webhook Hit: /webhook/junglepay");
@@ -153,21 +192,31 @@ apiRoutes.post('/webhook/junglepay', async (c) => {
 
         const transaction = payload.data;
         const { status, id, customer, amount } = transaction;
+        const externalId = String(id);
 
-        console.log(`ℹ️ Processing JunglePay Transaction: ${id} | Status: ${status}`);
+        console.log(`ℹ️ Processing JunglePay Transaction: ${externalId} | Status: ${status}`);
 
         if (status === 'paid') {
-            // Buscar usuário pelo email
+            // 1. Primeiro, atualizar o checkout usando o externalId
+            const updatedCheckouts = await db.update(checkouts)
+                .set({ status: 'paid', updatedAt: new Date() })
+                .where(eq(checkouts.externalId, externalId))
+                .returning();
+
+            if (updatedCheckouts.length > 0) {
+                console.log(`[JunglePay Webhook] Checkout ${updatedCheckouts[0].id} atualizado para 'paid'`);
+            }
+
+            // 2. Buscar usuário pelo email
             const foundUsers = await db.select().from(users).where(eq(users.email, customer.email)).limit(1);
             const user = foundUsers[0];
 
             if (!user) {
-                console.log(`ℹ️ User not found for email ${customer.email}, creating new user...`);
-                // Opcionalmente criar usuário ou apenas logar
-                return c.json({ received: true, message: 'User not found' });
+                console.log(`ℹ️ User not found for email ${customer.email}, checkout already updated.`);
+                return c.json({ received: true, checkoutUpdated: updatedCheckouts.length > 0 });
             }
 
-            // Buscar plano pelo valor mais próximo
+            // 3. Buscar plano pelo valor mais próximo
             const allPlans = await db.select().from(plans);
             let plan = null;
             if (allPlans.length > 0) {
@@ -176,7 +225,7 @@ apiRoutes.post('/webhook/junglepay', async (c) => {
                 });
             }
 
-            // Criar ou ativar subscription
+            // 4. Criar ou ativar subscription
             const startDate = new Date();
             const durationDays = plan?.duration || 30;
             const endDate = new Date();
@@ -185,28 +234,23 @@ apiRoutes.post('/webhook/junglepay', async (c) => {
             await db.insert(subscriptions).values({
                 userId: user.id,
                 planId: plan?.id || null,
-                externalId: String(id),
+                externalId: externalId,
                 status: 'active',
                 startDate: startDate,
                 endDate: endDate
             });
 
-            // Atualizar status do usuário
+            // 5. Atualizar status do usuário
             await db.update(users)
                 .set({ subscriptionStatus: 1 })
                 .where(eq(users.id, user.id));
 
-            // Atualizar checkout se existir
-            await db.update(checkouts)
-                .set({ status: 'paid' })
-                .where(eq(checkouts.customerEmail, customer.email));
-
-            console.log(`[JunglePay Webhook] Subscription activated for user ${user.id} (Tx: ${id})`);
-            return c.json({ received: true, activated: true });
+            console.log(`[JunglePay Webhook] Subscription activated for user ${user.id} (Tx: ${externalId})`);
+            return c.json({ received: true, activated: true, checkoutUpdated: updatedCheckouts.length > 0 });
         }
 
         if (status === 'waiting_payment') {
-            console.log(`[JunglePay Webhook] Transaction ${id} waiting for payment`);
+            console.log(`[JunglePay Webhook] Transaction ${externalId} waiting for payment`);
             return c.json({ received: true });
         }
 

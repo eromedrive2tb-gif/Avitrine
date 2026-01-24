@@ -17,6 +17,7 @@ export interface PixChargeRequest {
 export interface PixChargeResponse {
   success: true;
   transactionId: number;
+  checkoutId: number; // ID do checkout no nosso banco
   pixQrCode: string;
   pixUrl: string;
   expirationDate: string;
@@ -48,6 +49,7 @@ export interface CardChargeRequest {
 export interface CardChargeResponse {
   success: true;
   transactionId: number;
+  checkoutId: number; // ID do checkout no nosso banco
   status: string;
   cardLastDigits: string;
   cardBrand: string;
@@ -271,9 +273,10 @@ export class JunglePayService {
         };
       }
 
-      // 7. Criar registro do checkout no banco
-      await db.insert(checkouts).values({
+      // 7. Criar registro do checkout no banco com o externalId
+      const [checkout] = await db.insert(checkouts).values({
         planId: request.planId,
+        externalId: String(data.id), // ID da transação na JunglePay
         paymentMethod: 'pix',
         orderBump: request.orderBump,
         totalAmount: request.totalAmount,
@@ -282,12 +285,13 @@ export class JunglePayService {
         customerDocument: this.sanitizeDocument(request.customerDocument),
         customerPhone: this.sanitizePhone(request.customerPhone),
         status: 'pending'
-      });
+      }).returning();
 
       // 8. Retornar dados do PIX
       return {
         success: true,
         transactionId: data.id,
+        checkoutId: checkout.id, // ID do checkout no nosso banco
         pixQrCode: data.pix.qrcode,
         pixUrl: data.secureUrl || '',
         expirationDate: data.pix.expirationDate,
@@ -449,9 +453,10 @@ export class JunglePayService {
         };
       }
 
-      // 7. Criar registro do checkout no banco
-      await db.insert(checkouts).values({
+      // 7. Criar registro do checkout no banco com o externalId
+      const [checkout] = await db.insert(checkouts).values({
         planId: request.planId,
+        externalId: String(data.id), // ID da transação na JunglePay
         paymentMethod: 'credit_card',
         orderBump: request.orderBump,
         totalAmount: request.totalAmount,
@@ -460,12 +465,13 @@ export class JunglePayService {
         customerDocument: this.sanitizeDocument(request.customerDocument),
         customerPhone: this.sanitizePhone(request.customerPhone),
         status: data.status === 'paid' ? 'paid' : 'pending'
-      });
+      }).returning();
 
       // 8. Retornar dados do cartão
       return {
         success: true,
         transactionId: data.id,
+        checkoutId: checkout.id, // ID do checkout no nosso banco
         status: data.status,
         cardLastDigits: data.card?.lastDigits || '****',
         cardBrand: data.card?.brand || 'unknown',
