@@ -234,9 +234,8 @@ export class JunglePayService {
       pix: {
         expiresInDays: 1
       },
-      postbackUrl: process.env.BASE_URL 
-        ? `${process.env.BASE_URL}/api/webhook/junglepay`
-        : undefined
+      // Usar postbackUrl do banco de dados
+      postbackUrl: gateway.postbackUrl || undefined
     };
 
     // 5. Fazer a chamada HTTP para a API JunglePay
@@ -409,9 +408,8 @@ export class JunglePayService {
         }
       },
       items,
-      postbackUrl: process.env.BASE_URL 
-        ? `${process.env.BASE_URL}/api/webhook/junglepay`
-        : undefined
+      // Usar postbackUrl do banco de dados
+      postbackUrl: gateway.postbackUrl || undefined
     };
 
     // 5. Fazer a chamada HTTP para a API JunglePay

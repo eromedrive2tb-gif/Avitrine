@@ -7,6 +7,7 @@ interface PaymentGateway {
   name: string;
   publicKey: string | null;
   secretKey: string | null;
+  postbackUrl: string | null;
   isActive: boolean;
 }
 
@@ -56,7 +57,7 @@ export const AdminFinance: FC<AdminFinanceProps> = ({
         {/* Gateway Selection Card */}
         <div class="p-6 rounded-xl bg-surface border border-white/5 h-fit">
           <h3 class="font-bold text-xl text-white mb-4">Gateway Ativo</h3>
-          <form action="/api/admin/finance/gateway" method="POST">
+          <form action="/api/admin/finance/gateway" method="post">
             <div class="mb-4">
               <label class="block text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">
                 Selecione o Provedor
@@ -90,7 +91,7 @@ export const AdminFinance: FC<AdminFinanceProps> = ({
             )}
           </div>
           
-          <form action="/api/admin/finance/junglepay" method="POST" class="space-y-4">
+          <form action="/api/admin/finance/junglepay" method="post" class="space-y-4">
             <input type="hidden" name="id" value={jungleGateway?.id || ''} />
             
             <div>
@@ -113,6 +114,18 @@ export const AdminFinance: FC<AdminFinanceProps> = ({
                 class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white font-mono text-sm focus:border-primary focus:outline-none transition-colors"
                 placeholder="sk_live_..."
               />
+            </div>
+
+            <div>
+              <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Postback URL (Webhook)</label>
+              <input 
+                type="url" 
+                name="postbackUrl" 
+                value={jungleGateway?.postbackUrl || ''} 
+                class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white font-mono text-sm focus:border-primary focus:outline-none transition-colors"
+                placeholder="https://seusite.com/api/webhook/junglepay"
+              />
+              <p class="text-xs text-gray-500 mt-1">URL para receber notificações de pagamento da JunglePay</p>
             </div>
 
             <div class="pt-4 border-t border-white/5">

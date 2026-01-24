@@ -9,10 +9,11 @@ interface InputProps {
   value?: string;
   required?: boolean;
   readOnly?: boolean;
+  maxLength?: number;
   className?: string;
 }
 
-export const Input: FC<InputProps> = ({ id, name, label, placeholder, type = "text", value, required, readOnly, className = "" }) => {
+export const Input: FC<InputProps> = ({ id, name, label, placeholder, type = "text", value, required, readOnly, maxLength, className = "" }) => {
   return (
     <div class={className}>
       <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2" for={id}>
@@ -27,6 +28,7 @@ export const Input: FC<InputProps> = ({ id, name, label, placeholder, type = "te
         placeholder={placeholder} 
         required={required} 
         readonly={readOnly}
+        maxlength={maxLength}
       />
     </div>
   );

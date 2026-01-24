@@ -247,9 +247,10 @@ apiRoutes.post('/admin/finance/junglepay', async (c) => {
   const body = await c.req.parseBody();
   const pk = body['publicKey'] as string;
   const sk = body['secretKey'] as string;
+  const postbackUrl = body['postbackUrl'] as string;
 
   const result = await db.update(paymentGateways)
-      .set({ publicKey: pk, secretKey: sk })
+      .set({ publicKey: pk, secretKey: sk, postbackUrl: postbackUrl || null })
       .where(eq(paymentGateways.name, 'JunglePay'))
       .returning();
 
@@ -258,6 +259,7 @@ apiRoutes.post('/admin/finance/junglepay', async (c) => {
           name: 'JunglePay',
           publicKey: pk,
           secretKey: sk,
+          postbackUrl: postbackUrl || null,
           isActive: false 
       });
   }

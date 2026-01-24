@@ -149,7 +149,7 @@ export const TransactionsTable: FC<TransactionsTableProps> = ({
         </div>
 
         {/* Filters */}
-        <form method="GET" action="/admin/finance" class="flex flex-wrap gap-3">
+        <form method="get" action="/admin/finance" class="flex flex-wrap gap-3">
           <input 
             type="text" 
             name="search" 

@@ -31,6 +31,7 @@ export const paymentGateways = pgTable('payment_gateways', {
   name: text('name').notNull().unique(), // 'Dias Marketplace' | 'JunglePay'
   publicKey: text('public_key'),
   secretKey: text('secret_key'),
+  postbackUrl: text('postback_url'), // URL de webhook/callback para notificações de pagamento
   isActive: boolean('is_active').default(false),
 });
 

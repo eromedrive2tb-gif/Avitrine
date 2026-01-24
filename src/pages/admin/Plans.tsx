@@ -8,8 +8,8 @@ interface Plan {
   price: number; // in cents
   duration: number; // in days
   checkoutUrl: string | null;
-  acceptsPix?: boolean;
-  acceptsCard?: boolean;
+  acceptsPix?: boolean | null;
+  acceptsCard?: boolean | null;
 }
 
 interface AdminPlansProps {
@@ -29,7 +29,7 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway }) => {
 
   const renderPlanCard = (plan: any, title: string) => (
     <div class="p-6 rounded-xl bg-surface border border-white/5 relative group hover:border-primary/50 transition-colors">
-      <form action="/api/admin/plans/update" method="POST" class="space-y-4">
+      <form action="/api/admin/plans/update" method="post" class="space-y-4">
         <input type="hidden" name="id" value={plan.id} />
         
         <div class="flex justify-between items-center mb-4">
