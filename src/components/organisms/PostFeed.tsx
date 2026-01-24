@@ -152,9 +152,9 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName, 
                             return itemHtml;
                         }).join('');
                         
-                        // Adicionar blur overlay se não for assinante
+                        // Adicionar blur overlay se não for assinante - otimizado para performance
                         if (!isSubscribed && mediaItems.length > 0) {
-                            postHtml += '<div class="premium-blur-overlay" style="background-image: url(\'' + mediaItems[0].url + '\');"></div>';
+                            postHtml += '<div class="premium-blur-overlay" style="background-image: url(\'' + mediaItems[0].url + '\');" aria-hidden="true"></div>';
                         }
 
                         if (mediaItems.length > 1) {

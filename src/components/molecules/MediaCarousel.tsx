@@ -78,6 +78,7 @@ export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId, isBl
         <div 
           class="premium-blur-overlay"
           style={`background-image: url('${mediaItems[0]?.url || ''}');`}
+          aria-hidden="true"
         ></div>
       )}
 

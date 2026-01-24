@@ -3531,12 +3531,13 @@
   background-image: inherit;
   background-size: cover;
   background-position: center;
-  filter: blur(30px) saturate(30%) brightness(0.7) !important;
-  transform: translateZ(0) scale(1.15) !important;
-  will-change: filter, transform;
-  -webkit-filter: blur(30px) saturate(30%) brightness(0.7) !important;
-  -webkit-transform: translateZ(0) scale(1.15) !important;
+  filter: blur(18px) saturate(15%) brightness(0.5);
+  transform: translateZ(0) scale(1.08);
+  -webkit-filter: blur(18px) saturate(15%) brightness(0.5);
+  -webkit-transform: translateZ(0) scale(1.08);
   pointer-events: none;
+  isolation: isolate;
+  content-visibility: auto;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
