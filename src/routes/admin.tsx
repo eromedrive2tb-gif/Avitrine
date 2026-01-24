@@ -13,13 +13,137 @@ import { AdminSupport } from '../pages/admin/Support';
 import { AdminFinance } from '../pages/admin/Finance';
 import { AdminClients } from '../pages/admin/Clients';
 import { WhitelabelDbService } from '../services/whitelabel';
+import { AdsService, type AdStatus, type AdPlacement, type AdType } from '../services/ads';
 
 const adminRoutes = new Hono();
 
 adminRoutes.get('/', (c) => c.html(<AdminDashboard />));
 adminRoutes.get('/models', (c) => c.html(<AdminModels />));
-adminRoutes.get('/ads', (c) => c.html(<AdminAds />));
+
+// === ADS ROUTES ===
+adminRoutes.get('/ads', async (c) => {
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const statusFilter = c.req.query('status') as AdStatus | undefined;
+  const placementFilter = c.req.query('placement') as AdPlacement | undefined;
+  
+  const result = await AdsService.list(page, 20, { 
+    status: statusFilter, 
+    placement: placementFilter 
+  });
+  
+  // Formatar dados para exibição
+  const formattedAds = result.data.map(ad => ({
+    id: ad.id,
+    name: ad.name,
+    type: AdsService.formatTypeLabel(ad.type),
+    placement: AdsService.formatPlacementLabel(ad.placement),
+    impressions: ad.impressions?.toLocaleString('pt-BR') || '0',
+    clicks: ad.clicks?.toLocaleString('pt-BR') || '0',
+    status: ad.status === 'active' ? 'Active' : ad.status === 'paused' ? 'Paused' : 'Draft'
+  }));
+  
+  return c.html(
+    <AdminAds 
+      ads={formattedAds} 
+      pagination={{
+        page: result.page,
+        totalPages: result.totalPages,
+        total: result.total
+      }}
+      filters={{ status: statusFilter, placement: placementFilter }}
+    />
+  );
+});
+
 adminRoutes.get('/ads/new', (c) => c.html(<AdminAdsCreate />));
+
+adminRoutes.get('/ads/:id/edit', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const ad = await AdsService.getById(id);
+  
+  if (!ad) {
+    return c.redirect('/admin/ads?error=not_found');
+  }
+  
+  return c.html(<AdminAdsCreate ad={ad} isEditing={true} />);
+});
+
+adminRoutes.post('/ads/create', async (c) => {
+  const body = await c.req.parseBody();
+  
+  try {
+    await AdsService.create({
+      name: body['name'] as string || body['title'] as string,
+      type: body['type'] as AdType || 'banner',
+      placement: body['placement'] as AdPlacement || 'home_top',
+      status: body['status'] as AdStatus || 'draft',
+      title: body['title'] as string,
+      subtitle: body['subtitle'] as string,
+      ctaText: body['ctaText'] as string,
+      imageUrl: body['imageUrl'] as string,
+      link: body['link'] as string || '#',
+      category: body['category'] as string,
+      priority: parseInt(body['priority'] as string) || 0,
+    });
+    
+    return c.redirect('/admin/ads?success=created');
+  } catch (e: any) {
+    console.error('[Ads Create Error]', e);
+    return c.redirect('/admin/ads?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/ads/:id/update', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const body = await c.req.parseBody();
+  
+  try {
+    await AdsService.update({
+      id,
+      name: body['name'] as string || body['title'] as string,
+      type: body['type'] as AdType,
+      placement: body['placement'] as AdPlacement,
+      status: body['status'] as AdStatus,
+      title: body['title'] as string,
+      subtitle: body['subtitle'] as string,
+      ctaText: body['ctaText'] as string,
+      imageUrl: body['imageUrl'] as string,
+      link: body['link'] as string,
+      category: body['category'] as string,
+      priority: parseInt(body['priority'] as string) || 0,
+    });
+    
+    return c.redirect('/admin/ads?success=updated');
+  } catch (e: any) {
+    console.error('[Ads Update Error]', e);
+    return c.redirect('/admin/ads?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/ads/:id/toggle', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  
+  try {
+    await AdsService.toggleStatus(id);
+    return c.redirect('/admin/ads?success=toggled');
+  } catch (e: any) {
+    console.error('[Ads Toggle Error]', e);
+    return c.redirect('/admin/ads?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/ads/:id/delete', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  
+  try {
+    await AdsService.delete(id);
+    return c.redirect('/admin/ads?success=deleted');
+  } catch (e: any) {
+    console.error('[Ads Delete Error]', e);
+    return c.redirect('/admin/ads?error=' + encodeURIComponent(e.message));
+  }
+});
+
 adminRoutes.get('/plans', async (c) => {
   // Ensure default plans exist
   const existingPlans = await db.select().from(plans);

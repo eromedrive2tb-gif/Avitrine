@@ -2,13 +2,18 @@ import { FC } from 'hono/jsx';
 import { Layout } from '../components/templates/Layout';
 import { Button } from '../components/atoms/Button';
 import { AuthHero } from '../components/organisms/AuthHero';
+import type { Ad } from '../services/ads';
 
 interface AuthPageProps {
   type: 'login' | 'register';
+  ads?: Ad[];
 }
 
-export const AuthPage: FC<AuthPageProps> = ({ type }) => {
+export const AuthPage: FC<AuthPageProps> = ({ type, ads = [] }) => {
   const isLogin = type === 'login';
+  
+  // Get first ad
+  const adData = ads[0];
   
   return (
     <Layout title={isLogin ? "Login - CreatorFlix" : "Acesso VIP - CreatorFlix"}>
@@ -84,22 +89,32 @@ export const AuthPage: FC<AuthPageProps> = ({ type }) => {
               </p>
             </div>
 
-            {/* AD BANNER (Bottom of Form) */}
-            <div class="mt-8">
-               <a href="#" class="block relative rounded-lg overflow-hidden border border-[#FFD700]/30 group">
-                  <div class="bg-gradient-to-r from-[#1a1a1a] to-black p-4 flex items-center justify-between">
-                     <div>
-                        <span class="text-[10px] text-[#FFD700] border border-[#FFD700] px-1 font-bold uppercase">Parceiro</span>
-                        <h5 class="text-white font-bold mt-1">Cassino Royalle</h5>
-                        <p class="text-xs text-gray-400">Bônus de boas-vindas ativo.</p>
-                     </div>
-                     <span class="text-2xl">🎰</span>
-                  </div>
-                  <div class="h-1 w-full bg-[#FFD700]/20">
-                     <div class="h-full bg-[#FFD700] w-2/3"></div>
-                  </div>
-               </a>
-            </div>
+            {/* AD BANNER (Bottom of Form) - Dynamic */}
+            {adData && (
+              <div class="mt-8">
+                 <a 
+                   href={adData.link} 
+                   class="block relative rounded-lg overflow-hidden border border-[#FFD700]/30 group"
+                   onclick={`fetch('/api/ads/${adData.id}/click', {method:'post'})`}
+                 >
+                    <div class="bg-gradient-to-r from-[#1a1a1a] to-black p-4 flex items-center justify-between">
+                       <div>
+                          <span class="text-[10px] text-[#FFD700] border border-[#FFD700] px-1 font-bold uppercase">Parceiro</span>
+                          <h5 class="text-white font-bold mt-1">{adData.title}</h5>
+                          <p class="text-xs text-gray-400">{adData.subtitle || adData.ctaText}</p>
+                       </div>
+                       {adData.imageUrl ? (
+                         <img src={adData.imageUrl} class="w-12 h-12 rounded object-cover" />
+                       ) : (
+                         <span class="text-2xl">🎰</span>
+                       )}
+                    </div>
+                    <div class="h-1 w-full bg-[#FFD700]/20">
+                       <div class="h-full bg-[#FFD700] w-2/3"></div>
+                    </div>
+                 </a>
+              </div>
+            )}
 
             {/* Trust Badges */}
             <div class="mt-8 flex justify-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all">

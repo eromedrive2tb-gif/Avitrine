@@ -6,15 +6,21 @@ import { NativeAdBlock } from '../components/molecules/NativeAdBlock';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { Pagination } from '../components/molecules/Pagination';
 import { MockService } from '../services/mock';
+import type { Ad } from '../services/ads';
 
 interface ModelsPageProps {
   models: any[];
   pagination: any;
   user?: any;
+  ads?: {
+    models_grid?: Ad[];
+    sidebar?: Ad[];
+  };
 }
 
-export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user }) => {
-  const sponsoredModels = MockService.getVipModels();
+export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user, ads = {} }) => {
+  // Get grid ads - exclusively diamond_block for this placement
+  const gridAds = (ads.models_grid || []).filter(ad => ad.type === 'diamond_block');
 
   return (
     <Layout title="Explorar Modelos - CreatorFlix" user={user}>
@@ -22,14 +28,21 @@ export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user }) =>
 
       <div class="max-w-[1600px] mx-auto px-4 md:px-6 py-6 min-h-screen">
           
-          {/* Top Banner Ad */}
-          <AdBanner 
-                title="Acesso VIP Limitado" 
-                subtitle="Desbloqueie todas as modelos por apenas R$ 1,99 no primeiro mês." 
-                ctaText="Aproveitar" 
-                link="/plans"
-                imageUrl="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=1200&q=80"
-          />
+          {/* Top Featured Ads - Native Block */}
+          {gridAds.length > 0 && (
+            <div class="mb-8">
+              <NativeAdBlock 
+                title={gridAds[0].title || "Diamond Selection"} 
+                models={gridAds.slice(0, 4).map(ad => ({
+                  name: ad.title,
+                  imageUrl: ad.imageUrl || '',
+                  isPromoted: true,
+                  category: ad.category || 'VIP',
+                  link: ad.link
+                }))}
+              />
+            </div>
+          )}
 
           {/* Grid Section */}
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -41,11 +54,6 @@ export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user }) =>
                     thumbnailUrl={m.thumbnailUrl}
                  />
              ))}
-          </div>
-
-          {/* Native Ad Block Separator */}
-          <div class="py-6">
-             <NativeAdBlock title="Recomendado para Você" models={sponsoredModels} />
           </div>
 
           <Pagination {...pagination} />

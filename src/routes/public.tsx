@@ -8,6 +8,7 @@ import { AuthPage } from '../pages/Auth';
 import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 import { WhitelabelDbService } from '../services/whitelabel';
+import { AdsService } from '../services/ads';
 import { db } from '../db';
 import { plans, users, subscriptions, paymentGateways, orderBumps } from '../db/schema';
 import { eq, asc } from 'drizzle-orm';
@@ -30,17 +31,15 @@ async function getUser(c: any) {
             where: eq(users.id, payload.id as number),
             with: {
                 subscription: {
-                    where: eq(subscriptions.status, 'active'),
                     with: {
                         plan: true
                     }
                 }
             }
-        });
+        }) as any;
 
         if (user && user.subscription && Array.isArray(user.subscription)) {
-            // @ts-ignore - drizzle with multiple might return array
-            user.subscription = user.subscription[0];
+            user.subscription = user.subscription.find((s: any) => s.status === 'active') || user.subscription[0];
         }
 
         return user || null;
@@ -54,12 +53,17 @@ async function getUser(c: any) {
 publicRoutes.get('/', async (c) => {
   const user = await getUser(c);
   try {
-    const signedModels = await WhitelabelDbService.getTopModelsWithThumbnails(1, 20);
+    // Buscar modelos e anúncios em paralelo
+    const [signedModels, homeAds] = await Promise.all([
+      WhitelabelDbService.getTopModelsWithThumbnails(1, 20),
+      AdsService.getActiveByPlacements(['home_top', 'home_middle', 'home_bottom', 'sidebar', 'feed_mix'])
+    ]);
+    
     const safeModels = signedModels.map(m => ({ ...m, postCount: m.postCount || 0 }));
-    return c.html(<HomePage models={safeModels} user={user} />);
+    return c.html(<HomePage models={safeModels} user={user} ads={homeAds} />);
   } catch (e) {
     console.error("Erro na Home:", e);
-    return c.html(<HomePage models={[]} user={user} />);
+    return c.html(<HomePage models={[]} user={user} ads={{}} />);
   }
 });
 
@@ -71,22 +75,31 @@ publicRoutes.get('/models/:slug', async (c) => {
 
   if (!model) return c.notFound();
 
-  // Busca os primeiros 20 posts com thumbnails assinadas
-  const formattedPosts = await WhitelabelDbService.getModelPosts(model.id, 1, 20);
+  // Busca os primeiros 20 posts com thumbnails assinadas e anúncios
+  const [formattedPosts, profileAds] = await Promise.all([
+    WhitelabelDbService.getModelPosts(model.id, 1, 20),
+    AdsService.getActiveByPlacements(['model_profile', 'sidebar'])
+  ]);
 
-  return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} user={user} />);
+  return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} user={user} ads={profileAds} />);
 });
 
 // Outras rotas...
 publicRoutes.get('/models', async (c) => {
   const user = await getUser(c);
   const page = parseInt(c.req.query('page') || '1') || 1;
-  const result = await WhitelabelDbService.listModels(page, 20);
+  
+  // Buscar modelos e anúncios em paralelo
+  const [result, modelsAds] = await Promise.all([
+    WhitelabelDbService.listModels(page, 20),
+    AdsService.getActiveByPlacements(['models_grid', 'sidebar'])
+  ]);
   
   return c.html(
     <ModelsPage 
       models={result.data} 
       user={user}
+      ads={modelsAds}
       pagination={{
         currentPage: result.page,
         totalPages: result.totalPages,
@@ -171,7 +184,14 @@ publicRoutes.get('/checkout', async (c) => {
   return c.html(<CheckoutPage plan={plan} user={user} gateway={activeGateway} orderBumps={activeOrderBumps} />);
 });
 
-publicRoutes.get('/login', (c) => c.html(<AuthPage type="login" />));
-publicRoutes.get('/register', (c) => c.html(<AuthPage type="register" />));
+publicRoutes.get('/login', async (c) => {
+  const loginAds = await AdsService.getActiveByPlacement('login', 3);
+  return c.html(<AuthPage type="login" ads={loginAds} />);
+});
+
+publicRoutes.get('/register', async (c) => {
+  const registerAds = await AdsService.getActiveByPlacement('register', 3);
+  return c.html(<AuthPage type="register" ads={registerAds} />);
+});
 
 export default publicRoutes;

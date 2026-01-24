@@ -190,3 +190,46 @@ export const whitelabelMediaRelations = relations(whitelabelMedia, ({ one }) => 
     references: [whitelabelPosts.id],
   }),
 }));
+
+// --- ADS (ANÚNCIOS) ---
+
+export const ads = pgTable('ads', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(), // Nome da campanha
+  
+  // Tipo de anúncio
+  type: text('type', { 
+    enum: ['diamond', 'diamond_block', 'banner', 'spot', 'hero'] 
+  }).notNull().default('banner'),
+  
+  // Posicionamento/Placement
+  placement: text('placement', {
+    enum: ['home_top', 'home_middle', 'home_bottom', 'sidebar', 'feed_mix', 'models_grid', 'model_profile', 'login', 'register', 'feed_model']
+  }).notNull().default('home_top'),
+  
+  // Status do anúncio
+  status: text('status', {
+    enum: ['active', 'paused', 'draft']
+  }).notNull().default('draft'),
+  
+  // Conteúdo do anúncio
+  title: text('title').notNull(),
+  subtitle: text('subtitle'),
+  ctaText: text('cta_text'),
+  imageUrl: text('image_url'),
+  link: text('link').notNull(),
+  category: text('category'), // Para hero carousel
+  
+  // Estatísticas
+  impressions: integer('impressions').default(0),
+  clicks: integer('clicks').default(0),
+  
+  // Configurações de exibição
+  priority: integer('priority').default(0), // Maior = maior prioridade
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  
+  // Timestamps
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
+});

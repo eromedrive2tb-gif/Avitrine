@@ -9,6 +9,7 @@ import { WhitelabelDbService } from '../services/whitelabel';
 import { AuthService } from '../services/auth';
 import { JunglePayService, type PixChargeRequest, type PixChargeResult, type CardChargeRequest, type CardChargeResult } from '../services/junglepay';
 import { SSEManager } from '../services/sse';
+import { AdsService, type AdPlacement } from '../services/ads';
 
 const apiRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -852,6 +853,92 @@ apiRoutes.post('/order-bumps/by-ids', async (c) => {
     return c.json({ success: true, data: bumps, total });
   } catch (e: any) {
     console.error("[OrderBumps] ByIds Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// === ADS API ROUTES ===
+
+// Buscar anúncios ativos por placement (público)
+apiRoutes.get('/ads/placement/:placement', async (c) => {
+  try {
+    const placement = c.req.param('placement') as AdPlacement;
+    const limit = parseInt(c.req.query('limit') || '5');
+    
+    const ads = await AdsService.getActiveByPlacement(placement, limit);
+    
+    // Track impressions para cada anúncio retornado
+    for (const ad of ads) {
+      // Non-blocking impression tracking
+      AdsService.trackImpression(ad.id).catch(() => {});
+    }
+    
+    return c.json({ success: true, data: ads });
+  } catch (e: any) {
+    console.error("[Ads] Placement Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Buscar anúncios ativos por múltiplos placements (público)
+apiRoutes.post('/ads/placements', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { placements } = body as { placements: AdPlacement[] };
+    
+    if (!placements || !Array.isArray(placements)) {
+      return c.json({ success: false, error: 'Placements array required' }, 400);
+    }
+    
+    const adsMap = await AdsService.getActiveByPlacements(placements);
+    
+    // Track impressions
+    for (const placement of placements) {
+      const ads = adsMap[placement] || [];
+      for (const ad of ads) {
+        AdsService.trackImpression(ad.id).catch(() => {});
+      }
+    }
+    
+    return c.json({ success: true, data: adsMap });
+  } catch (e: any) {
+    console.error("[Ads] Placements Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Track click (pixel de clique)
+apiRoutes.post('/ads/:id/click', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    
+    if (!id || isNaN(id)) {
+      return c.json({ success: false, error: 'Invalid ad ID' }, 400);
+    }
+    
+    await AdsService.trackClick(id);
+    
+    return c.json({ success: true });
+  } catch (e: any) {
+    console.error("[Ads] Click Track Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Track impression manually (alternativa ao auto-track)
+apiRoutes.post('/ads/:id/impression', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    
+    if (!id || isNaN(id)) {
+      return c.json({ success: false, error: 'Invalid ad ID' }, 400);
+    }
+    
+    await AdsService.trackImpression(id);
+    
+    return c.json({ success: true });
+  } catch (e: any) {
+    console.error("[Ads] Impression Track Error:", e);
     return c.json({ success: false, error: e.message }, 500);
   }
 });

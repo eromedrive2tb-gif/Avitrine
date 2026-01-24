@@ -1,17 +1,20 @@
 import { FC } from 'hono/jsx';
 
 interface AdBannerProps {
-  imageUrl?: string; // Optional custom image
+  imageUrl?: string | null;
   title: string;
   subtitle: string;
   ctaText: string;
   link: string;
+  adId?: number; // For click tracking
 }
 
 // Type B: Banner Ad (Faixa Horizontal)
-export const AdBanner: FC<AdBannerProps> = ({ title, subtitle, ctaText, link, imageUrl }) => {
+export const AdBanner: FC<AdBannerProps> = ({ title, subtitle, ctaText, link, imageUrl, adId }) => {
+  const handleClick = adId ? `fetch('/api/ads/${adId}/click', {method:'POST'})` : '';
+  
   return (
-    <a href={link} class="block my-6 group">
+    <a href={link} class="block my-6 group" onclick={handleClick}>
       <div class="relative w-full h-24 md:h-32 rounded-lg overflow-hidden bg-gradient-to-r from-[#1a1a1a] to-[#050505] border border-white/10 hover:border-primary/50 transition-all">
         {imageUrl && (
             <img src={imageUrl} class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity" />

@@ -71,6 +71,13 @@
       "when": 1769275541951,
       "tag": "0009_order_bumps",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769287613695,
+      "tag": "0010_ads_table",
+      "breakpoints": true
     }
   ]
 }

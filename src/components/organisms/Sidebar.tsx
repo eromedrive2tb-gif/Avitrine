@@ -1,7 +1,12 @@
 import { FC } from 'hono/jsx';
 import { AdSpotSmall } from '../molecules/AdSpotSmall';
+import { AdsService } from '../../services/ads';
 
-export const Sidebar: FC = () => {
+export const Sidebar: FC = async () => {
+  // Fetch sidebar ads from database
+  const sidebarAds = await AdsService.getActiveByPlacement('sidebar', 1);
+  const activeSpotAd = sidebarAds.find(ad => ad.type === 'spot');
+
   const menuItems = [
     { 
       label: 'Home', 
@@ -104,12 +109,15 @@ export const Sidebar: FC = () => {
           </div>
         </div>
 
-        {/* Ad Spot Small */}
-        <AdSpotSmall 
-          title="BET WIN"
-          buttonText="BÔNUS DE R$500"
-          link="#"
-        />
+        {/* Ad Spot Small - Real Data from DB */}
+        {activeSpotAd && (
+          <AdSpotSmall 
+            title={activeSpotAd.title}
+            buttonText={activeSpotAd.ctaText || 'SAIBA MAIS'}
+            link={activeSpotAd.link}
+            imageUrl={activeSpotAd.imageUrl || undefined}
+          />
+        )}
 
       </aside>
 
