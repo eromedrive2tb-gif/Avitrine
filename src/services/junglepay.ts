@@ -1,8 +1,14 @@
 import { db } from '../db';
-import { paymentGateways, plans, checkouts } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { paymentGateways, plans, checkouts, orderBumps } from '../db/schema';
+import { eq, inArray } from 'drizzle-orm';
 
 // --- Types ---
+
+interface OrderBumpItem {
+  id: number;
+  name: string;
+  price: number;
+}
 
 export interface PixChargeRequest {
   customerName: string;
@@ -11,7 +17,8 @@ export interface PixChargeRequest {
   customerPhone: string;
   totalAmount: number; // em centavos
   planId: number;
-  orderBump: boolean;
+  orderBump: boolean; // Retrocompatibilidade
+  orderBumpIds?: number[]; // IDs das order bumps selecionadas
 }
 
 export interface PixChargeResponse {
@@ -41,7 +48,8 @@ export interface CardChargeRequest {
   customerPhone: string;
   totalAmount: number; // em centavos
   planId: number;
-  orderBump: boolean;
+  orderBump: boolean; // Retrocompatibilidade
+  orderBumpIds?: number[]; // IDs das order bumps selecionadas
   cardHash: string; // Token gerado pelo JunglePagamentos.encrypt()
   installments: number;
 }
@@ -142,6 +150,20 @@ export class JunglePayService {
   }
 
   /**
+   * Busca order bumps por IDs
+   */
+  static async getOrderBumpsByIds(ids: number[]): Promise<OrderBumpItem[]> {
+    if (!ids || ids.length === 0) return [];
+    
+    const bumps = await db
+      .select({ id: orderBumps.id, name: orderBumps.name, price: orderBumps.price })
+      .from(orderBumps)
+      .where(inArray(orderBumps.id, ids));
+    
+    return bumps;
+  }
+
+  /**
    * Cria uma cobrança PIX via JunglePay
    */
   static async createPixCharge(request: PixChargeRequest): Promise<PixChargeResult> {
@@ -210,8 +232,19 @@ export class JunglePayService {
       }
     ];
 
-    // Adicionar order bump se incluído
-    if (request.orderBump) {
+    // Adicionar order bumps selecionadas (nova lógica com múltiplas bumps)
+    if (request.orderBumpIds && request.orderBumpIds.length > 0) {
+      const selectedBumps = await this.getOrderBumpsByIds(request.orderBumpIds);
+      for (const bump of selectedBumps) {
+        items.push({
+          title: bump.name,
+          unitPrice: bump.price,
+          quantity: 1,
+          tangible: false
+        });
+      }
+    } else if (request.orderBump) {
+      // Retrocompatibilidade: order bump única legada
       items.push({
         title: 'Acesso Antecipado Premium',
         unitPrice: 1990, // R$ 19,90
@@ -278,7 +311,8 @@ export class JunglePayService {
         planId: request.planId,
         externalId: String(data.id), // ID da transação na JunglePay
         paymentMethod: 'pix',
-        orderBump: request.orderBump,
+        orderBump: request.orderBump || (request.orderBumpIds && request.orderBumpIds.length > 0),
+        orderBumpIds: request.orderBumpIds || null,
         totalAmount: request.totalAmount,
         customerName: request.customerName,
         customerEmail: request.customerEmail,
@@ -385,8 +419,19 @@ export class JunglePayService {
       }
     ];
 
-    // Adicionar order bump se incluído
-    if (request.orderBump) {
+    // Adicionar order bumps selecionadas (nova lógica com múltiplas bumps)
+    if (request.orderBumpIds && request.orderBumpIds.length > 0) {
+      const selectedBumps = await this.getOrderBumpsByIds(request.orderBumpIds);
+      for (const bump of selectedBumps) {
+        items.push({
+          title: bump.name,
+          unitPrice: bump.price,
+          quantity: 1,
+          tangible: false
+        });
+      }
+    } else if (request.orderBump) {
+      // Retrocompatibilidade: order bump única legada
       items.push({
         title: 'Acesso Antecipado Premium',
         unitPrice: 1990, // R$ 19,90
@@ -458,7 +503,8 @@ export class JunglePayService {
         planId: request.planId,
         externalId: String(data.id), // ID da transação na JunglePay
         paymentMethod: 'credit_card',
-        orderBump: request.orderBump,
+        orderBump: request.orderBump || (request.orderBumpIds && request.orderBumpIds.length > 0),
+        orderBumpIds: request.orderBumpIds || null,
         totalAmount: request.totalAmount,
         customerName: request.customerName,
         customerEmail: request.customerEmail,

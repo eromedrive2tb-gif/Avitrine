@@ -1,13 +1,25 @@
 import { FC } from 'hono/jsx';
 
+interface OrderBumpItem {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  isActive: boolean | null;
+  imageUrl: string | null;
+  displayOrder: number | null;
+}
+
 interface OrderSummaryProps {
   planName: string;
   planDuration: number;
   priceFormatted: string;
-  orderBumpFormatted: string;
+  orderBumps?: OrderBumpItem[];
 }
 
-export const OrderSummary: FC<OrderSummaryProps> = ({ planName, planDuration, priceFormatted, orderBumpFormatted }) => {
+export const OrderSummary: FC<OrderSummaryProps> = ({ planName, planDuration, priceFormatted, orderBumps = [] }) => {
+  const activeBumps = orderBumps.filter(b => b.isActive);
+  
   return (
     <div class="lg:col-span-4">
         <div class="glass-card p-6 rounded-2xl border border-white/10 sticky top-28">
@@ -30,10 +42,24 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ planName, planDuration, pr
                 <span>Plano Selecionado</span>
                 <span class="text-white">{priceFormatted}</span>
             </div>
-            <div id="bump-summary" class="flex justify-between text-gold hidden animate-[fadeIn_0.3s_ease]">
-                <span>Grupo VIP (Telegram)</span>
-                <span class="font-bold">{orderBumpFormatted}</span>
+            
+            {/* Container para order bumps selecionadas - será atualizado via JS */}
+            <div id="selected-bumps-container">
+              {activeBumps.map((bump) => (
+                <div 
+                  id={`bump-summary-${bump.id}`} 
+                  class="bump-summary-item flex justify-between text-gold hidden animate-[fadeIn_0.3s_ease]"
+                  data-bump-id={bump.id}
+                  data-bump-price={bump.price}
+                >
+                  <span class="truncate max-w-[150px]">{bump.name}</span>
+                  <span class="font-bold">
+                    {(bump.price / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              ))}
             </div>
+            
             <div class="flex justify-between text-green-400 font-medium">
                 <span>Desconto Aplicado</span>
                 <span>R$ 0,00</span>

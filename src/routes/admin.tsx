@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { db } from '../db';
-import { plans, supportContacts, paymentGateways, checkouts, subscriptions, users } from '../db/schema';
-import { eq, desc, like, or, sql } from 'drizzle-orm';
+import { plans, supportContacts, paymentGateways, checkouts, subscriptions, users, orderBumps } from '../db/schema';
+import { eq, desc, like, or, sql, asc } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminModels } from '../pages/admin/Models';
 import { AdminAds } from '../pages/admin/Ads';
@@ -45,7 +45,13 @@ adminRoutes.get('/plans', async (c) => {
   const gateways = await db.select().from(paymentGateways).where(eq(paymentGateways.isActive, true));
   const activeGateway = gateways[0]?.name || 'Dias Marketplace';
   
-  return c.html(<AdminPlans plans={allPlans} activeGateway={activeGateway} />);
+  // Buscar order bumps
+  const allOrderBumps = await db
+    .select()
+    .from(orderBumps)
+    .orderBy(asc(orderBumps.displayOrder), asc(orderBumps.id));
+  
+  return c.html(<AdminPlans plans={allPlans} activeGateway={activeGateway} orderBumps={allOrderBumps} />);
 });
 
 adminRoutes.get('/finance', async (c) => {

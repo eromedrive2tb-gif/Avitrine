@@ -4,12 +4,22 @@ import { OrderBump } from '../molecules/OrderBump';
 import { Input } from '../atoms/Input';
 import { Spinner } from '../atoms/Spinner';
 
+interface OrderBumpItem {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  isActive: boolean | null;
+  imageUrl: string | null;
+  displayOrder: number | null;
+}
+
 interface StepPaymentProps {
-  orderBumpFormatted: string;
+  orderBumps?: OrderBumpItem[];
   planPrice?: number; // Preço em centavos para calcular parcelas
 }
 
-export const StepPayment: FC<StepPaymentProps> = ({ orderBumpFormatted, planPrice = 0 }) => {
+export const StepPayment: FC<StepPaymentProps> = ({ orderBumps = [], planPrice = 0 }) => {
   // Gera opções de parcelas (1x a 12x)
   const installmentOptions = Array.from({ length: 12 }, (_, i) => {
     const installment = i + 1;
@@ -67,7 +77,7 @@ export const StepPayment: FC<StepPaymentProps> = ({ orderBumpFormatted, planPric
                 </div>
             </div>
 
-            <OrderBump priceFormatted={orderBumpFormatted} />
+            <OrderBump orderBumps={orderBumps} />
 
             <div class="flex justify-between items-center mt-8 pt-6 border-t border-white/5">
                 <button type="button" onclick="goToStep(1)" class="text-gray-400 hover:text-white font-medium text-sm transition-colors uppercase tracking-wide">Voltar</button>

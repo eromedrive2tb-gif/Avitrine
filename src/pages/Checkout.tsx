@@ -5,6 +5,16 @@ import { StepPayment } from '../components/organisms/StepPayment';
 import { StepSuccess } from '../components/organisms/StepSuccess';
 import { OrderSummary } from '../components/organisms/OrderSummary';
 
+interface OrderBumpItem {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  isActive: boolean | null;
+  imageUrl: string | null;
+  displayOrder: number | null;
+}
+
 interface CheckoutPageProps {
   plan: {
     id: number;
@@ -16,13 +26,15 @@ interface CheckoutPageProps {
   gateway?: {
     publicKey?: string | null;
   };
+  orderBumps?: OrderBumpItem[];
 }
 
-export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => {
+export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway, orderBumps = [] }) => {
   const formattedPrice = (plan.price / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const orderBumpPrice = 1990;
-  const orderBumpFormatted = (orderBumpPrice / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const junglePayPublicKey = gateway?.publicKey || '';
+  
+  // Serializar order bumps para o JavaScript do checkout
+  const orderBumpsJson = JSON.stringify(orderBumps.filter(b => b.isActive));
 
   return (
     <html lang="pt-BR" class="dark">
@@ -46,10 +58,10 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => 
       </head>
       <body 
         class="min-h-screen bg-[#050505] selection:bg-primary selection:text-white overflow-x-hidden" 
-        onload={`initCheckout(${plan.price}, ${orderBumpPrice}, '${junglePayPublicKey}')`}
+        onload={`initCheckout(${plan.price}, '${junglePayPublicKey}', ${orderBumpsJson})`}
         data-plan-price={plan.price}
-        data-bump-price={orderBumpPrice}
         data-junglepay-pk={junglePayPublicKey}
+        data-order-bumps={orderBumpsJson}
       >
         
         {/* Ambient Glow */}
@@ -65,7 +77,7 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => 
               
               <StepIdentification user={user} />
               
-              <StepPayment orderBumpFormatted={orderBumpFormatted} planPrice={plan.price} />
+              <StepPayment orderBumps={orderBumps} planPrice={plan.price} />
               
               <StepSuccess />
 
@@ -75,8 +87,8 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway }) => 
           <OrderSummary 
             planName={plan.name} 
             planDuration={plan.duration} 
-            priceFormatted={formattedPrice} 
-            orderBumpFormatted={orderBumpFormatted} 
+            priceFormatted={formattedPrice}
+            orderBumps={orderBumps}
           />
 
         </main>

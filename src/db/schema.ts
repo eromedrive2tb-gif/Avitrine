@@ -119,6 +119,7 @@ export const checkouts = pgTable('checkouts', {
   status: text('status', { enum: ['pending', 'paid', 'failed', 'abandoned'] }).default('pending'),
   paymentMethod: text('payment_method', { enum: ['pix', 'credit_card'] }),
   orderBump: boolean('order_bump').default(false),
+  orderBumpIds: json('order_bump_ids'), // Array de IDs das order bumps selecionadas
   totalAmount: integer('total_amount').notNull(), // Em centavos, valor final
   customerName: text('customer_name'),
   customerEmail: text('customer_email'),
@@ -126,6 +127,17 @@ export const checkouts = pgTable('checkouts', {
   customerPhone: text('customer_phone'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
+});
+
+export const orderBumps = pgTable('order_bumps', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  price: integer('price').notNull(), // Em centavos
+  isActive: boolean('is_active').default(true),
+  imageUrl: text('image_url'),
+  displayOrder: integer('display_order').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // --- RELATIONS ---

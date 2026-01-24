@@ -9,8 +9,8 @@ import { ModelProfilePage } from '../pages/ModelProfile';
 import { PostDetailPage } from '../pages/PostDetail';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { db } from '../db';
-import { plans, users, subscriptions, paymentGateways } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { plans, users, subscriptions, paymentGateways, orderBumps } from '../db/schema';
+import { eq, asc } from 'drizzle-orm';
 
 import { CheckoutPage } from '../pages/Checkout';
 
@@ -161,7 +161,14 @@ publicRoutes.get('/checkout', async (c) => {
       where: eq(paymentGateways.isActive, true)
   });
 
-  return c.html(<CheckoutPage plan={plan} user={user} gateway={activeGateway} />);
+  // Buscar order bumps ativas ordenadas
+  const activeOrderBumps = await db
+    .select()
+    .from(orderBumps)
+    .where(eq(orderBumps.isActive, true))
+    .orderBy(asc(orderBumps.displayOrder), asc(orderBumps.id));
+
+  return c.html(<CheckoutPage plan={plan} user={user} gateway={activeGateway} orderBumps={activeOrderBumps} />);
 });
 
 publicRoutes.get('/login', (c) => c.html(<AuthPage type="login" />));

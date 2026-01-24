@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { setCookie, getCookie } from 'hono/cookie';
 import { sign, verify } from 'hono/jwt';
 import { db } from '../db';
-import { plans, subscriptions, users, paymentGateways, checkouts } from '../db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { plans, subscriptions, users, paymentGateways, checkouts, orderBumps } from '../db/schema';
+import { eq, sql, asc, inArray } from 'drizzle-orm';
 import { AdminService } from '../services/admin';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AuthService } from '../services/auth';
@@ -42,7 +42,7 @@ apiRoutes.post('/checkout/process', async (c) => {
 // --- Endpoint RPC: Gerar Cobrança PIX via JunglePay ---
 apiRoutes.post('/checkout/pix', async (c) => {
     try {
-        const body = await c.req.json() as PixChargeRequest;
+        const body = await c.req.json() as PixChargeRequest & { orderBumpIds?: number[] };
 
         // Validação básica dos campos obrigatórios
         const requiredFields = ['customerName', 'customerEmail', 'customerDocument', 'totalAmount', 'planId'];
@@ -56,6 +56,16 @@ apiRoutes.post('/checkout/pix', async (c) => {
             }
         }
 
+        // Converter orderBumpIds de string para array se necessário
+        let orderBumpIds: number[] | undefined;
+        if (body.orderBumpIds) {
+            if (typeof body.orderBumpIds === 'string') {
+                orderBumpIds = (body.orderBumpIds as string).split(',').map(Number).filter(n => !isNaN(n));
+            } else if (Array.isArray(body.orderBumpIds)) {
+                orderBumpIds = body.orderBumpIds.map(Number).filter(n => !isNaN(n));
+            }
+        }
+
         // Chamar o service JunglePay
         const result = await JunglePayService.createPixCharge({
             customerName: body.customerName,
@@ -64,7 +74,8 @@ apiRoutes.post('/checkout/pix', async (c) => {
             customerPhone: body.customerPhone || '',
             totalAmount: Number(body.totalAmount),
             planId: Number(body.planId),
-            orderBump: Boolean(body.orderBump)
+            orderBump: Boolean(body.orderBump),
+            orderBumpIds: orderBumpIds
         });
 
         if (!result.success) {
@@ -89,7 +100,7 @@ apiRoutes.post('/checkout/pix', async (c) => {
 // --- Endpoint RPC: Cobrança Cartão de Crédito via JunglePay ---
 apiRoutes.post('/checkout/card', async (c) => {
     try {
-        const body = await c.req.json() as CardChargeRequest;
+        const body = await c.req.json() as CardChargeRequest & { orderBumpIds?: number[] };
 
         // Validação básica dos campos obrigatórios
         const requiredFields = ['customerName', 'customerEmail', 'customerDocument', 'totalAmount', 'planId', 'cardHash'];
@@ -103,6 +114,16 @@ apiRoutes.post('/checkout/card', async (c) => {
             }
         }
 
+        // Converter orderBumpIds de string para array se necessário
+        let orderBumpIds: number[] | undefined;
+        if (body.orderBumpIds) {
+            if (typeof body.orderBumpIds === 'string') {
+                orderBumpIds = (body.orderBumpIds as string).split(',').map(Number).filter(n => !isNaN(n));
+            } else if (Array.isArray(body.orderBumpIds)) {
+                orderBumpIds = body.orderBumpIds.map(Number).filter(n => !isNaN(n));
+            }
+        }
+
         // Chamar o service JunglePay
         const result = await JunglePayService.createCardCharge({
             customerName: body.customerName,
@@ -112,6 +133,7 @@ apiRoutes.post('/checkout/card', async (c) => {
             totalAmount: Number(body.totalAmount),
             planId: Number(body.planId),
             orderBump: Boolean(body.orderBump),
+            orderBumpIds: orderBumpIds,
             cardHash: body.cardHash,
             installments: Number(body.installments) || 1
         });
@@ -662,6 +684,176 @@ apiRoutes.post('/logout', (c) => {
       secure: process.env.NODE_ENV === 'production'
   });
   return c.redirect('/login');
+});
+
+// --- Order Bumps CRUD Routes ---
+
+// Listar todas as order bumps (admin)
+apiRoutes.get('/admin/order-bumps', async (c) => {
+  try {
+    const bumps = await db
+      .select()
+      .from(orderBumps)
+      .orderBy(asc(orderBumps.displayOrder), asc(orderBumps.id));
+    
+    return c.json({ success: true, data: bumps });
+  } catch (e: any) {
+    console.error("[OrderBumps] List Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Listar order bumps ativas (público - para checkout)
+apiRoutes.get('/order-bumps/active', async (c) => {
+  try {
+    const bumps = await db
+      .select()
+      .from(orderBumps)
+      .where(eq(orderBumps.isActive, true))
+      .orderBy(asc(orderBumps.displayOrder), asc(orderBumps.id));
+    
+    return c.json({ success: true, data: bumps });
+  } catch (e: any) {
+    console.error("[OrderBumps] Active List Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Criar nova order bump
+apiRoutes.post('/admin/order-bumps', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { name, description, price, isActive, imageUrl, displayOrder } = body;
+
+    if (!name || price === undefined) {
+      return c.json({ success: false, error: 'Nome e preço são obrigatórios' }, 400);
+    }
+
+    const [newBump] = await db.insert(orderBumps).values({
+      name,
+      description: description || null,
+      price: parseInt(price),
+      isActive: isActive !== false,
+      imageUrl: imageUrl || null,
+      displayOrder: parseInt(displayOrder) || 0
+    }).returning();
+
+    return c.json({ success: true, data: newBump });
+  } catch (e: any) {
+    console.error("[OrderBumps] Create Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Atualizar order bump
+apiRoutes.put('/admin/order-bumps/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    const body = await c.req.json();
+    const { name, description, price, isActive, imageUrl, displayOrder } = body;
+
+    if (!id) {
+      return c.json({ success: false, error: 'ID inválido' }, 400);
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) updateData.price = parseInt(price);
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (displayOrder !== undefined) updateData.displayOrder = parseInt(displayOrder);
+
+    const [updated] = await db
+      .update(orderBumps)
+      .set(updateData)
+      .where(eq(orderBumps.id, id))
+      .returning();
+
+    if (!updated) {
+      return c.json({ success: false, error: 'Order bump não encontrada' }, 404);
+    }
+
+    return c.json({ success: true, data: updated });
+  } catch (e: any) {
+    console.error("[OrderBumps] Update Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Toggle status da order bump
+apiRoutes.patch('/admin/order-bumps/:id/toggle', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+
+    // Buscar status atual
+    const [current] = await db
+      .select({ isActive: orderBumps.isActive })
+      .from(orderBumps)
+      .where(eq(orderBumps.id, id))
+      .limit(1);
+
+    if (!current) {
+      return c.json({ success: false, error: 'Order bump não encontrada' }, 404);
+    }
+
+    // Inverter status
+    const [updated] = await db
+      .update(orderBumps)
+      .set({ isActive: !current.isActive })
+      .where(eq(orderBumps.id, id))
+      .returning();
+
+    return c.json({ success: true, data: updated });
+  } catch (e: any) {
+    console.error("[OrderBumps] Toggle Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Deletar order bump
+apiRoutes.delete('/admin/order-bumps/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+
+    const [deleted] = await db
+      .delete(orderBumps)
+      .where(eq(orderBumps.id, id))
+      .returning();
+
+    if (!deleted) {
+      return c.json({ success: false, error: 'Order bump não encontrada' }, 404);
+    }
+
+    return c.json({ success: true, data: deleted });
+  } catch (e: any) {
+    console.error("[OrderBumps] Delete Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Buscar order bumps por IDs (para processar pagamento)
+apiRoutes.post('/order-bumps/by-ids', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { ids } = body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return c.json({ success: true, data: [], total: 0 });
+    }
+
+    const bumps = await db
+      .select()
+      .from(orderBumps)
+      .where(inArray(orderBumps.id, ids.map(Number)));
+
+    const total = bumps.reduce((sum, bump) => sum + (bump.price || 0), 0);
+
+    return c.json({ success: true, data: bumps, total });
+  } catch (e: any) {
+    console.error("[OrderBumps] ByIds Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
 });
 
 export default apiRoutes;

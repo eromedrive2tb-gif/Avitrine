@@ -15,36 +15,58 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listeners
     setupStepNavigation();
     setupPaymentMethodToggle();
-    setupOrderBump();
+    setupOrderBumps();
 });
 
 // --- State Management Simples ---
 const state = {
     currentStep: 1,
     basePrice: 0,
-    bumpPrice: 0,
+    orderBumps: [], // Array de order bumps disponíveis
+    selectedBumpIds: [], // IDs das order bumps selecionadas
+    bumpTotal: 0, // Total das order bumps selecionadas
     total: 0,
     junglePayPublicKey: ''
 };
 
 // Função de inicialização principal (chamada do onload)
-function initCheckout(base, bump, publicKey) {
-    state.basePrice = base;
-    state.bumpPrice = bump;
+function initCheckout(basePrice, publicKey, orderBumpsData) {
+    state.basePrice = basePrice;
     state.junglePayPublicKey = publicKey || '';
+    
+    // Parse order bumps data
+    if (orderBumpsData) {
+        if (typeof orderBumpsData === 'string') {
+            try {
+                state.orderBumps = JSON.parse(orderBumpsData);
+            } catch (e) {
+                console.warn('[Checkout] Failed to parse order bumps:', e);
+                state.orderBumps = [];
+            }
+        } else if (Array.isArray(orderBumpsData)) {
+            state.orderBumps = orderBumpsData;
+        }
+    }
+    
     updateTotal();
     
     // Configurar JunglePagamentos se disponível
     if (typeof JunglePagamentos !== 'undefined' && state.junglePayPublicKey) {
         JunglePagamentos.setPublicKey(state.junglePayPublicKey);
-        // JunglePagamentos.setTestMode(true); // Descomentar para modo de teste
         console.log('[JunglePay] SDK inicializado com publicKey');
     }
+    
+    console.log('[Checkout] Inicializado:', { 
+        basePrice: state.basePrice, 
+        orderBumps: state.orderBumps.length 
+    });
 }
 
 // Ler dados iniciais do DOM (retrocompatibilidade)
 function initPrices(base, bump) {
-    initCheckout(base, bump, '');
+    // Conversão legada: criar um order bump fake se necessário
+    const legacyBumps = bump ? [{ id: 0, name: 'Acesso Antecipado Premium', price: bump, isActive: true }] : [];
+    initCheckout(base, '', legacyBumps);
 }
 
 // --- Máscaras de Cartão ---
@@ -140,27 +162,86 @@ function setupPaymentMethodToggle() {
     });
 }
 
-function setupOrderBump() {
-    const bumpCheck = document.getElementById('order_bump');
-    if(bumpCheck) {
-        bumpCheck.addEventListener('change', updateTotal);
+// --- Order Bumps Management ---
+function setupOrderBumps() {
+    // Ouvir evento customizado disparado pelo componente OrderBump
+    window.addEventListener('orderBumpsChanged', (e) => {
+        const { selectedIds, totalBumpPrice } = e.detail;
+        state.selectedBumpIds = selectedIds.map(Number);
+        state.bumpTotal = totalBumpPrice;
+        updateTotal();
+        updateOrderBumpSummary();
+    });
+    
+    // Verificar se há checkboxes de order bump e adicionar listeners
+    const bumpCheckboxes = document.querySelectorAll('.bump-checkbox');
+    bumpCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            collectSelectedBumps();
+        });
+    });
+    
+    // Retrocompatibilidade: checkbox legada
+    const legacyBumpCheck = document.getElementById('order_bump');
+    if (legacyBumpCheck) {
+        legacyBumpCheck.addEventListener('change', updateTotal);
     }
 }
 
+function collectSelectedBumps() {
+    const checkboxes = document.querySelectorAll('.bump-checkbox:checked');
+    const selectedIds = [];
+    let total = 0;
+    
+    checkboxes.forEach(cb => {
+        const id = parseInt(cb.dataset.bumpId);
+        const price = parseInt(cb.dataset.bumpPrice) || 0;
+        selectedIds.push(id);
+        total += price;
+    });
+    
+    state.selectedBumpIds = selectedIds;
+    state.bumpTotal = total;
+    updateTotal();
+    updateOrderBumpSummary();
+}
+
+function updateOrderBumpSummary() {
+    // Atualizar visibilidade dos itens de resumo das order bumps
+    const summaryItems = document.querySelectorAll('.bump-summary-item');
+    summaryItems.forEach(item => {
+        const bumpId = parseInt(item.dataset.bumpId);
+        if (state.selectedBumpIds.includes(bumpId)) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+}
+
 function updateTotal() {
-    const bumpCheck = document.getElementById('order_bump');
-    const bumpSummary = document.getElementById('bump-summary');
     const totalPriceEl = document.getElementById('total-price');
     
-    const isBumped = bumpCheck && bumpCheck.checked;
+    // Retrocompatibilidade: verificar checkbox legada
+    const legacyBumpCheck = document.getElementById('order_bump');
+    const legacyBumpSummary = document.getElementById('bump-summary');
     
-    if(isBumped) {
-        bumpSummary.classList.remove('hidden');
-    } else {
-        bumpSummary.classList.add('hidden');
+    let bumpAmount = state.bumpTotal;
+    
+    // Se estiver usando o sistema legado
+    if (legacyBumpCheck && !document.querySelector('.bump-checkbox')) {
+        const legacyBumpPrice = state.orderBumps[0]?.price || 1990;
+        if (legacyBumpCheck.checked) {
+            bumpAmount = legacyBumpPrice;
+            if (legacyBumpSummary) legacyBumpSummary.classList.remove('hidden');
+        } else {
+            bumpAmount = 0;
+            if (legacyBumpSummary) legacyBumpSummary.classList.add('hidden');
+        }
     }
     
-    const total = isBumped ? state.basePrice + state.bumpPrice : state.basePrice;
+    const total = state.basePrice + bumpAmount;
+    state.total = total;
     
     if(totalPriceEl) {
         totalPriceEl.innerText = (total / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -201,9 +282,15 @@ async function processCheckout() {
     const cpf = document.getElementById('cpf').value;
     const phone = document.getElementById('phone').value;
     const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
-    const orderBump = document.getElementById('order_bump').checked;
     
-    const totalAmount = orderBump ? state.basePrice + state.bumpPrice : state.basePrice;
+    // Coletar order bumps selecionadas
+    const orderBumpIds = state.selectedBumpIds.length > 0 ? state.selectedBumpIds : [];
+    
+    // Retrocompatibilidade para checkbox legada
+    const legacyBumpCheck = document.getElementById('order_bump');
+    const hasLegacyBump = legacyBumpCheck && legacyBumpCheck.checked && orderBumpIds.length === 0;
+    
+    const totalAmount = state.total || state.basePrice;
 
     try {
         // Se for PIX, usar o endpoint PIX da JunglePay
@@ -215,7 +302,8 @@ async function processCheckout() {
                 customerPhone: phone,
                 totalAmount: totalAmount,
                 planId: parseInt(planId),
-                orderBump: orderBump
+                orderBump: hasLegacyBump,
+                orderBumpIds: orderBumpIds
             });
 
             if (pixResult.success) {
@@ -234,7 +322,8 @@ async function processCheckout() {
                 customerPhone: phone,
                 totalAmount: totalAmount,
                 planId: parseInt(planId),
-                orderBump: orderBump
+                orderBump: hasLegacyBump,
+                orderBumpIds: orderBumpIds
             });
 
             if (cardResult.success) {
