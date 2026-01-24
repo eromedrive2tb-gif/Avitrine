@@ -218,7 +218,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                       />
                   </div>
 
-                  {/* PREVIEW: BANNER */}
+                  {/* PREVIEW: BANNER (DEFAULT) */}
                   <div id="preview-banner" class="w-full hidden">
                       <AdBanner 
                         title={formData.title}
@@ -227,6 +227,18 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                         link="#"
                         imageUrl={formData.imageUrl}
                       />
+                  </div>
+
+                  {/* PREVIEW: BANNER (AUTH STYLE - LOGIN/REGISTER) */}
+                  <div id="preview-banner-auth" class="w-full hidden">
+                    <div class="bg-gradient-to-r from-[#1a1a1a] to-black p-4 flex items-center justify-between rounded-lg border border-[#FFD700]/30">
+                      <div>
+                        <span class="text-[10px] text-[#FFD700] border border-[#FFD700] px-1 font-bold uppercase">Parceiro</span>
+                        <h5 class="text-white font-bold mt-1">{formData.title}</h5>
+                        <p class="text-xs text-gray-400">{formData.subtitle}</p>
+                      </div>
+                      <img src={formData.imageUrl} class="w-12 h-12 rounded object-cover" />
+                    </div>
                   </div>
 
                   {/* PREVIEW: SPOT SMALL (DEFAULT) */}
@@ -308,6 +320,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
             const pDiamond = document.getElementById('preview-diamond');
             const pDiamondBlock = document.getElementById('preview-diamond-block');
             const pBanner = document.getElementById('preview-banner');
+            const pBannerAuth = document.getElementById('preview-banner-auth');
             const pSpot = document.getElementById('preview-spot');
             const pSpotCard = document.getElementById('preview-spot-card');
             const pSpotBanner = document.getElementById('preview-spot-banner');
@@ -380,6 +393,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                 pDiamond.classList.add('hidden');
                 pDiamondBlock.classList.add('hidden');
                 pBanner.classList.add('hidden');
+                pBannerAuth.classList.add('hidden');
                 pSpot.classList.add('hidden');
                 pSpotCard.classList.add('hidden');
                 pSpotBanner.classList.add('hidden');
@@ -397,8 +411,13 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                     pDiamondBlock.classList.remove('hidden');
                     fieldCta.classList.add('hidden');
                 } else if (type === 'banner') {
-                    pBanner.classList.remove('hidden');
-                    fieldSubtitle.classList.remove('hidden');
+                    if (placement === 'login' || placement === 'register') {
+                        pBannerAuth.classList.remove('hidden');
+                        fieldSubtitle.classList.remove('hidden');
+                    } else {
+                        pBanner.classList.remove('hidden');
+                        fieldSubtitle.classList.remove('hidden');
+                    }
                 } else if (type === 'spot') {
                     if (placement === 'model_sidebar') {
                         pSpotCard.classList.remove('hidden');
@@ -457,6 +476,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
 
                 // Update Banner
                 if (type === 'banner') {
+                    // Default Banner
                     const titleEl = pBanner.querySelector('h4');
                     const subEl = pBanner.querySelector('p');
                     const ctaEl = pBanner.querySelector('span.bg-primary');
@@ -466,6 +486,15 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                     if(subEl) subEl.innerText = subtitle;
                     if(ctaEl) ctaEl.innerText = cta;
                     if(imgEl) imgEl.src = imgUrl;
+
+                    // Auth Style Banner
+                    const authTitleEl = pBannerAuth.querySelector('h5');
+                    const authSubEl = pBannerAuth.querySelector('p');
+                    const authImgEl = pBannerAuth.querySelector('img');
+
+                    if(authTitleEl) authTitleEl.innerText = title;
+                    if(authSubEl) authSubEl.innerText = subtitle;
+                    if(authImgEl) authImgEl.src = imgUrl;
                 }
 
                 // Update Spot
