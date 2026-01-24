@@ -11,6 +11,7 @@ import { AdminSettings } from '../pages/admin/Settings';
 import { AdminWhitelabel } from '../pages/admin/Whitelabel';
 import { AdminSupport } from '../pages/admin/Support';
 import { AdminFinance } from '../pages/admin/Finance';
+import { AdminClients } from '../pages/admin/Clients';
 import { WhitelabelDbService } from '../services/whitelabel';
 
 const adminRoutes = new Hono();
@@ -172,9 +173,14 @@ adminRoutes.get('/finance', async (c) => {
 
   const totalPages = Math.ceil(total / limit);
 
+  const gatewaysList = gateways.map(g => ({
+    ...g,
+    isActive: !!g.isActive
+  }));
+
   return c.html(
     <AdminFinance 
-      gateways={gateways} 
+      gateways={gatewaysList} 
       activeGatewayName={activeGateway} 
       success={success}
       checkouts={checkoutsList}
@@ -231,6 +237,79 @@ adminRoutes.post('/support/update', async (c) => {
   }
 
   return c.redirect('/admin/support');
+});
+
+adminRoutes.get('/clients', async (c) => {
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = parseInt(c.req.query('limit') || '20');
+  const offset = (page - 1) * limit;
+  const search = c.req.query('search') || '';
+
+  // 1. Stats
+  const [statsResult] = await db.select({
+    total: sql<number>`count(*)`,
+    active: sql<number>`count(*) filter (where ${users.subscriptionStatus} = 1)`,
+    inactive: sql<number>`count(*) filter (where ${users.subscriptionStatus} = 0 or ${users.subscriptionStatus} is null)`
+  }).from(users);
+
+  const stats = {
+    totalUsers: Number(statsResult?.total || 0),
+    activeSubscribers: Number(statsResult?.active || 0),
+    inactiveSubscribers: Number(statsResult?.inactive || 0)
+  };
+
+  // 2. Users with Latest Subscription End Date
+  const latestSub = db.select({
+    userId: subscriptions.userId,
+    maxEndDate: sql<Date>`max(${subscriptions.endDate})`.as('max_end_date')
+  }).from(subscriptions).groupBy(subscriptions.userId).as('latest_sub');
+
+  let query = db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    subscriptionStatus: users.subscriptionStatus,
+    lastSubscriptionEndDate: latestSub.maxEndDate
+  })
+  .from(users)
+  .leftJoin(latestSub, eq(users.id, latestSub.userId));
+
+  if (search) {
+    query = query.where(
+      or(
+        like(users.name, `%${search}%`),
+        like(users.email, `%${search}%`)
+      )
+    ) as any;
+  }
+
+  const usersList = await query
+    .limit(limit)
+    .offset(offset)
+    .orderBy(desc(users.id));
+
+  // 3. Total for Pagination
+  let countQuery = db.select({ count: sql<number>`count(*)` }).from(users);
+  if (search) {
+    countQuery = countQuery.where(
+      or(
+        like(users.name, `%${search}%`),
+        like(users.email, `%${search}%`)
+      )
+    ) as any;
+  }
+  const [totalResult] = await countQuery;
+  const total = Number(totalResult?.count || 0);
+  const totalPages = Math.ceil(total / limit);
+
+  return c.html(
+    <AdminClients 
+      users={usersList as any}
+      stats={stats}
+      pagination={{ page, totalPages, total }}
+      filters={{ search }}
+    />
+  );
 });
 
 // WHITELABEL ROUTES
