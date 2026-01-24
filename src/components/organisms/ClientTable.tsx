@@ -29,15 +29,15 @@ const ClientTableRow: FC<{ user: UserData }> = ({ user }) => (
       </div>
     </td>
     <td class="px-6 py-4 text-xs text-gray-500">{user.email}</td>
-    <td class="px-6 py-4">
-      <Badge variant={user.subscriptionStatus === 1 ? 'success' : 'danger'}>
-        {user.subscriptionStatus === 1 ? 'Ativa' : 'Inativa'}
-      </Badge>
-    </td>
     <td class="px-6 py-4 text-xs text-gray-400 font-mono">
       {user.lastSubscriptionEndDate 
         ? new Date(user.lastSubscriptionEndDate).toLocaleDateString('pt-BR') 
         : <span class="text-gray-700">Nenhuma</span>}
+    </td>
+    <td class="px-6 py-4">
+      <Badge variant={user.subscriptionStatus === 1 ? 'success' : 'danger'}>
+        {user.subscriptionStatus === 1 ? 'Ativa' : 'Inativa'}
+      </Badge>
     </td>
     <td class="px-6 py-4 text-right">
       <ActionHistoryButton userId={user.id} />
@@ -54,8 +54,8 @@ export const ClientTable: FC<ClientTableProps> = ({ users, pagination }) => (
             <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">ID</th>
             <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Usuário</th>
             <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Email</th>
-            <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Status Assinatura</th>
             <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Último Término</th>
+            <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Status Assinatura</th>
             <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em] text-right">Ações</th>
           </tr>
         </thead>
