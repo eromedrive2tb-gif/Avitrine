@@ -36,7 +36,6 @@ export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user, ads 
                 models={gridAds.slice(0, 4).map(ad => ({
                   name: ad.title,
                   imageUrl: ad.imageUrl || '',
-                  isPromoted: true,
                   category: ad.category || 'VIP',
                   link: ad.link
                 }))}

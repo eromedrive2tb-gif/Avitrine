@@ -34,8 +34,21 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
   // Get ads from database
   const heroAds = ads.home_top?.filter(ad => ad.type === 'hero') || [];
   const topBannerAds = ads.home_top?.filter(ad => ad.type === 'banner') || [];
-  const middleAds = ads.home_middle?.filter(ad => ad.type === 'diamond_block') || [];
+  const diamondBlockAds = ads.home_top?.filter(ad => ad.type === 'diamond_block') || [];
+  const middleAds = ads.home_middle?.filter(ad => ad.type === 'diamond_block' || ad.type === 'banner') || [];
   const bottomBannerAds = ads.home_bottom?.filter(ad => ad.type === 'banner') || [];
+
+  // Split models for layout
+  const recommendedModels = models.slice(0, 5);
+  const featuredModels = models.slice(5);
+
+  // Log para debugging
+  console.log('[Home] Ads data:', { 
+    home_top_count: ads.home_top?.length, 
+    home_middle_count: ads.home_middle?.length,
+    diamond_block_home_top: diamondBlockAds.length,
+    middle_ads: middleAds.length
+  });
 
   return (
     <Layout user={user}>
@@ -80,13 +93,31 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
             ))}
         </div>
 
+        {/* Diamond Selection (Native Block) - home_top */}
+        {diamondBlockAds.length > 0 && (
+          <div class="mb-10">
+            <NativeAdBlock 
+              title={diamondBlockAds[0].title || "Diamond Selection"} 
+              models={diamondBlockAds.slice(0, 4).map(ad => ({
+                name: ad.title,
+                imageUrl: ad.imageUrl || '',
+                category: ad.category || 'Destaque',
+                link: ad.link
+              }))}
+            />
+          </div>
+        )}
+
         {/* --- MAIN FEED (REAL DATA) --- */}
-        <section>
+        
+        {/* Recomendados Section */}
+        <section class="mb-8">
             <h3 class="font-display text-xl text-white mb-4 flex items-center gap-2">
-              Modelos em Destaque
+              <span class="w-1.5 h-6 bg-primary rounded-full"></span>
+              Recomendados
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                {models.map(m => (
+                {recommendedModels.map(m => (
                   <WhiteLabelModelCard 
                     id={m.id}
                     name={m.name}
@@ -97,18 +128,48 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
             </div>
         </section>
 
-        {/* MIDDLE AD - Diamond Selection Block */}
+        {/* Modelos em Destaque Section */}
+        <section>
+            <h3 class="font-display text-xl text-white mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-6 bg-primary rounded-full"></span>
+              Modelos em Destaque
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                {featuredModels.map(m => (
+                  <WhiteLabelModelCard 
+                    id={m.id}
+                    name={m.name}
+                    postCount={m.postCount}
+                    thumbnailUrl={m.thumbnailUrl}
+                  />
+                ))}
+            </div>
+        </section>
+
+        {/* MIDDLE AD - Diamond Selection Block or Banner */}
         {middleAds.length > 0 && (
-          <NativeAdBlock 
-            title={middleAds[0].title || "Diamond Selection"} 
-            models={middleAds.map(ad => ({
-              name: ad.title,
-              imageUrl: ad.imageUrl || '',
-              isPromoted: true,
-              category: ad.category || 'Destaque',
-              link: ad.link
-            }))}
-          />
+          <div class="my-10">
+            {middleAds[0].type === 'diamond_block' ? (
+              <NativeAdBlock 
+                title={middleAds[0].title || "Diamond Selection"} 
+                models={middleAds.slice(0, 4).map(ad => ({
+                  name: ad.title,
+                  imageUrl: ad.imageUrl || '',
+                  category: ad.category || 'Destaque',
+                  link: ad.link
+                }))}
+              />
+            ) : (
+              <AdBanner 
+                title={middleAds[0].title}
+                subtitle={middleAds[0].subtitle || ''}
+                ctaText={middleAds[0].ctaText || 'Saiba Mais'}
+                link={middleAds[0].link}
+                imageUrl={middleAds[0].imageUrl}
+                adId={middleAds[0].id}
+              />
+            )}
+          </div>
         )}
 
         {/* Secondary Feed */}

@@ -59,6 +59,13 @@ publicRoutes.get('/', async (c) => {
       AdsService.getActiveByPlacements(['home_top', 'home_middle', 'home_bottom', 'sidebar', 'feed_mix'])
     ]);
     
+    console.log('[Route] Home ads fetched:', {
+      home_top: homeAds.home_top?.length,
+      home_middle: homeAds.home_middle?.length,
+      home_top_types: homeAds.home_top?.map(a => a.type),
+      home_middle_types: homeAds.home_middle?.map(a => a.type)
+    });
+    
     const safeModels = signedModels.map(m => ({ ...m, postCount: m.postCount || 0 }));
     return c.html(<HomePage models={safeModels} user={user} ads={homeAds} />);
   } catch (e) {

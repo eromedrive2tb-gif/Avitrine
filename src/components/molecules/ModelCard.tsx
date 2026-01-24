@@ -7,6 +7,7 @@ interface ModelCardProps {
   isLive?: boolean;
   views?: string;
   isPromoted?: boolean; // Type A: "Post" Ad
+  link?: string; // Optional external link for ads
 }
 
 export const ModelCard: FC<ModelCardProps> = ({ 
@@ -15,12 +16,14 @@ export const ModelCard: FC<ModelCardProps> = ({
   category = 'Model', 
   isLive = false,
   views = '1.2k',
-  isPromoted = false
+  isPromoted = false,
+  link
 }) => {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const href = link || `/models/${slug}`;
 
   return (
-    <a href={`/models/${slug}`} class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer block transition-all duration-300 ${
+    <a href={href} class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer block transition-all duration-300 ${
       isPromoted 
         ? 'border-2 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)]' 
         : 'bg-surface border border-white/5 hover:border-primary/50'
