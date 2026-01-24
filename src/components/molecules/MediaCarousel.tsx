@@ -8,9 +8,10 @@ interface MediaItem {
 interface MediaCarouselProps {
   mediaItems: MediaItem[];
   postId: string;
+  isBlurred?: boolean;
 }
 
-export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId }) => {
+export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId, isBlurred = false }) => {
   const hasMultiple = mediaItems.length > 1;
 
   return (
@@ -24,7 +25,7 @@ export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId }) =>
             <div class="custom-video-wrapper w-full h-full relative group/video no-context-menu" onContextMenu={(e: any) => e.preventDefault()}>
               <video 
                 src={item.url} 
-                class="w-full h-full object-cover" 
+                class="w-full h-full object-cover"
                 loop 
                 playsInline 
                 muted
@@ -71,6 +72,14 @@ export const MediaCarousel: FC<MediaCarouselProps> = ({ mediaItems, postId }) =>
           )}
         </div>
       ))}
+      
+      {/* Blur Overlay - Camada visual separada que fica acima da mídia */}
+      {isBlurred && (
+        <div 
+          class="premium-blur-overlay"
+          style={`background-image: url('${mediaItems[0]?.url || ''}');`}
+        ></div>
+      )}
 
       {hasMultiple && (
         <>

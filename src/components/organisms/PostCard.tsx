@@ -6,9 +6,10 @@ interface PostCardProps {
   post: any;
   model: any;
   displayName: string;
+  isSubscribed?: boolean;
 }
 
-export const PostCard: FC<PostCardProps> = ({ post, model, displayName }) => {
+export const PostCard: FC<PostCardProps> = ({ post, model, displayName, isSubscribed = false }) => {
   // Robust media type detection
   const rawImages = (post.mediaCdns?.images || post.images || []);
   const rawVideos = (post.mediaCdns?.videos || post.videos || []);
@@ -44,9 +45,53 @@ export const PostCard: FC<PostCardProps> = ({ post, model, displayName }) => {
         </button>
       </div>
 
-      {/* 2. Media Block (Absolute Black) */}
-      <div class="stack-media">
-        <MediaCarousel mediaItems={mediaItems as any} postId={post.id} />
+      {/* 2. Media Block (Absolute Black) - with Premium Overlay */}
+      <div class="stack-media relative overflow-hidden">
+        <MediaCarousel mediaItems={mediaItems as any} postId={post.id} isBlurred={!isSubscribed} />
+        
+        {/* Premium Content Overlay - Only visible for non-subscribers */}
+        {!isSubscribed && (
+          <div class="premium-overlay absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/50">
+            {/* Content Layer */}
+            <div class="relative z-10 flex flex-col items-center text-center px-6">
+              {/* Lock Icon */}
+              <div class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4 border border-white/20 shadow-lg">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  stroke-width="1.5" 
+                  stroke-linecap="round" 
+                  stroke-linejoin="round"
+                  class="w-8 h-8 text-white"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              
+              {/* CTA Text */}
+              <h3 class="text-lg font-bold text-white mb-2">Conteúdo Exclusivo</h3>
+              <p class="text-sm text-gray-300 mb-5 max-w-[200px]">
+                Assine para desbloquear este e outros conteúdos premium
+              </p>
+              
+              {/* Subscribe Button */}
+              <a 
+                href="/plans" 
+                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#8A2BE2] to-[#9D4EDD] text-white text-sm font-bold rounded-full hover:from-[#7B27CC] hover:to-[#8E3FCC] transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                Assinar Agora
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3. Footer Block (Solid Graphite "Floor") */}

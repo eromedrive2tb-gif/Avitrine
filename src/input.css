@@ -24,6 +24,22 @@
   }
 }
 
+/* Premium Content Blur Overlay - Camada visual que fica acima da mídia */
+.premium-blur-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  background-image: inherit;
+  background-size: cover;
+  background-position: center;
+  filter: blur(30px) saturate(30%) brightness(0.7) !important;
+  transform: translateZ(0) scale(1.15) !important;
+  will-change: filter, transform;
+  -webkit-filter: blur(30px) saturate(30%) brightness(0.7) !important;
+  -webkit-transform: translateZ(0) scale(1.15) !important;
+  pointer-events: none;
+}
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
@@ -134,6 +150,7 @@
   background-color: #000000;
   position: relative;
   width: 100%;
+  overflow: hidden;
 }
 
 .stack-footer {

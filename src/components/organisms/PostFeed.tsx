@@ -5,15 +5,16 @@ interface PostFeedProps {
   initialPosts: any[];
   model: any;
   displayName: string;
+  isSubscribed?: boolean;
 }
 
-export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }) => {
+export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName, isSubscribed = false }) => {
   return (
     <div class="lg:col-span-2">
       {/* Feed de Posts */}
       <div id="posts-feed">
         {initialPosts.map(post => (
-            <PostCard post={post} model={model} displayName={displayName} />
+            <PostCard post={post} model={model} displayName={displayName} isSubscribed={isSubscribed} />
         ))}
       </div>
 
@@ -31,6 +32,7 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
             const modelSlug = "${model.folderName}";
             const modelIcon = "${model.iconUrl || model.thumbnailUrl}";
             const displayName = "${displayName}";
+            const isSubscribed = ${isSubscribed ? 'true' : 'false'};
             const feed = document.getElementById('posts-feed');
             const sentinel = document.getElementById('infinite-sentinel');
 
@@ -43,6 +45,27 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
                if (window.initPostCarousels) {
                  window.initPostCarousels();
                }
+            }
+            
+            // Função para gerar o overlay premium
+            function getPremiumOverlayHtml() {
+                if (isSubscribed) return '';
+                return '<div class="premium-overlay absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/50">' +
+                    '<div class="relative z-10 flex flex-col items-center text-center px-6">' +
+                        '<div class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4 border border-white/20 shadow-lg">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-white">' +
+                                '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>' +
+                                '<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' +
+                            '</svg>' +
+                        '</div>' +
+                        '<h3 class="text-lg font-bold text-white mb-2">Conteúdo Exclusivo</h3>' +
+                        '<p class="text-sm text-gray-300 mb-5 max-w-[200px]">Assine para desbloquear este e outros conteúdos premium</p>' +
+                        '<a href="/plans" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#8A2BE2] to-[#9D4EDD] text-white text-sm font-bold rounded-full hover:from-[#7B27CC] hover:to-[#8E3FCC] transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>' +
+                            'Assinar Agora' +
+                        '</a>' +
+                    '</div>' +
+                '</div>';
             }
 
             const observer = new IntersectionObserver(async (entries) => {
@@ -95,11 +118,12 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
                         postHtml += '</div>';
 
                         // 2. Media
-                        postHtml += '<div class="stack-media">';
+                        postHtml += '<div class="stack-media relative overflow-hidden">';
                         postHtml +=   '<div class="post-carousel relative w-full aspect-[4/5] bg-[#000] overflow-hidden group" data-post-id="' + post.id + '">';
                         
                         postHtml += mediaItems.map((item, idx) => {
                             let itemHtml = '<div class="carousel-item absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ' + (idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none') + '">';
+                            
                             if (item.type === 'video') {
                                 itemHtml += '<div class="custom-video-wrapper w-full h-full relative group/video no-context-menu" oncontextmenu="return false;">';
                                 itemHtml +=   '<video src="' + item.url + '" class="w-full h-full object-cover" loop playsinline muted oncontextmenu="return false;"></video>';
@@ -127,6 +151,11 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
                             itemHtml += '</div>';
                             return itemHtml;
                         }).join('');
+                        
+                        // Adicionar blur overlay se não for assinante
+                        if (!isSubscribed && mediaItems.length > 0) {
+                            postHtml += '<div class="premium-blur-overlay" style="background-image: url(\'' + mediaItems[0].url + '\');"></div>';
+                        }
 
                         if (mediaItems.length > 1) {
                             postHtml += '<button class="carousel-prev absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white/90 flex items-center justify-center backdrop-blur-sm z-30 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#8A2BE2] hover:scale-110">';
@@ -147,7 +176,9 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, model, displayName }
                             postHtml += '</div>';
                         }
                         
-                        postHtml += '</div></div>'; 
+                        postHtml += '</div>'; // Close carousel
+                        postHtml += getPremiumOverlayHtml(); // Add premium overlay
+                        postHtml += '</div>'; // Close stack-media 
 
                         // 3. Footer (Updated to match PostCard.tsx exact structure)
                         postHtml += '<div class="stack-footer">';

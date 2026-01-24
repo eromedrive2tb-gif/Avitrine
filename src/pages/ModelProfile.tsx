@@ -16,6 +16,9 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
   const folderName = model.folderName;
   const displayName = model.name || folderName;
 
+  // Verificar se usuário tem assinatura ativa
+  const isSubscribed = user?.subscriptionStatus === 1;
+
   // Banner superior estilo Netflix
   const bannerUrl = model.bannerUrl || model.thumbnailUrl || '/static/img/placeholder_model.jpg';
 
@@ -38,7 +41,7 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
           {/* Feed Area */}
           <div class="lg:col-span-2">
             <TabSelector />
-            <PostFeed initialPosts={initialPosts} model={model} displayName={displayName} />
+            <PostFeed initialPosts={initialPosts} model={model} displayName={displayName} isSubscribed={isSubscribed} />
           </div>
         </div>
       </div>
