@@ -81,6 +81,7 @@ export const AdminClients: FC<AdminClientsProps> = ({
                 <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Email</th>
                 <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Status Assinatura</th>
                 <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Último Término</th>
+                <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em] text-right">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
@@ -109,6 +110,17 @@ export const AdminClients: FC<AdminClientsProps> = ({
                       ? new Date(user.lastSubscriptionEndDate).toLocaleDateString('pt-BR') 
                       : <span class="text-gray-700">Nenhuma</span>}
                   </td>
+                  <td class="px-6 py-4 text-right">
+                    <button 
+                      hx-get={`/admin/clients/${user.id}/history`}
+                      hx-target="#modal-history-content"
+                      hx-indicator="#modal-loader"
+                      onclick="document.getElementById('history-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden';"
+                      class="text-[10px] font-bold text-primary hover:text-white border border-primary/30 hover:bg-primary px-3 py-1.5 rounded transition-all uppercase tracking-widest"
+                    >
+                      Histórico
+                    </button>
+                  </td>
                 </tr>
               ))}
 
@@ -131,6 +143,51 @@ export const AdminClients: FC<AdminClientsProps> = ({
             baseUrl="/admin/clients"
           />
         )}
+      </div>
+
+      {/* Modal Histórico */}
+      <div id="history-modal" class="fixed inset-0 z-[100] hidden">
+        {/* Backdrop */}
+        <div 
+          class="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          onclick="document.getElementById('history-modal').classList.add('hidden'); document.body.style.overflow = '';"
+        ></div>
+        
+        {/* Modal Content */}
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[80vh] bg-surface border border-primary/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+          {/* Header */}
+          <div class="p-6 border-b border-white/5 flex items-center justify-between bg-[#050505]">
+            <div>
+              <h3 class="font-display text-xl text-white tracking-wide">Histórico de Transações</h3>
+              <p class="text-[10px] text-gray-500 uppercase tracking-widest">Listagem completa do usuário</p>
+            </div>
+            <button 
+              onclick="document.getElementById('history-modal').classList.add('hidden'); document.body.style.overflow = '';"
+              class="p-2 text-gray-500 hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+
+          {/* Body */}
+          <div id="modal-history-content" class="p-6 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
+            {/* Loader placeholder */}
+            <div id="modal-loader" class="htmx-indicator flex flex-col items-center justify-center gap-4 py-12">
+               <div class="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+               <p class="text-xs text-gray-500 uppercase tracking-widest animate-pulse">Carregando...</p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div class="p-4 border-t border-white/5 bg-[#050505] flex justify-end">
+            <button 
+              onclick="document.getElementById('history-modal').classList.add('hidden'); document.body.style.overflow = '';"
+              class="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white uppercase tracking-widest transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );

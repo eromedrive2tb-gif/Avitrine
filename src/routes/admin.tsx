@@ -312,6 +312,97 @@ adminRoutes.get('/clients', async (c) => {
   );
 });
 
+adminRoutes.get('/clients/:id/history', async (c) => {
+  const userId = parseInt(c.req.param('id'));
+  
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId)
+  });
+
+  if (!user) return c.html(<div class="p-8 text-center text-gray-500">Usuário não encontrado</div>);
+
+  const [checkoutsHistory, subscriptionsHistory] = await Promise.all([
+    db.select({
+      id: checkouts.id,
+      amount: checkouts.totalAmount,
+      method: checkouts.paymentMethod,
+      status: checkouts.status,
+      date: checkouts.createdAt,
+      type: sql<string>`'Checkout (JunglePay)'`
+    })
+    .from(checkouts)
+    .where(eq(checkouts.userId, userId))
+    .orderBy(desc(checkouts.createdAt)),
+
+    db.select({
+      id: subscriptions.id,
+      amount: plans.price,
+      method: sql<string>`'Assinatura'`,
+      status: subscriptions.status,
+      date: subscriptions.createdAt,
+      type: sql<string>`'Subscription (Dias)'`
+    })
+    .from(subscriptions)
+    .leftJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(eq(subscriptions.userId, userId))
+    .orderBy(desc(subscriptions.createdAt))
+  ]);
+
+  const allTransactions = [...checkoutsHistory, ...subscriptionsHistory]
+    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
+
+  if (allTransactions.length === 0) {
+    return c.html(
+      <div class="p-12 text-center text-gray-500 flex flex-col items-center gap-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="opacity-20"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        <p>Nenhuma transação encontrada para este usuário.</p>
+      </div>
+    );
+  }
+
+  return c.html(
+    <div class="space-y-4 p-1">
+      {allTransactions.map((tx) => (
+        <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-primary/30 transition-all group">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <span class="text-[10px] font-black tracking-widest text-primary/60 uppercase">{tx.type}</span>
+              <h5 class="text-white font-bold text-sm">Transação #{tx.id}</h5>
+            </div>
+            <span class={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+              tx.status === 'paid' || tx.status === 'active' 
+                ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                : tx.status === 'pending'
+                ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                : 'bg-red-500/10 text-red-500 border border-red-500/20'
+            }`}>
+              {tx.status}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Valor</p>
+              <p class="text-white font-mono text-sm">
+                {((tx.amount || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+            <div>
+              <p class="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Método</p>
+              <p class="text-white text-sm capitalize">{tx.method || '-'}</p>
+            </div>
+            <div class="col-span-2 pt-2 border-t border-white/5">
+              <p class="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Data</p>
+              <p class="text-gray-300 text-xs">
+                {new Date(tx.date!).toLocaleString('pt-BR')}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
+
 // WHITELABEL ROUTES
 // 1. Main View (Paginated via DB)
 adminRoutes.get('/whitelabel', async (c) => {
