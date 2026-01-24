@@ -198,7 +198,7 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                       </button>
                       <button 
-                        onclick={`editOrderBump(${JSON.stringify(bump).replace(/"/g, '&quot;')})`}
+                        onclick={`editOrderBump(${bump.id})`}
                         class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
                         title="Editar"
                       >
@@ -311,9 +311,16 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
               </button>
               <button 
                 type="submit"
-                class="flex-1 bg-primary hover:bg-primary/80 text-white py-3 rounded-lg font-bold text-sm transition-all"
+                id="save-bump-btn"
+                class="flex-1 bg-primary hover:bg-primary/80 text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2"
               >
-                SALVAR
+                <span id="save-btn-text">SALVAR</span>
+                <div id="save-btn-loader" class="hidden">
+                  <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
               </button>
             </div>
           </form>
@@ -322,25 +329,33 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
 
       {/* Script para gerenciar Order Bumps */}
       <script dangerouslySetInnerHTML={{__html: `
-        function openOrderBumpModal() {
+        const orderBumpsData = ${JSON.stringify(orderBumps)};
+
+        window.openOrderBumpModal = function() {
+          const form = document.getElementById('order-bump-form');
+          form.reset();
           document.getElementById('modal-title').textContent = 'Nova Order Bump';
           document.getElementById('bump-id').value = '';
-          document.getElementById('bump-name').value = '';
-          document.getElementById('bump-description').value = '';
-          document.getElementById('bump-price').value = '';
-          document.getElementById('bump-order').value = '0';
-          document.getElementById('bump-image').value = '';
           document.getElementById('bump-active').checked = true;
-          document.getElementById('order-bump-modal').classList.remove('hidden');
-          document.getElementById('order-bump-modal').classList.add('flex');
+          
+          const modal = document.getElementById('order-bump-modal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
         }
 
-        function closeOrderBumpModal() {
-          document.getElementById('order-bump-modal').classList.add('hidden');
-          document.getElementById('order-bump-modal').classList.remove('flex');
+        window.closeOrderBumpModal = function() {
+          const modal = document.getElementById('order-bump-modal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
         }
 
-        function editOrderBump(bump) {
+        window.editOrderBump = function(id) {
+          const bump = orderBumpsData.find(b => b.id === id);
+          if (!bump) {
+            console.error('Order bump não encontrada:', id);
+            return;
+          }
+
           document.getElementById('modal-title').textContent = 'Editar Order Bump';
           document.getElementById('bump-id').value = bump.id;
           document.getElementById('bump-name').value = bump.name || '';
@@ -348,26 +363,28 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
           document.getElementById('bump-price').value = (bump.price / 100).toFixed(2).replace('.', ',');
           document.getElementById('bump-order').value = bump.displayOrder || 0;
           document.getElementById('bump-image').value = bump.imageUrl || '';
-          document.getElementById('bump-active').checked = bump.isActive;
-          document.getElementById('order-bump-modal').classList.remove('hidden');
-          document.getElementById('order-bump-modal').classList.add('flex');
+          document.getElementById('bump-active').checked = !!bump.isActive;
+          
+          const modal = document.getElementById('order-bump-modal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
         }
 
-        async function toggleOrderBump(id) {
+        window.toggleOrderBump = async function(id) {
           try {
             const res = await fetch('/api/admin/order-bumps/' + id + '/toggle', { method: 'PATCH' });
             const data = await res.json();
             if (data.success) {
               window.location.reload();
             } else {
-              alert('Erro: ' + data.error);
+              alert('Erro: ' + (data.error || 'Erro desconhecido'));
             }
           } catch (e) {
-            alert('Erro ao alternar status');
+            alert('Erro ao alternar status. Verifique sua conexão.');
           }
         }
 
-        async function deleteOrderBump(id, name) {
+        window.deleteOrderBump = async function(id, name) {
           if (!confirm('Tem certeza que deseja excluir "' + name + '"?')) return;
           
           try {
@@ -376,15 +393,19 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
             if (data.success) {
               window.location.reload();
             } else {
-              alert('Erro: ' + data.error);
+              alert('Erro: ' + (data.error || 'Erro desconhecido'));
             }
           } catch (e) {
-            alert('Erro ao excluir');
+            alert('Erro ao excluir. Verifique sua conexão.');
           }
         }
 
         document.getElementById('order-bump-form').addEventListener('submit', async function(e) {
           e.preventDefault();
+          
+          const btn = document.getElementById('save-bump-btn');
+          const btnText = document.getElementById('save-btn-text');
+          const btnLoader = document.getElementById('save-btn-loader');
           
           const id = document.getElementById('bump-id').value;
           const name = document.getElementById('bump-name').value;
@@ -394,22 +415,41 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
           const imageUrl = document.getElementById('bump-image').value;
           const isActive = document.getElementById('bump-active').checked;
           
+          // Validação básica
+          if (!name) {
+            alert('O nome é obrigatório');
+            return;
+          }
+
           // Converter preço para centavos
           const priceClean = priceRaw.replace(',', '.');
           const price = Math.round(parseFloat(priceClean) * 100);
           
-          if (!name || isNaN(price)) {
-            alert('Preencha nome e preço corretamente');
+          if (isNaN(price)) {
+            alert('Insira um preço válido');
             return;
           }
           
-          const payload = { name, description, price, displayOrder: parseInt(displayOrder) || 0, imageUrl, isActive };
+          const payload = { 
+            name, 
+            description: description || null, 
+            price, 
+            displayOrder: parseInt(displayOrder) || 0, 
+            imageUrl: imageUrl || null, 
+            isActive 
+          };
+          
+          // Iniciar loading
+          btn.disabled = true;
+          btnText.textContent = 'SALVANDO...';
+          btnLoader.classList.remove('hidden');
           
           try {
             let res;
             if (id) {
+              // Usar PATCH conforme solicitado
               res = await fetch('/api/admin/order-bumps/' + id, {
-                method: 'PUT',
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
               });
@@ -425,10 +465,25 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
             if (data.success) {
               window.location.reload();
             } else {
-              alert('Erro: ' + data.error);
+              alert('Erro ao salvar: ' + (data.error || 'Erro desconhecido'));
+              // Reset loading
+              btn.disabled = false;
+              btnText.textContent = 'SALVAR';
+              btnLoader.classList.add('hidden');
             }
           } catch (e) {
-            alert('Erro ao salvar');
+            alert('Erro de rede ao salvar. Tente novamente.');
+            // Reset loading
+            btn.disabled = false;
+            btnText.textContent = 'SALVAR';
+            btnLoader.classList.add('hidden');
+          }
+        });
+
+        // Fechar modal ao clicar fora dele
+        document.getElementById('order-bump-modal').addEventListener('click', function(e) {
+          if (e.target === this) {
+            window.closeOrderBumpModal();
           }
         });
       `}} />

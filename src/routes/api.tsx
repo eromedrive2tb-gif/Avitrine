@@ -746,7 +746,7 @@ apiRoutes.post('/admin/order-bumps', async (c) => {
 });
 
 // Atualizar order bump
-apiRoutes.put('/admin/order-bumps/:id', async (c) => {
+apiRoutes.patch('/admin/order-bumps/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'));
     const body = await c.req.json();
