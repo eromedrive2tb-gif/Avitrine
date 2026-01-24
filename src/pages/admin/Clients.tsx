@@ -40,20 +40,17 @@ export const AdminClients: FC<AdminClientsProps> = ({
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard 
           label="Total de Usuários" 
-          value={stats.totalUsers.toString()} 
-          icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+          value={stats.totalUsers.toLocaleString('pt-BR')} 
         />
         <StatCard 
           label="Usuários Assinantes" 
-          value={stats.activeSubscribers.toString()} 
+          value={stats.activeSubscribers.toLocaleString('pt-BR')} 
           isPositive={true}
-          icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>}
         />
         <StatCard 
           label="Usuários Não Assinantes" 
-          value={stats.inactiveSubscribers.toString()} 
+          value={stats.inactiveSubscribers.toLocaleString('pt-BR')} 
           isPositive={false}
-          icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>}
         />
       </div>
 
@@ -65,59 +62,59 @@ export const AdminClients: FC<AdminClientsProps> = ({
             name="search"
             placeholder="Buscar por nome ou email..." 
             value={filters.search}
-            class="w-full bg-surface border border-primary/20 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-primary/50 focus:outline-none transition-all"
+            class="w-full bg-surface border border-white/10 rounded px-4 py-2 text-xs text-white focus:border-primary focus:outline-none transition-all"
           />
-          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           </div>
         </form>
       </div>
 
       {/* Users Table */}
-      <div class="bg-surface/50 border border-primary/10 rounded-2xl overflow-hidden backdrop-blur-sm shadow-2xl">
+      <div class="rounded-xl border border-white/5 bg-surface overflow-hidden shadow-2xl">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="border-b border-primary/10 bg-white/[0.02]">
-                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">ID</th>
-                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Usuário</th>
-                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Email</th>
-                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Status Assinatura</th>
-                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Último Término</th>
+              <tr class="bg-[#1a1a1a] border-b border-white/5">
+                <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">ID</th>
+                <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Usuário</th>
+                <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Email</th>
+                <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Status Assinatura</th>
+                <th class="px-6 py-4 text-[10px] font-bold text-gray-200 uppercase tracking-[0.2em]">Último Término</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-primary/5">
+            <tbody class="divide-y divide-white/5">
               {users.map((user) => (
-                <tr key={user.id} class="hover:bg-white/[0.02] transition-colors group">
-                  <td class="px-6 py-4 text-sm text-gray-400">#{user.id}</td>
+                <tr key={user.id} class="hover:bg-white/5 transition-colors group">
+                  <td class="px-6 py-4 text-[11px] font-mono text-gray-600">#{user.id}</td>
                   <td class="px-6 py-4">
-                    <div class="font-display text-sm text-white group-hover:text-primary transition-colors">
+                    <div class="font-bold text-white group-hover:text-primary transition-colors text-sm">
                       {user.name || 'Sem nome'}
                     </div>
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-400">{user.email}</td>
+                  <td class="px-6 py-4 text-xs text-gray-500">{user.email}</td>
                   <td class="px-6 py-4">
                     {user.subscriptionStatus === 1 ? (
-                      <span class="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] text-green-500 font-bold uppercase tracking-widest">
+                      <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-green-500/10 text-green-500 border border-green-500/20">
                         Ativa
                       </span>
                     ) : (
-                      <span class="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[10px] text-red-500 font-bold uppercase tracking-widest">
+                      <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-500 border border-red-500/20">
                         Inativa
                       </span>
                     )}
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-400">
+                  <td class="px-6 py-4 text-xs text-gray-400 font-mono">
                     {user.lastSubscriptionEndDate 
                       ? new Date(user.lastSubscriptionEndDate).toLocaleDateString('pt-BR') 
-                      : 'Nenhuma'}
+                      : <span class="text-gray-700">Nenhuma</span>}
                   </td>
                 </tr>
               ))}
 
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} class="px-6 py-12 text-center text-gray-500 italic">
+                  <td colSpan={5} class="px-6 py-12 text-center text-gray-500 text-sm">
                     Nenhum usuário encontrado.
                   </td>
                 </tr>
@@ -128,13 +125,11 @@ export const AdminClients: FC<AdminClientsProps> = ({
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div class="p-6 border-t border-primary/10 flex justify-center">
-            <Pagination 
-              currentPage={pagination.page} 
-              totalPages={pagination.totalPages} 
-              baseUrl="/admin/clients"
-            />
-          </div>
+          <Pagination 
+            currentPage={pagination.page} 
+            totalPages={pagination.totalPages} 
+            baseUrl="/admin/clients"
+          />
         )}
       </div>
     </AdminLayout>
