@@ -17,8 +17,8 @@ interface AdminAdsCreateProps {
 const VALID_PLACEMENTS_BY_TYPE = {
   diamond: ['feed_model'],
   diamond_block: ['home_top', 'home_middle', 'models_grid'],
-  banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register'],
-  spot: ['sidebar', 'model_profile'],
+  banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register', 'model_sidebar'],
+  spot: ['sidebar', 'model_profile', 'model_sidebar'],
   hero: ['home_top']
 };
 
@@ -27,13 +27,14 @@ const PLACEMENT_LABELS: Record<string, string> = {
   'home_top': 'Home (Topo)',
   'home_middle': 'Home (Meio)',
   'home_bottom': 'Home (Rodapé)',
-  'sidebar': 'Sidebar',
+  'sidebar': 'Sidebar (Geral)',
   'feed_mix': 'Feed Mix',
   'models_grid': 'Grid de Modelos',
-  'model_profile': 'Perfil de Modelo',
+  'model_profile': 'Perfil de Modelo (Topo)',
   'login': 'Página de Login',
   'register': 'Página de Registro',
-  'feed_model': 'Feed de Modelo'
+  'feed_model': 'Feed de Modelo',
+  'model_sidebar': 'Sidebar de Modelo'
 };
 
 export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false }) => {
@@ -228,7 +229,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                       />
                   </div>
 
-                  {/* PREVIEW: SPOT SMALL */}
+                  {/* PREVIEW: SPOT SMALL (DEFAULT) */}
                   <div id="preview-spot" class="w-64 hidden">
                       <AdSpotSmall 
                         title={formData.title}
@@ -236,6 +237,33 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                         link="#"
                         imageUrl={formData.imageUrl}
                       />
+                  </div>
+
+                  {/* PREVIEW: SPOT SMALL (CARD STYLE - MODEL SIDEBAR) */}
+                  <div id="preview-spot-card" class="w-64 hidden">
+                    <a href="#" class="block rounded-lg overflow-hidden border border-white/10 hover:border-primary/50 transition-colors group">
+                      <img src={formData.imageUrl} class="w-full h-32 object-cover group-hover:scale-105 transition-transform" />
+                      <div class="p-3 bg-[#1a1a1a]">
+                        <span class="text-[10px] text-[#FFD700] font-bold uppercase">Patrocinado</span>
+                        <h5 class="text-white font-bold text-sm mt-1">{formData.title}</h5>
+                        <span class="text-xs text-primary mt-2 inline-block">{formData.ctaText}</span>
+                      </div>
+                    </a>
+                  </div>
+
+                  {/* PREVIEW: SPOT SMALL (BANNER STYLE - MODEL PROFILE TOPO) */}
+                  <div id="preview-spot-banner" class="w-full hidden">
+                    <div class="relative w-full h-24 md:h-32 rounded-lg overflow-hidden bg-gradient-to-r from-[#1a1a1a] to-[#050505] border border-white/10 hover:border-primary/50 transition-all">
+                      <img src={formData.imageUrl} class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity" />
+                      <div class="absolute inset-0 flex items-center justify-between px-4 md:px-10 z-10">
+                        <div class="flex flex-col justify-center">
+                          <span class="text-[10px] text-[#FFD700] uppercase font-bold tracking-widest border border-[#FFD700] px-1 w-fit mb-1">Publicidade</span>
+                          <h4 class="text-white font-display text-xl md:text-3xl uppercase leading-none">{formData.title}</h4>
+                          <p class="text-gray-400 text-xs md:text-sm hidden sm:block">{formData.subtitle}</p>
+                        </div>
+                        <span class="bg-primary text-white text-xs md:text-sm font-bold px-4 py-2 rounded-sm uppercase group-hover:bg-primary/80 transition-colors">{formData.ctaText}</span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* PREVIEW: HERO CAROUSEL */}
@@ -281,14 +309,16 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
             const pDiamondBlock = document.getElementById('preview-diamond-block');
             const pBanner = document.getElementById('preview-banner');
             const pSpot = document.getElementById('preview-spot');
+            const pSpotCard = document.getElementById('preview-spot-card');
+            const pSpotBanner = document.getElementById('preview-spot-banner');
             const pHero = document.getElementById('preview-hero');
 
             // Mapeamento de placements válidos por tipo
             const validPlacementsByType = {
                 diamond: ['feed_model'],
                 diamond_block: ['home_top', 'home_middle', 'models_grid'],
-                banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register'],
-                spot: ['sidebar', 'model_profile'],
+                banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register', 'model_sidebar'],
+                spot: ['sidebar', 'model_profile', 'model_sidebar'],
                 hero: ['home_top']
             };
 
@@ -297,13 +327,14 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                 'home_top': 'Home (Topo)',
                 'home_middle': 'Home (Meio)',
                 'home_bottom': 'Home (Rodapé)',
-                'sidebar': 'Sidebar',
+                'sidebar': 'Sidebar (Geral)',
                 'feed_mix': 'Feed Mix',
                 'models_grid': 'Grid de Modelos',
-                'model_profile': 'Perfil de Modelo',
+                'model_profile': 'Perfil de Modelo (Topo)',
                 'login': 'Página de Login',
                 'register': 'Página de Registro',
-                'feed_model': 'Feed de Modelo'
+                'feed_model': 'Feed de Modelo',
+                'model_sidebar': 'Sidebar de Modelo'
             };
 
             // Valor inicial do placement (do servidor)
@@ -343,12 +374,15 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
 
             function updateVisibility() {
                 const type = typeSelect.value;
+                const placement = placementSelect.value;
                 
                 // Reset Previews
                 pDiamond.classList.add('hidden');
                 pDiamondBlock.classList.add('hidden');
                 pBanner.classList.add('hidden');
                 pSpot.classList.add('hidden');
+                pSpotCard.classList.add('hidden');
+                pSpotBanner.classList.add('hidden');
                 pHero.classList.add('hidden');
 
                 // Reset Fields
@@ -366,7 +400,14 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                     pBanner.classList.remove('hidden');
                     fieldSubtitle.classList.remove('hidden');
                 } else if (type === 'spot') {
-                    pSpot.classList.remove('hidden');
+                    if (placement === 'model_sidebar') {
+                        pSpotCard.classList.remove('hidden');
+                    } else if (placement === 'model_profile') {
+                        pSpotBanner.classList.remove('hidden');
+                        fieldSubtitle.classList.remove('hidden'); // Show subtitle for banner-style spot
+                    } else {
+                        pSpot.classList.remove('hidden');
+                    }
                 } else if (type === 'hero') {
                     pHero.classList.remove('hidden');
                     fieldCategory.classList.remove('hidden');
@@ -429,6 +470,7 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
 
                 // Update Spot
                 if (type === 'spot') {
+                    // Default Spot
                     const titleEl = pSpot.querySelector('.absolute.bottom-3 p');
                     const btnEl = pSpot.querySelector('.absolute.bottom-3 button');
                     const imgEl = pSpot.querySelector('img');
@@ -436,6 +478,26 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
                     if(titleEl) titleEl.innerText = title;
                     if(btnEl) btnEl.innerText = cta;
                     if(imgEl) imgEl.src = imgUrl;
+
+                    // Card Style Spot
+                    const cardTitleEl = pSpotCard.querySelector('h5');
+                    const cardCtaEl = pSpotCard.querySelector('span.text-primary');
+                    const cardImgEl = pSpotCard.querySelector('img');
+
+                    if(cardTitleEl) cardTitleEl.innerText = title;
+                    if(cardCtaEl) cardCtaEl.innerText = cta;
+                    if(cardImgEl) cardImgEl.src = imgUrl;
+
+                    // Banner Style Spot
+                    const bTitleEl = pSpotBanner.querySelector('h4');
+                    const bSubEl = pSpotBanner.querySelector('p');
+                    const bCtaEl = pSpotBanner.querySelector('span.bg-primary');
+                    const bImgEl = pSpotBanner.querySelector('img');
+
+                    if(bTitleEl) bTitleEl.innerText = title;
+                    if(bSubEl) bSubEl.innerText = subtitle;
+                    if(bCtaEl) bCtaEl.innerText = cta;
+                    if(bImgEl) bImgEl.src = imgUrl;
                 }
 
                 // Update Hero
@@ -453,6 +515,11 @@ export const AdminAdsCreate: FC<AdminAdsCreateProps> = ({ ad, isEditing = false 
             // Listeners
             typeSelect.addEventListener('change', () => {
                 updatePlacementOptions();
+                updateVisibility();
+                updatePreview();
+            });
+
+            placementSelect.addEventListener('change', () => {
                 updateVisibility();
                 updatePreview();
             });

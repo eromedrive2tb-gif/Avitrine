@@ -78,7 +78,7 @@ publicRoutes.get('/models/:slug', async (c) => {
   // Busca os primeiros 20 posts com thumbnails assinadas e anúncios
   const [formattedPosts, profileAds] = await Promise.all([
     WhitelabelDbService.getModelPosts(model.id, 1, 20),
-    AdsService.getActiveByPlacements(['model_profile', 'sidebar'])
+    AdsService.getActiveByPlacements(['model_profile', 'model_sidebar'])
   ]);
 
   return c.html(<ModelProfilePage model={model} initialPosts={formattedPosts} user={user} ads={profileAds} />);

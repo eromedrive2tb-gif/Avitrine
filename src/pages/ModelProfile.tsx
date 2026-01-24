@@ -14,7 +14,7 @@ interface ModelProfilePageProps {
   user?: any;
   ads?: {
     model_profile?: Ad[];
-    sidebar?: Ad[];
+    model_sidebar?: Ad[];
   };
 }
 
@@ -30,7 +30,7 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
 
   // Get profile ads
   const profileAds = ads.model_profile?.filter(ad => ad.type === 'spot') || [];
-  const sidebarAds = ads.sidebar?.filter(ad => ad.type === 'spot' || ad.type === 'banner') || [];
+  const sidebarAds = ads.model_sidebar?.filter(ad => ad.type === 'spot' || ad.type === 'banner') || [];
 
   return (
     <Layout title={`${displayName} (@${folderName}) - Perfil Exclusivo`} user={user}>

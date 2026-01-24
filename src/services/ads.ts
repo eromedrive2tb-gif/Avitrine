@@ -4,7 +4,7 @@ import { eq, desc, asc, and, or, sql, gte, lte, isNull } from 'drizzle-orm';
 
 // Types
 export type AdType = 'diamond' | 'diamond_block' | 'banner' | 'spot' | 'hero';
-export type AdPlacement = 'home_top' | 'home_middle' | 'home_bottom' | 'sidebar' | 'feed_mix' | 'models_grid' | 'model_profile' | 'login' | 'register' | 'feed_model';
+export type AdPlacement = 'home_top' | 'home_middle' | 'home_bottom' | 'sidebar' | 'feed_mix' | 'models_grid' | 'model_profile' | 'login' | 'register' | 'feed_model' | 'model_sidebar';
 export type AdStatus = 'active' | 'paused' | 'draft';
 
 // Mapeamento de placements válidos por tipo de anúncio
@@ -16,10 +16,10 @@ export const VALID_PLACEMENTS_BY_TYPE: Record<AdType, AdPlacement[]> = {
   diamond_block: ['home_top', 'home_middle', 'models_grid'],
   
   // Banner: qualquer lugar menos feeds de conteúdo
-  banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register'],
+  banner: ['home_top', 'home_bottom', 'sidebar', 'login', 'register', 'model_sidebar'],
   
   // Ad Spot Small: apenas áreas laterais ou secundárias
-  spot: ['sidebar', 'model_profile'],
+  spot: ['sidebar', 'model_profile', 'model_sidebar'],
   
   // Hero Carousel: apenas topo da home
   hero: ['home_top']
@@ -306,7 +306,8 @@ export const AdsService = {
       'model_profile': 'Perfil de Modelo',
       'login': 'Página de Login',
       'register': 'Página de Registro',
-      'feed_model': 'Feed de Modelo'
+      'feed_model': 'Feed de Modelo',
+      'model_sidebar': 'Sidebar de Modelo'
     };
     return labels[placement] || placement;
   },

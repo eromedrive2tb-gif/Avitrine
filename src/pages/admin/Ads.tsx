@@ -72,13 +72,14 @@ export const AdminAds: FC<AdminAdsProps> = ({ ads, pagination, filters }) => {
               <option value="home_top" selected={filters?.placement === 'home_top'}>Home (Topo)</option>
               <option value="home_middle" selected={filters?.placement === 'home_middle'}>Home (Meio)</option>
               <option value="home_bottom" selected={filters?.placement === 'home_bottom'}>Home (Rodapé)</option>
-              <option value="sidebar" selected={filters?.placement === 'sidebar'}>Sidebar</option>
+              <option value="sidebar" selected={filters?.placement === 'sidebar'}>Sidebar (Geral)</option>
               <option value="feed_mix" selected={filters?.placement === 'feed_mix'}>Feed Mix</option>
               <option value="models_grid" selected={filters?.placement === 'models_grid'}>Grid de Modelos</option>
-              <option value="model_profile" selected={filters?.placement === 'model_profile'}>Perfil de Modelo</option>
+              <option value="model_profile" selected={filters?.placement === 'model_profile'}>Perfil de Modelo (Topo)</option>
               <option value="login" selected={filters?.placement === 'login'}>Página de Login</option>
               <option value="register" selected={filters?.placement === 'register'}>Página de Registro</option>
               <option value="feed_model" selected={filters?.placement === 'feed_model'}>Feed de Modelo</option>
+              <option value="model_sidebar" selected={filters?.placement === 'model_sidebar'}>Sidebar de Modelo</option>
             </select>
           </div>
           <button type="submit" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-bold uppercase transition-colors">

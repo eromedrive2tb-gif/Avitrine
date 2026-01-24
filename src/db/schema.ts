@@ -204,7 +204,7 @@ export const ads = pgTable('ads', {
   
   // Posicionamento/Placement
   placement: text('placement', {
-    enum: ['home_top', 'home_middle', 'home_bottom', 'sidebar', 'feed_mix', 'models_grid', 'model_profile', 'login', 'register', 'feed_model']
+    enum: ['home_top', 'home_middle', 'home_bottom', 'sidebar', 'feed_mix', 'models_grid', 'model_profile', 'login', 'register', 'feed_model', 'model_sidebar']
   }).notNull().default('home_top'),
   
   // Status do anúncio
