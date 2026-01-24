@@ -3,6 +3,7 @@ import { db } from '../db';
 import { plans, supportContacts, paymentGateways, checkouts, subscriptions, users, orderBumps } from '../db/schema';
 import { eq, desc, like, or, sql, asc } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
+import { AdminDashboardService } from '../services/admin/dashboard';
 import { AdminModels } from '../pages/admin/Models';
 import { AdminAds } from '../pages/admin/Ads';
 import { AdminAdsCreate } from '../pages/admin/AdsCreate';
@@ -17,7 +18,22 @@ import { AdsService, type AdStatus, type AdPlacement, type AdType } from '../ser
 
 const adminRoutes = new Hono();
 
-adminRoutes.get('/', (c) => c.html(<AdminDashboard />));
+adminRoutes.get('/', async (c) => {
+  const [stats, trafficData, recentActivity] = await Promise.all([
+    AdminDashboardService.getStats(),
+    AdminDashboardService.getTrafficData(),
+    AdminDashboardService.getRecentActivity(),
+  ]);
+
+  return c.html(
+    <AdminDashboard 
+      stats={stats} 
+      trafficData={trafficData} 
+      recentActivity={recentActivity} 
+    />
+  );
+});
+
 adminRoutes.get('/models', (c) => c.html(<AdminModels />));
 
 // === ADS ROUTES ===

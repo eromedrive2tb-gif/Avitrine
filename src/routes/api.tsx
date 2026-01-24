@@ -453,8 +453,12 @@ apiRoutes.get('/models', async (c) => {
     const result = await WhitelabelDbService.getTopModelsWithThumbnails(page, limit);
 
     return c.json({
-      data: result,
-      meta: { page, limit, count: result.length }
+      data: result.data,
+      meta: { 
+        page: result.page, 
+        limit: result.limit, 
+        count: result.total 
+      }
     });
 
   } catch (err: any) {

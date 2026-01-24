@@ -15,6 +15,9 @@ import { eq, asc } from 'drizzle-orm';
 
 import { CheckoutPage } from '../pages/Checkout';
 
+import { WhiteLabelModelCard } from '../components/molecules/WhiteLabelModelCard';
+import { Button } from '../components/atoms/Button';
+
 const publicRoutes = new Hono();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
@@ -52,23 +55,68 @@ async function getUser(c: any) {
 // ROTA HOME
 publicRoutes.get('/', async (c) => {
   const user = await getUser(c);
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const pageSize = 20;
+  const isHTMX = c.req.header('HX-Request') === 'true';
+  
   try {
-    // Buscar modelos e anúncios em paralelo
-    const [signedModels, homeAds] = await Promise.all([
-      WhitelabelDbService.getTopModelsWithThumbnails(1, 20),
+    if (isHTMX && page > 1) {
+      const modelsResult = await WhitelabelDbService.getTopModelsWithThumbnails(page, pageSize);
+      const hasNextPage = (pageSize * page) < modelsResult.total;
+      
+      return c.html(
+        <>
+          {modelsResult.data.map(m => (
+            <WhiteLabelModelCard 
+              id={m.id}
+              name={m.name}
+              postCount={m.postCount || 0}
+              thumbnailUrl={m.thumbnailUrl}
+            />
+          ))}
+          
+          <div id="load-more-container" hx-swap-oob="true">
+            {hasNextPage ? (
+              <div class="mt-12 flex justify-center">
+                <Button 
+                  variant="secondary" 
+                  className="min-w-[250px] !rounded-full py-4 border-white/20 hover:border-primary group"
+                  onClick={`this.setAttribute('disabled', 'true'); htmx.ajax('GET', '/?page=${page + 1}', {target: '#new-revelations-grid', swap: 'beforeend'})`}
+                >
+                  <span class="flex items-center gap-2">
+                    Carregar Mais Modelos
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform group-hover:translate-y-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </Button>
+              </div>
+            ) : <div class="mt-12"></div>}
+          </div>
+        </>
+      );
+    }
+
+    // Buscar modelos (limit cumulativo para Carregar Mais se não for HTMX)
+    const [modelsResult, homeAds] = await Promise.all([
+      WhitelabelDbService.getTopModelsWithThumbnails(1, pageSize * page),
       AdsService.getActiveByPlacements(['home_top', 'home_middle', 'home_bottom', 'sidebar', 'feed_mix'])
     ]);
     
-    console.log('[Route] Home ads fetched:', {
-      home_top: homeAds.home_top?.length,
-      home_middle: homeAds.home_middle?.length,
-      home_bottom: homeAds.home_bottom?.length,
-      home_top_types: homeAds.home_top?.map(a => a.type),
-      home_bottom_types: homeAds.home_bottom?.map(a => a.type)
-    });
+    const safeModels = modelsResult.data.map(m => ({ ...m, postCount: m.postCount || 0 }));
     
-    const safeModels = signedModels.map(m => ({ ...m, postCount: m.postCount || 0 }));
-    return c.html(<HomePage models={safeModels} user={user} ads={homeAds} />);
+    return c.html(
+      <HomePage 
+        models={safeModels} 
+        user={user} 
+        ads={homeAds} 
+        pagination={{
+          currentPage: page,
+          totalPages: Math.ceil(modelsResult.total / pageSize),
+          hasNextPage: (pageSize * page) < modelsResult.total
+        }}
+      />
+    );
   } catch (e) {
     console.error("Erro na Home:", e);
     return c.html(<HomePage models={[]} user={user} ads={{}} />);

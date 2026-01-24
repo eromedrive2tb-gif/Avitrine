@@ -2,14 +2,49 @@ import { FC } from 'hono/jsx';
 import { AdminLayout } from '../../components/templates/AdminLayout';
 import { StatCard } from '../../components/molecules/StatCard';
 
-export const AdminDashboard: FC = () => {
+interface AdminDashboardProps {
+  stats: {
+    monthlyRevenue: string;
+    revenueTrend: string;
+    revenueIsPositive: boolean;
+    newSubscribers: string;
+    subscribersTrend: string;
+    subscribersIsPositive: boolean;
+    activeModels: string;
+    avgAdsCtr: string;
+  };
+  trafficData: number[];
+  recentActivity: {
+    userName: string;
+    planName: string;
+    timeAgo: string;
+  }[];
+}
+
+export const AdminDashboard: FC<AdminDashboardProps> = ({ stats, trafficData, recentActivity }) => {
   return (
     <AdminLayout title="Dashboard Overview" activePath="/admin">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard label="Receita Mensal" value="R$ 45.200" trend="+12%" isPositive={true} />
-        <StatCard label="Novos Assinantes" value="1,240" trend="+5%" isPositive={true} />
-        <StatCard label="Modelos Ativas" value="342" trend="+2" isPositive={true} />
-        <StatCard label="Ads CTR Médio" value="3.2%" trend="-0.4%" isPositive={false} />
+        <StatCard 
+          label="Receita Mensal" 
+          value={stats.monthlyRevenue} 
+          trend={stats.revenueTrend} 
+          isPositive={stats.revenueIsPositive} 
+        />
+        <StatCard 
+          label="Novos Assinantes" 
+          value={stats.newSubscribers} 
+          trend={stats.subscribersTrend} 
+          isPositive={stats.subscribersIsPositive} 
+        />
+        <StatCard 
+          label="Modelos Ativas" 
+          value={stats.activeModels} 
+        />
+        <StatCard 
+          label="Ads CTR Médio" 
+          value={stats.avgAdsCtr} 
+        />
       </div>
 
       <div class="grid lg:grid-cols-3 gap-8">
@@ -26,17 +61,21 @@ export const AdminDashboard: FC = () => {
           </div>
           
           <div class="flex-1 flex items-end gap-2 px-2 pb-2">
-             {/* Fake Chart Bars com gradientes e hover */}
-             {Array.from({length: 24}).map((_, i) => (
-                <div 
-                  style={{ height: `${Math.random() * 60 + 20}%` }} 
-                  class={`flex-1 rounded-t-sm transition-all duration-500 relative group/bar ${i % 2 === 0 ? 'bg-primary/20' : 'bg-primary/10'} hover:bg-primary hover:shadow-neon-purple`}
-                >
-                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface border border-primary/30 px-2 py-1 rounded text-[8px] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    {Math.floor(Math.random() * 1000)} users
+             {/* Real Chart Bars com gradientes e hover */}
+             {trafficData.map((count, i) => {
+                const max = Math.max(...trafficData, 1);
+                const height = (count / max) * 80 + 5; // 5% minimum height
+                return (
+                  <div 
+                    style={{ height: `${height}%` }} 
+                    class={`flex-1 rounded-t-sm transition-all duration-500 relative group/bar ${i % 2 === 0 ? 'bg-primary/20' : 'bg-primary/10'} hover:bg-primary hover:shadow-neon-purple`}
+                  >
+                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface border border-primary/30 px-2 py-1 rounded text-[8px] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      {count} hits
+                    </div>
                   </div>
-                </div>
-             ))}
+                );
+             })}
           </div>
 
           {/* Chart Grid Lines */}
@@ -53,7 +92,7 @@ export const AdminDashboard: FC = () => {
            </div>
            
            <ul class="space-y-4 flex-1">
-              {[1,2,3,4,5].map(i => (
+              {recentActivity.map(activity => (
                   <li class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.02] transition-colors group">
                       <div class="relative">
                         <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-sm group-hover:border-primary/50 transition-all">
@@ -65,15 +104,16 @@ export const AdminDashboard: FC = () => {
                       </div>
                       <div class="flex-1 min-w-0">
                           <p class="text-xs text-gray-300 truncate">
-                            <span class="text-white font-bold">User_{i}99</span> 
+                            <span class="text-white font-bold">{activity.userName}</span> 
                             <span class="text-gray-500 ml-1">assinou o plano</span> 
-                            <span class="text-primary font-bold ml-1">Diamond</span>
+                            <span class="text-primary font-bold ml-1">{activity.planName}</span>
                           </p>
-                          <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tighter">Há {i * 5} minutos</p>
+                          <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tighter">{activity.timeAgo}</p>
                       </div>
                   </li>
               ))}
            </ul>
+
 
            <button class="w-full mt-6 py-3 rounded-xl border border-primary/20 text-[11px] text-gray-400 font-bold uppercase tracking-widest hover:bg-primary/5 hover:text-white hover:border-primary/50 transition-all duration-300">
              Ver Todos os Logs

@@ -59,18 +59,29 @@ export const WhitelabelModelQueries = {
   async getTopWithThumbnails(page: number = 1, limit: number = 20) {
     const offset = (page - 1) * limit;
 
-    const models = await db.select({
-      id: whitelabelModels.id,
-      name: whitelabelModels.folderName,
-      postCount: whitelabelModels.postCount,
-      thumbnailUrl: whitelabelModels.thumbnailUrl,
-    })
-    .from(whitelabelModels)
-    .orderBy(desc(whitelabelModels.postCount), desc(whitelabelModels.id))
-    .limit(limit)
-    .offset(offset);
+    const [models, total] = await Promise.all([
+      db.select({
+        id: whitelabelModels.id,
+        name: whitelabelModels.folderName,
+        postCount: whitelabelModels.postCount,
+        thumbnailUrl: whitelabelModels.thumbnailUrl,
+      })
+      .from(whitelabelModels)
+      .orderBy(desc(whitelabelModels.postCount), desc(whitelabelModels.id))
+      .limit(limit)
+      .offset(offset),
+      db.select({ count: count() }).from(whitelabelModels)
+    ]);
 
-    return await WhitelabelModelQueries._enrichWithThumbnails(models);
+    const enrichedModels = await WhitelabelModelQueries._enrichWithThumbnails(models);
+    
+    return {
+      data: enrichedModels,
+      total: total[0].count,
+      page,
+      limit,
+      totalPages: Math.ceil(total[0].count / limit)
+    };
   },
 
   async getBySlug(slug: string) {

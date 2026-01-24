@@ -9,6 +9,8 @@ import { MockService } from '../services/mock';
 import { TrendingSideColumn } from '../components/molecules/TrendingSideColumn';
 import type { Ad } from '../services/ads';
 
+import { Button } from '../components/atoms/Button';
+
 // Interface das props
 interface HomePageProps {
   models: {
@@ -25,9 +27,14 @@ interface HomePageProps {
     sidebar?: Ad[];
     feed_mix?: Ad[];
   };
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    hasNextPage: boolean;
+  };
 }
 
-export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
+export const HomePage: FC<HomePageProps> = ({ models, user, ads = {}, pagination }) => {
   const trendingModels = MockService.getTrendingModels();
   const tags = MockService.getTags();
 
@@ -38,9 +45,23 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
   const middleAds = ads.home_middle?.filter(ad => ad.type === 'diamond_block') || [];
   const bottomBannerAds = ads.home_bottom?.filter(ad => ad.type === 'banner') || [];
 
-  // Split models for layout
+  // Lógica para evitar duplicidade de modelos em diferentes seções
+  const displayedModelIds = new Set<number>();
+
+  // Recomendados: primeiros 5 modelos
   const recommendedModels = models.slice(0, 5);
-  const featuredModels = models.slice(5);
+  recommendedModels.forEach(m => displayedModelIds.add(m.id));
+
+  // Modelos em Destaque: próximos 10 modelos (que não estão em recomendados)
+  const featuredModels = models
+    .filter(m => !displayedModelIds.has(m.id))
+    .slice(0, 10);
+  featuredModels.forEach(m => displayedModelIds.add(m.id));
+
+  // Novas Revelações: modelos restantes (que não estão nas seções acima), em ordem reversa
+  const newRevelations = models
+    .filter(m => !displayedModelIds.has(m.id))
+    .reverse();
 
   // Log para debugging
   console.log('[Home] Ads data:', { 
@@ -48,7 +69,13 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
     home_middle_count: ads.home_middle?.length,
     home_bottom_count: ads.home_bottom?.length,
     top_banners: topBannerAds.length,
-    bottom_banners: bottomBannerAds.length
+    bottom_banners: bottomBannerAds.length,
+    models_counts: {
+      total: models.length,
+      recommended: recommendedModels.length,
+      featured: featuredModels.length,
+      new_revelations: newRevelations.length
+    }
   });
 
   return (
@@ -167,8 +194,8 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
         {/* Secondary Feed */}
         <section class="mt-8">
             <h3 class="font-display text-2xl text-white mb-4">Novas Revelações</h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                 {models.slice().reverse().map(m => (
+            <div id="new-revelations-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                 {newRevelations.map(m => (
                     <WhiteLabelModelCard 
                       id={m.id}
                       name={m.name}
@@ -176,6 +203,26 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {} }) => {
                       thumbnailUrl={m.thumbnailUrl}
                     />
                  ))}
+            </div>
+            
+            {/* Load More Button */}
+            <div id="load-more-container">
+              {pagination?.hasNextPage && (
+                <div class="mt-12 flex justify-center">
+                  <Button 
+                    variant="secondary" 
+                    className="min-w-[250px] !rounded-full py-4 border-white/20 hover:border-primary group"
+                    onClick={`this.setAttribute('disabled', 'true'); htmx.ajax('GET', '/?page=${pagination.currentPage + 1}', {target: '#new-revelations-grid', swap: 'beforeend'})`}
+                  >
+                    <span class="flex items-center gap-2">
+                      Carregar Mais Modelos
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform group-hover:translate-y-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </Button>
+                </div>
+              )}
             </div>
         </section>
 
