@@ -17,9 +17,11 @@ export const HeroCarousel: FC<HeroCarouselProps> = ({ slides: customSlides }) =>
       {/* Slides Container */}
       <div id="carousel-track" class="w-full h-full relative">
         {slides.map((slide, index) => (
-          <div 
+            <div 
             class={`carousel-slide absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
             data-index={index}
+            data-ad-id={slide.adId}
+            data-placement={slide.placement || 'home_top'}
           >
             <img src={slide.image} class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent"></div>

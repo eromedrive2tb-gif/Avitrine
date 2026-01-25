@@ -28,11 +28,11 @@ export const TrendingSideColumn: FC<TrendingSideColumnProps> = ({ model, sidebar
 
             {/* Small Square Ad - Real Data */}
             {sidebarAds.length > 0 ? (
-                <div class="h-1/3 overflow-hidden rounded-lg">
+                <div class="h-1/3 overflow-hidden rounded-lg" id={`ad-trending-${sidebarAds[0].id}`}>
                     <a 
                         href={sidebarAds[0].link} 
                         class="block h-full w-full relative group"
-                        onclick={`fetch('/api/ads/${sidebarAds[0].id}/click', {method:'post'})`}
+                        onclick={`fetch('/api/ads/${sidebarAds[0].id}/click?placement=sidebar', {method:'post'})`}
                     >
                         {sidebarAds[0].imageUrl && (
                             <img src={sidebarAds[0].imageUrl} class="w-full h-full object-cover transition-transform group-hover:scale-110" />
@@ -46,6 +46,20 @@ export const TrendingSideColumn: FC<TrendingSideColumnProps> = ({ model, sidebar
                             )}
                         </div>
                     </a>
+                    <script dangerouslySetInnerHTML={{ __html: `
+                        (function() {
+                            const observer = new IntersectionObserver((entries) => {
+                                entries.forEach(entry => {
+                                    if (entry.isIntersecting) {
+                                        fetch('/api/ads/${sidebarAds[0].id}/impression?placement=sidebar', {method:'POST'});
+                                        observer.unobserve(entry.target);
+                                    }
+                                });
+                            }, { threshold: 0.1 });
+                            const el = document.getElementById('ad-trending-${sidebarAds[0].id}');
+                            if (el) observer.observe(el);
+                        })();
+                    `}} />
                 </div>
             ) : (
                 <div class="h-1/3 bg-[#111] rounded-lg border border-[#FFD700]/30 flex items-center justify-center relative overflow-hidden group">

@@ -91,11 +91,11 @@ export const AuthPage: FC<AuthPageProps> = ({ type, ads = [] }) => {
 
             {/* AD BANNER (Bottom of Form) - Dynamic */}
             {adData && (
-              <div class="mt-8">
+              <div class="mt-8" id={`ad-auth-${adData.id}`}>
                  <a 
                    href={adData.link} 
                    class="block relative rounded-lg overflow-hidden border border-[#FFD700]/30 group"
-                   onclick={`fetch('/api/ads/${adData.id}/click', {method:'post'})`}
+                   onclick={`fetch('/api/ads/${adData.id}/click?placement=${type}', {method:'post'})`}
                  >
                     <div class="bg-gradient-to-r from-[#1a1a1a] to-black p-4 flex items-center justify-between">
                        <div>
@@ -113,6 +113,20 @@ export const AuthPage: FC<AuthPageProps> = ({ type, ads = [] }) => {
                        <div class="h-full bg-[#FFD700] w-2/3"></div>
                     </div>
                  </a>
+                 <script dangerouslySetInnerHTML={{ __html: `
+                    (function() {
+                        const observer = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => {
+                                if (entry.isIntersecting) {
+                                    fetch('/api/ads/${adData.id}/impression?placement=${type}', {method:'POST'});
+                                    observer.unobserve(entry.target);
+                                }
+                            });
+                        }, { threshold: 0.1 });
+                        const el = document.getElementById('ad-auth-${adData.id}');
+                        if (el) observer.observe(el);
+                    })();
+                 `}} />
               </div>
             )}
 

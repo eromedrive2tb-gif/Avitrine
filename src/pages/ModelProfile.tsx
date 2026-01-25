@@ -52,24 +52,43 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
             {/* Sidebar Ads */}
             {sidebarAds.length > 0 && (
               <div class="mt-6 space-y-4">
-                {sidebarAds.slice(0, 2).map(ad => (
-                  <a 
-                    href={ad.link} 
-                    class="block rounded-lg overflow-hidden border border-white/10 hover:border-primary/50 transition-colors group"
-                    onclick={`fetch('/api/ads/${ad.id}/click', {method:'POST'})`}
-                  >
-                    {ad.imageUrl && (
-                      <img src={ad.imageUrl} class="w-full h-32 object-cover group-hover:scale-105 transition-transform" />
-                    )}
-                    <div class="p-3 bg-[#1a1a1a]">
-                      <span class="text-[10px] text-[#FFD700] font-bold uppercase">Patrocinado</span>
-                      <h5 class="text-white font-bold text-sm mt-1">{ad.title}</h5>
-                      {ad.ctaText && (
-                        <span class="text-xs text-primary mt-2 inline-block">{ad.ctaText}</span>
-                      )}
+                {sidebarAds.slice(0, 2).map(ad => {
+                  const trackId = `ad-model-sidebar-${ad.id}-${Math.random().toString(36).substr(2, 9)}`;
+                  return (
+                    <div id={trackId}>
+                      <a 
+                        href={ad.link} 
+                        class="block rounded-lg overflow-hidden border border-white/10 hover:border-primary/50 transition-colors group"
+                        onclick={`fetch('/api/ads/${ad.id}/click?placement=model_sidebar', {method:'POST'})`}
+                      >
+                        {ad.imageUrl && (
+                          <img src={ad.imageUrl} class="w-full h-32 object-cover group-hover:scale-105 transition-transform" />
+                        )}
+                        <div class="p-3 bg-[#1a1a1a]">
+                          <span class="text-[10px] text-[#FFD700] font-bold uppercase">Patrocinado</span>
+                          <h5 class="text-white font-bold text-sm mt-1">{ad.title}</h5>
+                          {ad.ctaText && (
+                            <span class="text-xs text-primary mt-2 inline-block">{ad.ctaText}</span>
+                          )}
+                        </div>
+                      </a>
+                      <script dangerouslySetInnerHTML={{ __html: `
+                        (function() {
+                          const observer = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => {
+                              if (entry.isIntersecting) {
+                                fetch('/api/ads/${ad.id}/impression?placement=model_sidebar', {method:'POST'});
+                                observer.unobserve(entry.target);
+                              }
+                            });
+                          }, { threshold: 0.1 });
+                          const el = document.getElementById('${trackId}');
+                          if (el) observer.observe(el);
+                        })();
+                      `}} />
                     </div>
-                  </a>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -88,6 +107,7 @@ export const ModelProfilePage: FC<ModelProfilePageProps> = ({ model, initialPost
                   link={profileAds[0].link}
                   imageUrl={profileAds[0].imageUrl}
                   adId={profileAds[0].id}
+                  placement="model_profile"
                 />
               </div>
             )}

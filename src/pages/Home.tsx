@@ -87,6 +87,8 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {}, pagination
           <div class="lg:col-span-3">
              <HeroCarousel 
                 slides={heroAds.map(ad => ({
+                  adId: ad.id,
+                  placement: 'home_top',
                   image: ad.imageUrl,
                   title: ad.title,
                   category: ad.category || 'DESTAQUE',
@@ -107,6 +109,7 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {}, pagination
                    link={topBannerAds[0].link}
                    imageUrl={topBannerAds[0].imageUrl}
                    adId={topBannerAds[0].id}
+                   placement="home_top"
                  />
                </div>
              )}
@@ -128,7 +131,9 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {}, pagination
           <div class="mb-10">
             <NativeAdBlock 
               title={diamondBlockAds[0].title || "Diamond Selection"} 
+              placement="home_top"
               models={diamondBlockAds.slice(0, 4).map(ad => ({
+                adId: ad.id,
                 name: ad.title,
                 imageUrl: ad.imageUrl || '',
                 category: ad.category || 'Destaque',
@@ -181,7 +186,9 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {}, pagination
           <div class="my-10">
             <NativeAdBlock 
               title={middleAds[0].title || "Diamond Selection"} 
+              placement="home_middle"
               models={middleAds.slice(0, 4).map(ad => ({
+                adId: ad.id,
                 name: ad.title,
                 imageUrl: ad.imageUrl || '',
                 category: ad.category || 'Destaque',
@@ -235,6 +242,7 @@ export const HomePage: FC<HomePageProps> = ({ models, user, ads = {}, pagination
             link={ad.link}
             imageUrl={ad.imageUrl}
             adId={ad.id}
+            placement="home_bottom"
           />
         ))}
 

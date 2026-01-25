@@ -8,6 +8,8 @@ interface ModelCardProps {
   views?: string;
   isPromoted?: boolean; // Type A: "Post" Ad
   link?: string; // Optional external link for ads
+  adId?: number;
+  placement?: string;
 }
 
 export const ModelCard: FC<ModelCardProps> = ({ 
@@ -17,18 +19,22 @@ export const ModelCard: FC<ModelCardProps> = ({
   isLive = false,
   views = '1.2k',
   isPromoted = false,
-  link
+  link,
+  adId,
+  placement
 }) => {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const href = link || `/models/${slug}`;
+  const trackId = `ad-card-${adId}-${Math.random().toString(36).substr(2, 9)}`;
+  const handleClick = adId ? `fetch('/api/ads/${adId}/click${placement ? `?placement=${placement}` : ''}', {method:'POST'})` : '';
 
   return (
-    <a href={href} class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer block transition-all duration-300 ${
+    <a href={href} id={trackId} onclick={handleClick} class={`group relative w-full aspect-[3/4] rounded-md overflow-hidden cursor-pointer block transition-all duration-300 ${
       isPromoted 
         ? 'border-2 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)]' 
         : 'bg-surface border border-white/5 hover:border-primary/50'
     }`}>
-      {/* Image Layer */}
+      {/* ... existing image and badges ... */}
       <img 
         src={imageUrl} 
         alt={name} 
@@ -66,6 +72,22 @@ export const ModelCard: FC<ModelCardProps> = ({
           </span>
         </div>
       </div>
+      {adId && (
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  fetch('/api/ads/${adId}/impression${placement ? `?placement=${placement}` : ''}', {method:'POST'});
+                  observer.unobserve(entry.target);
+                }
+              });
+            }, { threshold: 0.1 });
+            const el = document.getElementById('${trackId}');
+            if (el) observer.observe(el);
+          })();
+        `}} />
+      )}
     </a>
   );
 };

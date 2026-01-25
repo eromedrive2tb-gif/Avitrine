@@ -7,14 +7,16 @@ interface AdBannerProps {
   ctaText: string;
   link: string;
   adId?: number; // For click tracking
+  placement?: string; // For impression tracking
 }
 
 // Type B: Banner Ad (Faixa Horizontal)
-export const AdBanner: FC<AdBannerProps> = ({ title, subtitle, ctaText, link, imageUrl, adId }) => {
-  const handleClick = adId ? `fetch('/api/ads/${adId}/click', {method:'POST'})` : '';
-  
+export const AdBanner: FC<AdBannerProps> = ({ title, subtitle, ctaText, link, imageUrl, adId, placement }) => {
+  const handleClick = adId ? `fetch('/api/ads/${adId}/click${placement ? `?placement=${placement}` : ''}', {method:'POST'})` : '';
+  const trackId = `ad-banner-${adId}-${Math.random().toString(36).substr(2, 9)}`;
+
   return (
-    <a href={link} class="block my-6 group" onclick={handleClick}>
+    <a href={link} class="block my-6 group" onclick={handleClick} id={trackId}>
       <div class="relative w-full h-24 md:h-32 rounded-lg overflow-hidden bg-gradient-to-r from-[#1a1a1a] to-[#050505] border border-white/10 hover:border-primary/50 transition-all">
         {imageUrl && (
             <img src={imageUrl} class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity" />
@@ -30,6 +32,22 @@ export const AdBanner: FC<AdBannerProps> = ({ title, subtitle, ctaText, link, im
             </span>
         </div>
       </div>
+      {adId && (
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  fetch('/api/ads/${adId}/impression${placement ? `?placement=${placement}` : ''}', {method:'POST'});
+                  observer.unobserve(entry.target);
+                }
+              });
+            }, { threshold: 0.1 });
+            const el = document.getElementById('${trackId}');
+            if (el) observer.observe(el);
+          })();
+        `}} />
+      )}
     </a>
   );
 };

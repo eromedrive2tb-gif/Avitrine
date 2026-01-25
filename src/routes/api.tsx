@@ -869,7 +869,7 @@ apiRoutes.get('/ads/placement/:placement', async (c) => {
     const placement = c.req.param('placement') as AdPlacement;
     const limit = parseInt(c.req.query('limit') || '5');
     
-    const ads = await AdsService.getActiveByPlacement(placement, limit, true);
+    const ads = await AdsService.getActiveByPlacement(placement, limit, false);
     
     return c.json({ success: true, data: ads });
   } catch (e: any) {
@@ -888,7 +888,7 @@ apiRoutes.post('/ads/placements', async (c) => {
       return c.json({ success: false, error: 'Placements array required' }, 400);
     }
     
-    const adsMap = await AdsService.getActiveByPlacements(placements, true);
+    const adsMap = await AdsService.getActiveByPlacements(placements, false);
     
     return c.json({ success: true, data: adsMap });
   } catch (e: any) {

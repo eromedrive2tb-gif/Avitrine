@@ -33,7 +33,9 @@ export const ModelsPage: FC<ModelsPageProps> = ({ models, pagination, user, ads 
             <div class="mb-8">
               <NativeAdBlock 
                 title={gridAds[0].title || "Diamond Selection"} 
+                placement="models_grid"
                 models={gridAds.slice(0, 4).map(ad => ({
+                  adId: ad.id,
                   name: ad.title,
                   imageUrl: ad.imageUrl || '',
                   category: ad.category || 'VIP',

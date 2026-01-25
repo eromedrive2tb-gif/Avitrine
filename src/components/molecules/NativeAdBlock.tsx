@@ -4,10 +4,11 @@ import { ModelCard } from './ModelCard';
 interface NativeAdBlockProps {
   title: string;
   models: any[]; // List of models to show in this block
+  placement?: string;
 }
 
 // Type C: Native Ad (Bloco Editorial Patrocinado)
-export const NativeAdBlock: FC<NativeAdBlockProps> = ({ title, models }) => {
+export const NativeAdBlock: FC<NativeAdBlockProps> = ({ title, models, placement }) => {
   return (
     <div class="my-8 p-4 rounded-xl bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border-y border-[#FFD700]/30 relative overflow-hidden">
         {/* Label Native */}
@@ -20,7 +21,7 @@ export const NativeAdBlock: FC<NativeAdBlockProps> = ({ title, models }) => {
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             {models.map(model => (
-                <ModelCard {...model} isPromoted={true} />
+                <ModelCard {...model} isPromoted={true} placement={placement} />
             ))}
         </div>
     </div>

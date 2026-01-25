@@ -9,8 +9,17 @@ function updateSlides() {
     totalSlides = slides.length;
     
     slides.forEach((el, idx) => {
-        el.style.opacity = idx === currentSlide ? '1' : '0';
-        el.style.zIndex = idx === currentSlide ? '10' : '0';
+        const isActive = idx === currentSlide;
+        el.style.opacity = isActive ? '1' : '0';
+        el.style.zIndex = isActive ? '10' : '0';
+        
+        // Track impression for active slide if it's an ad and hasn't been tracked yet
+        if (isActive && el.dataset.adId && !el.dataset.tracked) {
+            const adId = el.dataset.adId;
+            const placement = el.dataset.placement || 'home_top';
+            fetch(`/api/ads/${adId}/impression?placement=${placement}`, { method: 'POST' });
+            el.dataset.tracked = 'true';
+        }
     });
     document.querySelectorAll('[id^="indicator-"]').forEach((el, idx) => {
         el.style.backgroundColor = idx === currentSlide ? '#8A2BE2' : 'rgba(255,255,255,0.2)';
