@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import { db } from '../db';
-import { plans, supportContacts, paymentGateways, checkouts, subscriptions, users, orderBumps } from '../db/schema';
-import { eq, desc, like, or, sql, asc } from 'drizzle-orm';
+import { plans, supportContacts, paymentGateways, checkouts, subscriptions, users, orderBumps, models } from '../db/schema';
+import { eq, desc, like, or, sql, asc, and } from 'drizzle-orm';
 import { AdminDashboard } from '../pages/admin/Dashboard';
 import { AdminDashboardService } from '../services/admin/dashboard';
 import { AdminModels } from '../pages/admin/Models';
+import { AdminModelsCreate } from '../pages/admin/ModelsCreate';
 import { AdminAds } from '../pages/admin/Ads';
 import { AdminAdsCreate } from '../pages/admin/AdsCreate';
 import { AdminPlans } from '../pages/admin/Plans';
@@ -16,6 +17,7 @@ import { AdminClients } from '../pages/admin/Clients';
 import { Alert } from '../components/atoms/Alert';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AdsService, type AdStatus, type AdPlacement, type AdType } from '../services/ads';
+import { AdminModelsService } from '../services/admin/adModels';
 
 const adminRoutes = new Hono();
 
@@ -35,7 +37,120 @@ adminRoutes.get('/', async (c) => {
   );
 });
 
-adminRoutes.get('/models', (c) => c.html(<AdminModels />));
+adminRoutes.get('/models', async (c) => {
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const statusFilter = c.req.query('status') as 'active' | 'hidden' | 'draft' | undefined;
+  const searchFilter = c.req.query('search') || '';
+
+  // Get models with filters
+  const result = await AdminModelsService.list(page, 20, {
+    status: statusFilter,
+    search: searchFilter
+  });
+
+  // Get stats
+  const stats = await AdminModelsService.getStats();
+
+  return c.html(
+    <AdminModels 
+      models={result.data}
+      stats={stats}
+      pagination={{
+        page: result.page,
+        totalPages: result.totalPages,
+        total: result.total
+      }}
+      filters={{ search: searchFilter, status: statusFilter }}
+    />
+  );
+});
+
+adminRoutes.get('/models/new', (c) => c.html(<AdminModelsCreate />));
+
+adminRoutes.get('/models/:id/edit', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const model = await AdminModelsService.getById(id);
+  
+  if (!model) {
+    return c.redirect('/admin/models?error=not_found');
+  }
+  
+  return c.html(<AdminModelsCreate model={model} isEditing={true} />);
+});
+
+adminRoutes.post('/models/create', async (c) => {
+  const body = await c.req.parseBody();
+  
+  try {
+    await AdminModelsService.create({
+      name: body['name'] as string,
+      slug: body['slug'] as string || undefined,
+      description: body['description'] as string,
+      thumbnailUrl: body['thumbnailUrl'] as string,
+      iconUrl: body['iconUrl'] as string,
+      bannerUrl: body['bannerUrl'] as string,
+      externalUrl: body['externalUrl'] as string,
+      isFeatured: body['isFeatured'] === 'true',
+      isAdvertiser: body['isAdvertiser'] === 'true',
+      status: body['status'] as 'active' | 'hidden' | 'draft' || 'active'
+    });
+    
+    return c.redirect('/admin/models?success=created');
+  } catch (e: any) {
+    console.error('[Models Create Error]', e);
+    return c.redirect('/admin/models?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/models/:id/update', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const body = await c.req.parseBody();
+  
+  try {
+    await AdminModelsService.update({
+      id,
+      name: body['name'] as string,
+      slug: body['slug'] as string || undefined,
+      description: body['description'] as string,
+      thumbnailUrl: body['thumbnailUrl'] as string,
+      iconUrl: body['iconUrl'] as string,
+      bannerUrl: body['bannerUrl'] as string,
+      externalUrl: body['externalUrl'] as string,
+      isFeatured: body['isFeatured'] === 'true',
+      isAdvertiser: body['isAdvertiser'] === 'true',
+      status: body['status'] as 'active' | 'hidden' | 'draft'
+    });
+    
+    return c.redirect('/admin/models?success=updated');
+  } catch (e: any) {
+    console.error('[Models Update Error]', e);
+    return c.redirect('/admin/models?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/models/:id/toggle', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  
+  try {
+    await AdminModelsService.toggleStatus(id);
+    return c.redirect('/admin/models?success=toggled');
+  } catch (e: any) {
+    console.error('[Models Toggle Error]', e);
+    return c.redirect('/admin/models?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/models/:id/delete', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  
+  try {
+    await AdminModelsService.delete(id);
+    return c.redirect('/admin/models?success=deleted');
+  } catch (e: any) {
+    console.error('[Models Delete Error]', e);
+    return c.redirect('/admin/models?error=' + encodeURIComponent(e.message));
+  }
+});
 
 // === ADS ROUTES ===
 adminRoutes.get('/ads', async (c) => {

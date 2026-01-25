@@ -1,6 +1,6 @@
 import { db } from '../../../db';
-import { whitelabelModels, whitelabelPosts, whitelabelMedia } from '../../../db/schema';
-import { desc, count, inArray, eq, and, sql } from 'drizzle-orm';
+import { whitelabelModels, whitelabelPosts, whitelabelMedia, models } from '../../../db/schema';
+import { desc, count, inArray, eq, and, sql, or } from 'drizzle-orm';
 import { signS3Key } from '../../s3';
 
 export const WhitelabelModelQueries = {
@@ -59,7 +59,8 @@ export const WhitelabelModelQueries = {
   async getTopWithThumbnails(page: number = 1, limit: number = 20) {
     const offset = (page - 1) * limit;
 
-    const [models, total] = await Promise.all([
+    // Get whitelabel models
+    const [wlModels, wlTotal] = await Promise.all([
       db.select({
         id: whitelabelModels.id,
         name: whitelabelModels.folderName,
@@ -73,28 +74,85 @@ export const WhitelabelModelQueries = {
       db.select({ count: count() }).from(whitelabelModels)
     ]);
 
-    const enrichedModels = await WhitelabelModelQueries._enrichWithThumbnails(models);
+    // Get active admin models (advertiser models)
+    const adminModels = await db.select({
+      id: models.id,
+      name: models.name,
+      postCount: models.postCount,
+      thumbnailUrl: models.thumbnailUrl,
+    })
+    .from(models)
+    .where(
+      and(
+        eq(models.status, 'active'),
+        eq(models.isAdvertiser, true)
+      )
+    )
+    .orderBy(desc(models.isFeatured), desc(models.createdAt))
+    .limit(Math.min(4, limit)); // Limit advertiser models
+
+    // Enrich whitelabel models with thumbnails
+    const enrichedWlModels = await WhitelabelModelQueries._enrichWithThumbnails(wlModels);
+    
+    // Combine: advertiser models first, then whitelabel models
+    const combinedModels = [...adminModels, ...enrichedWlModels];
+    
+    // Remove duplicates and limit
+    const uniqueIds = new Set<number>();
+    const uniqueModels = combinedModels.filter(m => {
+      if (uniqueIds.has(m.id)) return false;
+      uniqueIds.add(m.id);
+      return true;
+    }).slice(0, limit);
     
     return {
-      data: enrichedModels,
-      total: total[0].count,
+      data: uniqueModels,
+      total: wlTotal[0].count + adminModels.length,
       page,
       limit,
-      totalPages: Math.ceil(total[0].count / limit)
+      totalPages: Math.ceil((wlTotal[0].count + adminModels.length) / limit)
     };
   },
 
   async getBySlug(slug: string) {
-    const model = await db.select().from(whitelabelModels)
+    // First try to find in whitelabelModels
+    const wlModel = await db.select().from(whitelabelModels)
       .where(eq(whitelabelModels.folderName, slug))
       .limit(1).then(res => res[0]);
 
-    if (!model) return null;
+    if (wlModel) {
+      wlModel.thumbnailUrl = await signS3Key(wlModel.thumbnailUrl);
+      wlModel.iconUrl = await signS3Key(wlModel.iconUrl);
+      wlModel.bannerUrl = await signS3Key(wlModel.bannerUrl);
+      return {
+        ...wlModel,
+        name: wlModel.folderName, // Compatibility
+        source: 'whitelabel' as const
+      };
+    }
 
-    model.thumbnailUrl = await signS3Key(model.thumbnailUrl);
-    model.iconUrl = await signS3Key(model.iconUrl);
-    model.bannerUrl = await signS3Key(model.bannerUrl);
-    return model;
+    // Then try to find in models table (admin-created models)
+    const adminModel = await db.select().from(models)
+      .where(
+        and(
+          or(
+            eq(models.slug, slug),
+            eq(models.name, slug)
+          ),
+          eq(models.status, 'active')
+        )
+      )
+      .limit(1).then(res => res[0]);
+
+    if (adminModel) {
+      return {
+        ...adminModel,
+        folderName: adminModel.slug || adminModel.name, // Compatibility
+        source: 'admin' as const
+      };
+    }
+
+    return null;
   },
 
   async getStats() {
