@@ -21,6 +21,8 @@ interface CheckoutPageProps {
     name: string;
     price: number;
     duration: number;
+    acceptsPix?: boolean | null;
+    acceptsCard?: boolean | null;
   };
   user?: any;
   gateway?: {
@@ -58,10 +60,12 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway, order
       </head>
       <body 
         class="min-h-screen bg-[#050505] selection:bg-primary selection:text-white overflow-x-hidden" 
-        onload={`initCheckout(${plan.price}, '${junglePayPublicKey}', ${orderBumpsJson})`}
+        onload={`initCheckout(${plan.price}, '${junglePayPublicKey}', ${orderBumpsJson}, ${plan.acceptsPix !== false}, ${plan.acceptsCard !== false})`}
         data-plan-price={plan.price}
         data-junglepay-pk={junglePayPublicKey}
         data-order-bumps={orderBumpsJson}
+        data-accepts-pix={plan.acceptsPix !== false}
+        data-accepts-card={plan.acceptsCard !== false}
       >
         
         {/* Ambient Glow */}
@@ -77,7 +81,12 @@ export const CheckoutPage: FC<CheckoutPageProps> = ({ plan, user, gateway, order
               
               <StepIdentification user={user} />
               
-              <StepPayment orderBumps={orderBumps} planPrice={plan.price} />
+              <StepPayment 
+                orderBumps={orderBumps} 
+                planPrice={plan.price} 
+                acceptsPix={plan.acceptsPix !== false}
+                acceptsCard={plan.acceptsCard !== false}
+              />
               
               <StepSuccess />
 

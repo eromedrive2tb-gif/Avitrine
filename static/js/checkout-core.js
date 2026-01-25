@@ -26,13 +26,17 @@ const state = {
     selectedBumpIds: [], // IDs das order bumps selecionadas
     bumpTotal: 0, // Total das order bumps selecionadas
     total: 0,
-    junglePayPublicKey: ''
+    junglePayPublicKey: '',
+    acceptsPix: true,
+    acceptsCard: true
 };
 
 // Função de inicialização principal (chamada do onload)
-function initCheckout(basePrice, publicKey, orderBumpsData) {
+function initCheckout(basePrice, publicKey, orderBumpsData, acceptsPix = true, acceptsCard = true) {
     state.basePrice = basePrice;
     state.junglePayPublicKey = publicKey || '';
+    state.acceptsPix = acceptsPix;
+    state.acceptsCard = acceptsCard;
     
     // Parse order bumps data
     if (orderBumpsData) {
@@ -49,6 +53,13 @@ function initCheckout(basePrice, publicKey, orderBumpsData) {
     }
     
     updateTotal();
+    
+    // Configurar visibilidade inicial do cartão se for o único método ou estiver pré-selecionado
+    const cardFields = document.getElementById('card-fields');
+    const selectedCardRadio = document.querySelector('input[name="payment_method"]:checked');
+    if (cardFields && selectedCardRadio && selectedCardRadio.value === 'credit_card') {
+        cardFields.classList.remove('hidden');
+    }
     
     // Configurar JunglePagamentos se disponível
     if (typeof JunglePagamentos !== 'undefined' && state.junglePayPublicKey) {
@@ -281,7 +292,14 @@ async function processCheckout() {
     const name = document.getElementById('name').value;
     const cpf = document.getElementById('cpf').value;
     const phone = document.getElementById('phone').value;
-    const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+    
+    const paymentMethodInput = document.querySelector('input[name="payment_method"]:checked');
+    if (!paymentMethodInput) {
+        alert('Por favor, selecione um método de pagamento.');
+        resetButton();
+        return;
+    }
+    const paymentMethod = paymentMethodInput.value;
     
     // Coletar order bumps selecionadas
     const orderBumpIds = state.selectedBumpIds.length > 0 ? state.selectedBumpIds : [];

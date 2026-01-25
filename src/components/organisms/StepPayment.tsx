@@ -17,9 +17,16 @@ interface OrderBumpItem {
 interface StepPaymentProps {
   orderBumps?: OrderBumpItem[];
   planPrice?: number; // Preço em centavos para calcular parcelas
+  acceptsPix?: boolean;
+  acceptsCard?: boolean;
 }
 
-export const StepPayment: FC<StepPaymentProps> = ({ orderBumps = [], planPrice = 0 }) => {
+export const StepPayment: FC<StepPaymentProps> = ({ 
+  orderBumps = [], 
+  planPrice = 0,
+  acceptsPix = true,
+  acceptsCard = true
+}) => {
   // Gera opções de parcelas (1x a 12x)
   const installmentOptions = Array.from({ length: 12 }, (_, i) => {
     const installment = i + 1;
@@ -36,23 +43,34 @@ export const StepPayment: FC<StepPaymentProps> = ({ orderBumps = [], planPrice =
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <RadioCard 
-                    name="payment_method" 
-                    value="pix" 
-                    label="PIX (Instantâneo)" 
-                    description="Liberação imediata do conteúdo." 
-                    checked={true}
-                    badge="Recomendado"
-                    icon={<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>}
-                />
+                {acceptsPix && (
+                    <RadioCard 
+                        name="payment_method" 
+                        value="pix" 
+                        label="PIX (Instantâneo)" 
+                        description="Liberação imediata do conteúdo." 
+                        checked={true}
+                        badge="Recomendado"
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>}
+                    />
+                )}
 
-                <RadioCard 
-                    name="payment_method" 
-                    value="credit_card" 
-                    label="Cartão de Crédito" 
-                    description="Até 12x no cartão. Discreto na fatura." 
-                    icon={<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>}
-                />
+                {acceptsCard && (
+                    <RadioCard 
+                        name="payment_method" 
+                        value="credit_card" 
+                        label="Cartão de Crédito" 
+                        description="Até 12x no cartão. Discreto na fatura." 
+                        checked={!acceptsPix}
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>}
+                    />
+                )}
+
+                {!acceptsPix && !acceptsCard && (
+                    <div class="col-span-full p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center">
+                        Não há métodos de pagamento disponíveis para este plano no momento. Entre em contato com o suporte.
+                    </div>
+                )}
             </div>
 
             {/* Credit Card Fields */}

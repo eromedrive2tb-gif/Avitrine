@@ -222,6 +222,15 @@ export class JunglePayService {
       };
     }
 
+    // 3.1 Validar se o plano aceita PIX
+    if (plan.acceptsPix === false) {
+      return {
+        success: false,
+        error: 'Este plano não aceita pagamento via PIX.',
+        code: 'INVALID_DATA'
+      };
+    }
+
     // 4. Montar o payload para a API JunglePay
     const items: Array<{ title: string; unitPrice: number; quantity: number; tangible: boolean }> = [
       {
@@ -405,6 +414,15 @@ export class JunglePayService {
       return {
         success: false,
         error: 'Plano não encontrado.',
+        code: 'INVALID_DATA'
+      };
+    }
+
+    // 3.1 Validar se o plano aceita Cartão de Crédito
+    if (plan.acceptsCard === false) {
+      return {
+        success: false,
+        error: 'Este plano não aceita pagamento via Cartão de Crédito.',
         code: 'INVALID_DATA'
       };
     }
