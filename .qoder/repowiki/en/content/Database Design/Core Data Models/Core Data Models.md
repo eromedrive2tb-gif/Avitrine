@@ -10,6 +10,13 @@
 - [0004_mixed_vermin.sql](file://drizzle/0004_mixed_vermin.sql)
 - [0005_furry_catseye.sql](file://drizzle/0005_furry_catseye.sql)
 - [0006_overconfident_titania.sql](file://drizzle/0006_overconfident_titania.sql)
+- [0010_ads_table.sql](file://drizzle/0010_ads_table.sql)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql)
+- [ads.ts](file://src/services/ads.ts)
+- [Ads.tsx](file://src/pages/admin/Ads.tsx)
+- [AdsCreate.tsx](file://src/pages/admin/AdsCreate.tsx)
+- [api.tsx](file://src/routes/api.tsx)
+- [AdBanner.tsx](file://src/components/molecules/AdBanner.tsx)
 - [models.ts](file://src/services/whitelabel/queries/models.ts)
 - [posts.ts](file://src/services/whitelabel/queries/posts.ts)
 - [mappers.ts](file://src/services/admin/mappers.ts)
@@ -17,6 +24,15 @@
 - [Models.tsx](file://src/pages/Models.tsx)
 - [AdminPlans.tsx](file://src/pages/admin/Plans.tsx)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive Ads data model with enhanced analytics tracking capabilities
+- Introduced separate Impressions and Clicks data models with detailed metadata fields
+- Enhanced Ads model with comprehensive analytics tracking including user agent and IP tracking
+- Added placement-based targeting system with type-specific validation
+- Integrated automated impression tracking through IntersectionObserver
+- Implemented comprehensive admin interface for ad campaign management
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -31,10 +47,10 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document describes CreatorFlix’s core data models: users, subscriptions, plans, models, and posts. It explains field definitions, data types, constraints, validation rules, primary and foreign keys, indexing strategies, and business rules. It also outlines common query patterns and provides sample data structures to help developers and operators implement and maintain the system effectively.
+This document describes CreatorFlix's core data models: users, subscriptions, plans, models, posts, and the newly enhanced Ads system with comprehensive analytics tracking. It explains field definitions, data types, constraints, validation rules, primary and foreign keys, indexing strategies, and business rules. It also outlines common query patterns and provides sample data structures to help developers and operators implement and maintain the system effectively.
 
 ## Project Structure
-The data model is defined in a single schema file and enforced by a set of migrations. Queries for whitelabel models and posts are implemented in dedicated service modules. Frontend pages consume these models to render user-facing views.
+The data model is defined in a single schema file and enforced by a set of migrations. The Ads system includes dedicated service layer with comprehensive analytics tracking, admin interface for campaign management, and client-side integration for automatic impression tracking. Queries for whitelabel models and posts are implemented in dedicated service modules. Frontend pages consume these models to render user-facing views.
 
 ```mermaid
 graph TB
@@ -51,6 +67,9 @@ PG["payment_gateways"]
 CK["checkouts"]
 AS["admin_settings"]
 SC["support_contacts"]
+AD["ads"]
+IMP["impressions"]
+CLK["clicks"]
 end
 U --> S
 P -. "referenced by" .-> S
@@ -59,13 +78,15 @@ WLM --> WLP
 WLP --> WLMed
 U -. "referenced by" .-> CK
 P -. "referenced by" .-> CK
+AD --> IMP
+AD --> CLK
 ```
 
 **Diagram sources**
-- [schema.ts](file://src/db/schema.ts#L6-L127)
+- [schema.ts](file://src/db/schema.ts#L6-L253)
 
 **Section sources**
-- [schema.ts](file://src/db/schema.ts#L1-L178)
+- [schema.ts](file://src/db/schema.ts#L1-L253)
 
 ## Core Components
 
@@ -87,7 +108,7 @@ P -. "referenced by" .-> CK
   - Primary key index on id.
   - Unique index on email via unique constraint.
 - Business rules:
-  - subscriptionStatus is an integer flag; frontend logic interprets 1 as “has active subscription” and displays subscription details accordingly.
+  - subscriptionStatus is an integer flag; frontend logic interprets 1 as "has active subscription" and displays subscription details accordingly.
 - Sample data structure:
   - { id: 1, name: "Alex", email: "alex@example.com", password: "...", role: "user", subscriptionStatus: 1, createdAt: "2025-01-01T00:00:00Z" }
 
@@ -156,7 +177,7 @@ P -. "referenced by" .-> CK
 - [AdminPlans.tsx](file://src/pages/admin/Plans.tsx#L5-L13)
 
 ### Models
-- Purpose: Core content creators’ profiles and metadata.
+- Purpose: Core content creators' profiles and metadata.
 - Fields and constraints:
   - id: serial, primary key
   - name: text, not null
@@ -203,16 +224,111 @@ P -. "referenced by" .-> CK
 - [schema.ts](file://src/db/schema.ts#L59-L66)
 - [0000_special_white_queen.sql](file://drizzle/0000_special_white_queen.sql#L26-L33)
 
+### Ads System (Enhanced)
+- Purpose: Comprehensive advertising system with detailed analytics tracking and placement targeting.
+- Fields and constraints:
+  - id: serial, primary key
+  - name: text, not null (campaign name)
+  - type: text enum ['diamond','diamond_block','banner','spot','hero'], default 'banner'
+  - placement: text enum with specific locations, default 'home_top'
+  - status: text enum ['active','paused','draft'], default 'draft'
+  - title: text, not null
+  - subtitle: text (banner-specific)
+  - ctaText: text (call-to-action)
+  - imageUrl: text (ad image URL)
+  - link: text, not null (destination URL)
+  - category: text (hero carousel category)
+  - impressions: integer, default 0 (denormalized counter)
+  - clicks: integer, default 0 (denormalized counter)
+  - priority: integer, default 0 (higher = higher priority)
+  - startDate: timestamp (campaign start date)
+  - endDate: timestamp (campaign end date)
+  - createdAt: timestamp, default now()
+  - updatedAt: timestamp, default now() (auto-updated)
+- Validation rules:
+  - Type-specific placement validation ensures ads appear only in valid locations.
+  - Status constrained to predefined enum.
+  - Denormalized counters automatically maintained.
+- Indexing strategy:
+  - Primary key index on id.
+  - Composite indexes recommended for status/placement/type queries.
+- Business rules:
+  - Type determines valid placement locations and rendering behavior.
+  - Priority controls ad display order within placements.
+  - Campaign dates determine ad availability.
+  - Automatic impression tracking with metadata collection.
+- Sample data structure:
+  - { id: 1, name: "Summer Sale 2026", type: "banner", placement: "home_top", status: "active", title: "Summer Collection", subtitle: "Up to 50% off", ctaText: "SHOP NOW", imageUrl: "https://...", link: "https://...", category: "SUMMER", impressions: 1250, clicks: 45, priority: 10, startDate: "2026-06-01T00:00:00Z", endDate: "2026-06-30T23:59:59Z", createdAt: "2026-05-01T00:00:00Z", updatedAt: "2026-05-01T00:00:00Z" }
+
+**Section sources**
+- [schema.ts](file://src/db/schema.ts#L196-L235)
+- [0010_ads_table.sql](file://drizzle/0010_ads_table.sql#L1-L21)
+- [ads.ts](file://src/services/ads.ts#L58-L77)
+
+### Impressions Tracking
+- Purpose: Detailed analytics tracking for ad impressions with metadata collection.
+- Fields and constraints:
+  - id: serial, primary key
+  - adId: integer, not null, references ads(id) with cascade delete
+  - placement: text (location where impression occurred)
+  - userAgent: text (browser/user agent information)
+  - ip: text (client IP address)
+  - createdAt: timestamp, default now()
+- Validation rules:
+  - adId must reference an existing ad.
+  - Metadata fields capture contextual information.
+- Indexing strategy:
+  - Primary key index on id.
+  - Foreign key index on adId for fast joins.
+- Business rules:
+  - Automatically created when ad impressions are tracked.
+  - Supports manual and automatic tracking scenarios.
+  - Metadata enables detailed analytics and fraud detection.
+- Sample data structure:
+  - { id: 1, adId: 1, placement: "home_top", userAgent: "Mozilla/5.0...", ip: "203.0.113.10", createdAt: "2026-05-01T10:30:00Z" }
+
+**Section sources**
+- [schema.ts](file://src/db/schema.ts#L237-L244)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L1-L8)
+- [ads.ts](file://src/services/ads.ts#L246-L266)
+
+### Clicks Tracking
+- Purpose: Detailed analytics tracking for ad clicks with metadata collection.
+- Fields and constraints:
+  - id: serial, primary key
+  - adId: integer, not null, references ads(id) with cascade delete
+  - placement: text (location where click occurred)
+  - userAgent: text (browser/user agent information)
+  - ip: text (client IP address)
+  - createdAt: timestamp, default now()
+- Validation rules:
+  - adId must reference an existing ad.
+  - Metadata fields capture contextual information.
+- Indexing strategy:
+  - Primary key index on id.
+  - Foreign key index on adId for fast joins.
+- Business rules:
+  - Automatically created when ad clicks are tracked.
+  - Supports manual and automatic tracking scenarios.
+  - Metadata enables detailed analytics and fraud detection.
+- Sample data structure:
+  - { id: 1, adId: 1, placement: "home_top", userAgent: "Mozilla/5.0...", ip: "203.0.113.10", createdAt: "2026-05-01T10:32:15Z" }
+
+**Section sources**
+- [schema.ts](file://src/db/schema.ts#L246-L253)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L10-L17)
+- [ads.ts](file://src/services/ads.ts#L271-L290)
+
 ### Additional Entities (Supporting Models)
 These entities support advanced features and administration.
 
 - Payment Gateways
-  - Fields: id, name (unique), publicKey, secretKey, isActive
+  - Fields: id, name (unique), publicKey, secretKey, postbackUrl, isActive
   - Constraints: unique(name)
   - Business rules: Gateway selection influences checkout behavior.
 
 - Checkouts
-  - Fields: id, userId (optional), planId, status, paymentMethod, orderBump, totalAmount (cents), customer_* fields, timestamps
+  - Fields: id, userId (optional), planId, externalId, status, paymentMethod, orderBump, orderBumpIds, totalAmount (cents), customer_* fields, timestamps
   - Constraints: status enum; totalAmount not null; planId not null
   - Business rules: Captures payment intent and customer info; supports optional user linkage.
 
@@ -243,7 +359,7 @@ These entities support advanced features and administration.
 - [0006_overconfident_titania.sql](file://drizzle/0006_overconfident_titania.sql#L1-L18)
 
 ## Architecture Overview
-The data model centers around users subscribing to plans, managing content via models and posts, and supporting administrative and monetization features. Whitelabel entities mirror core entities for external integrations.
+The data model centers around users subscribing to plans, managing content via models and posts, supporting advertising campaigns with comprehensive analytics tracking, and supporting administrative and monetization features. Whitelabel entities mirror core entities for external integrations.
 
 ```mermaid
 erDiagram
@@ -295,13 +411,51 @@ text content_url
 text type
 timestamp created_at
 }
+ADS {
+int id PK
+text name
+text type
+text placement
+text status
+text title
+text subtitle
+text cta_text
+text image_url
+text link
+text category
+int impressions
+int clicks
+int priority
+timestamp start_date
+timestamp end_date
+timestamp created_at
+timestamp updated_at
+}
+IMPRESSIONS {
+int id PK
+int ad_id FK
+text placement
+text user_agent
+text ip
+timestamp created_at
+}
+CLICKS {
+int id PK
+int ad_id FK
+text placement
+text user_agent
+text ip
+timestamp created_at
+}
 CHECKOUTS {
 int id PK
 int user_id FK
 int plan_id FK
+text external_id
 text status
 text payment_method
 boolean order_bump
+json order_bump_ids
 int total_amount
 text customer_name
 text customer_email
@@ -315,6 +469,7 @@ int id PK
 text name UK
 text public_key
 text secret_key
+text postback_url
 boolean is_active
 }
 ADMIN_SETTINGS {
@@ -358,6 +513,8 @@ timestamp created_at
 USERS ||--o{ SUBSCRIPTIONS : "has"
 PLANS ||--o{ SUBSCRIPTIONS : "subscribed_by"
 MODELS ||--o{ POSTS : "contains"
+ADS ||--o{ IMPRESSIONS : "tracked_by"
+ADS ||--o{ CLICKS : "tracked_by"
 WHITELABEL_MODELS ||--o{ WHITELABEL_POSTS : "contains"
 WHITELABEL_POSTS ||--o{ WHITELABEL_MEDIA : "has"
 USERS ||--o{ CHECKOUTS : "creates"
@@ -365,7 +522,7 @@ PLANS ||--o{ CHECKOUTS : "purchased_in"
 ```
 
 **Diagram sources**
-- [schema.ts](file://src/db/schema.ts#L6-L127)
+- [schema.ts](file://src/db/schema.ts#L6-L253)
 
 ## Detailed Component Analysis
 
@@ -440,6 +597,39 @@ Q-->>UI : { data, total, page, limit, totalPages }
 - [models.ts](file://src/services/whitelabel/queries/models.ts#L36-L57)
 - [Models.tsx](file://src/pages/Models.tsx#L16-L56)
 
+### Ads System and Analytics Tracking
+- Business rule: Ads system provides comprehensive advertising capabilities with detailed analytics tracking. Type-specific placement validation ensures ads appear only in appropriate locations. Automatic impression tracking captures user metadata for analytics and fraud prevention.
+- Frontend usage: Admin interface allows creation and management of ad campaigns with real-time preview and analytics tracking.
+
+```mermaid
+sequenceDiagram
+participant UI as "Ad Preview"
+participant JS as "IntersectionObserver"
+participant API as "API Routes"
+participant Service as "AdsService"
+participant DB as "Database"
+UI->>JS : Observe ad element
+JS->>API : POST /api/ads/ : id/impression
+API->>Service : trackImpression()
+Service->>DB : Update ads.impressions + 1
+Service->>DB : Insert into impressions table
+DB-->>Service : Success
+Service-->>API : Success
+API-->>JS : 200 OK
+JS-->>UI : Hide observer
+```
+
+**Diagram sources**
+- [AdBanner.tsx](file://src/components/molecules/AdBanner.tsx#L39-L53)
+- [api.tsx](file://src/routes/api.tsx#L921-L940)
+- [ads.ts](file://src/services/ads.ts#L246-L266)
+
+**Section sources**
+- [schema.ts](file://src/db/schema.ts#L196-L253)
+- [ads.ts](file://src/services/ads.ts#L86-L380)
+- [Ads.tsx](file://src/pages/admin/Ads.tsx#L1-L131)
+- [AdsCreate.tsx](file://src/pages/admin/AdsCreate.tsx#L1-L569)
+
 ### Whitelabel Content Pipeline
 - Business rule: Whitelabel models and posts mirror core entities for external content ingestion. Media entries are signed for secure delivery.
 - Mapping: Admin mappers transform whitelabel staging data into production-ready records.
@@ -496,7 +686,7 @@ WL-->>WL : build { thumbnail, mediaCdns }
 - [posts.ts](file://src/services/whitelabel/queries/posts.ts#L7-L35)
 
 ## Dependency Analysis
-- Primary keys: users.id, plans.id, subscriptions.id, models.id, posts.id, whitelabel_models.id, whitelabel_posts.id, whitelabel_media.id, payment_gateways.id, checkouts.id, admin_settings.key, support_contacts.id.
+- Primary keys: users.id, plans.id, subscriptions.id, models.id, posts.id, whitelabel_models.id, whitelabel_posts.id, whitelabel_media.id, payment_gateways.id, checkouts.id, admin_settings.key, support_contacts.id, ads.id, impressions.id, clicks.id.
 - Foreign keys:
   - subscriptions.userId -> users.id
   - subscriptions.planId -> plans.id
@@ -505,6 +695,8 @@ WL-->>WL : build { thumbnail, mediaCdns }
   - whitelabel_media.whitelabelPostId -> whitelabel_posts.id (ON DELETE CASCADE)
   - checkouts.userId -> users.id
   - checkouts.planId -> plans.id
+  - impressions.adId -> ads.id (ON DELETE CASCADE)
+  - clicks.adId -> ads.id (ON DELETE CASCADE)
 - Uniqueness:
   - users.email
   - whitelabel_models.folderName
@@ -512,6 +704,7 @@ WL-->>WL : build { thumbnail, mediaCdns }
   - whitelabel_media.s3Key
   - payment_gateways.name
   - admin_settings.key
+  - ads.name
 
 ```mermaid
 graph LR
@@ -522,31 +715,35 @@ WLM["whitelabel_models.id"] --> WLP["whitelabel_posts.whitelabel_model_id"]
 WLP --> WLMed["whitelabel_media.whitelabel_post_id"]
 U --> CK["checkouts.user_id"]
 P --> CK["checkouts.plan_id"]
+AD["ads.id"] --> IMP["impressions.ad_id"]
+AD --> CLK["clicks.ad_id"]
 ```
 
 **Diagram sources**
-- [schema.ts](file://src/db/schema.ts#L37-L127)
+- [schema.ts](file://src/db/schema.ts#L37-L253)
 - [0000_special_white_queen.sql](file://drizzle/0000_special_white_queen.sql#L78-L79)
 - [0006_overconfident_titania.sql](file://drizzle/0006_overconfident_titania.sql#L17-L18)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L19-L20)
 
 **Section sources**
-- [schema.ts](file://src/db/schema.ts#L37-L127)
+- [schema.ts](file://src/db/schema.ts#L37-L253)
 - [0000_special_white_queen.sql](file://drizzle/0000_special_white_queen.sql#L78-L79)
 - [0006_overconfident_titania.sql](file://drizzle/0006_overconfident_titania.sql#L17-L18)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L19-L20)
 
 ## Performance Considerations
 - Indexes:
   - Primary keys are indexed by default.
   - Unique constraints imply unique indexes (users.email, whitelabel_models.folderName, whitelabel_media.s3Key, payment_gateways.name).
-  - Consider adding composite indexes for frequent joins and filters (e.g., subscriptions(userId,status), posts(modelId,createdAt)).
+  - Consider adding composite indexes for frequent joins and filters (e.g., subscriptions(userId,status), posts(modelId,createdAt), ads(status,placement,priority), impressions(adId,createdAt), clicks(adId,createdAt)).
 - Query patterns:
   - Paginated reads for whitelabel models and posts reduce memory footprint.
   - DISTINCT ON and JOINs for thumbnail enrichment should be paired with appropriate ordering and filtering to minimize result sets.
+  - Ads system benefits from type/placement/status filtering for efficient campaign management.
 - Data types:
   - Integer cents for monetary values prevent floating-point precision issues.
   - JSON fields (benefits, media_cdns) offer flexibility but should be validated and kept minimal.
-
-[No sources needed since this section provides general guidance]
+  - Denormalized counters (impressions, clicks) improve read performance but require transactional updates for consistency.
 
 ## Troubleshooting Guide
 - Duplicate email on signup:
@@ -561,17 +758,23 @@ P --> CK["checkouts.plan_id"]
 - Checkout linkage:
   - Symptom: checkouts.userId is null unexpectedly.
   - Resolution: Capture user context during checkout; ensure referential integrity.
+- Ad placement validation errors:
+  - Symptom: Attempt to set invalid placement for ad type.
+  - Resolution: Use isValidPlacement() function or default placement validation; ensure type/placement compatibility.
+- Analytics tracking failures:
+  - Symptom: Missing impression/click data in analytics.
+  - Resolution: Verify IntersectionObserver implementation and API route accessibility; check transaction rollback scenarios.
 
 **Section sources**
 - [schema.ts](file://src/db/schema.ts#L11-L12)
 - [models.ts](file://src/services/whitelabel/queries/models.ts#L26-L33)
 - [posts.ts](file://src/services/whitelabel/queries/posts.ts#L16-L32)
 - [mappers.ts](file://src/services/admin/mappers.ts#L27-L31)
+- [ads.ts](file://src/services/ads.ts#L34-L36)
+- [AdBanner.tsx](file://src/components/molecules/AdBanner.tsx#L39-L53)
 
 ## Conclusion
-CreatorFlix’s core data model cleanly separates user accounts, subscription lifecycle, plan definitions, and content entities. Whitelabel variants support scalable external content ingestion. Consistent constraints, enums, and foreign keys ensure data integrity, while frontend pages and service queries demonstrate practical usage patterns. Following the outlined business rules and query patterns will help maintain a robust and extensible system.
-
-[No sources needed since this section summarizes without analyzing specific files]
+CreatorFlix's core data model cleanly separates user accounts, subscription lifecycle, plan definitions, and content entities. The enhanced Ads system provides comprehensive advertising capabilities with detailed analytics tracking, placement targeting, and automated impression tracking. Whitelabel variants support scalable external content ingestion. Consistent constraints, enums, and foreign keys ensure data integrity, while frontend pages and service queries demonstrate practical usage patterns. Following the outlined business rules and query patterns will help maintain a robust and extensible system with advanced monetization capabilities.
 
 ## Appendices
 
@@ -584,8 +787,14 @@ CreatorFlix’s core data model cleanly separates user accounts, subscription li
   - SELECT whitelabelModels ORDER BY postCount DESC LIMIT N OFFSET ...
 - Admin: Update plan pricing and payment acceptance:
   - POST form to update price, checkoutUrl (gateway-dependent), acceptsPix, acceptsCard.
+- Ads: Get active ads by placement with analytics:
+  - SELECT ads WHERE status='active' AND placement=? AND (startDate IS NULL OR startDate<=NOW()) AND (endDate IS NULL OR endDate>=NOW()) ORDER BY priority DESC, createdAt DESC LIMIT N; JOIN impressions/clicks for analytics.
+- Ads: Track impression with metadata:
+  - UPDATE ads SET impressions=impressions+1 WHERE id=?; INSERT INTO impressions (ad_id, placement, user_agent, ip) VALUES (?, ?, ?, ?).
 
 **Section sources**
 - [models.ts](file://src/services/whitelabel/queries/models.ts#L36-L74)
 - [posts.ts](file://src/services/whitelabel/queries/posts.ts#L7-L35)
 - [AdminPlans.tsx](file://src/pages/admin/Plans.tsx#L30-L102)
+- [ads.ts](file://src/services/ads.ts#L307-L331)
+- [ads.ts](file://src/services/ads.ts#L246-L266)

@@ -4,6 +4,7 @@ import { ClientStatsSection } from '../../components/organisms/ClientStatsSectio
 import { ClientSearchForm } from '../../components/molecules/ClientSearchForm';
 import { ClientTable, type UserData } from '../../components/organisms/ClientTable';
 import { TransactionHistoryModal } from '../../components/organisms/TransactionHistoryModal';
+import { AddPlanModal } from '../../components/organisms/AddPlanModal';
 
 interface AdminClientsProps {
   users: UserData[];
@@ -34,6 +35,7 @@ export const AdminClients: FC<AdminClientsProps> = ({
       <ClientSearchForm value={filters.search} />
       <ClientTable users={users} pagination={pagination} />
       <TransactionHistoryModal />
+      <AddPlanModal />
     </AdminLayout>
   );
 };

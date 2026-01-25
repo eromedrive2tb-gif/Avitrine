@@ -17,6 +17,7 @@
 - [0008_stiff_toro.sql](file://drizzle/0008_stiff_toro.sql)
 - [0009_order_bumps.sql](file://drizzle/0009_order_bumps.sql)
 - [0010_ads_table.sql](file://drizzle/0010_ads_table.sql)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql)
 - [0009_snapshot.json](file://drizzle/meta/0009_snapshot.json)
 - [0010_snapshot.json](file://drizzle/meta/0010_snapshot.json)
 - [migrate-postback.ts](file://scripts/migrate-postback.ts)
@@ -36,11 +37,11 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive Ads table definition with campaign management, placement targeting, and analytics tracking
-- Enhanced Administrative Functions section to include ads table with full CRUD operations support
-- Updated schema with proper enums for ad types, placements, and status values
-- Added analytics tracking fields (impressions, clicks, priority) with default values
-- Integrated ads table into the overall database architecture and ER diagram
+- Added comprehensive advertising tracking system with dedicated impressions and clicks tables
+- Enhanced analytics tracking with detailed metadata including user agents and IP addresses
+- Updated Ads table with foreign key relationships to tracking tables
+- Integrated detailed analytics capabilities with atomic increment operations and transaction support
+- Enhanced administrative functions with comprehensive ad management and analytics dashboard
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -95,7 +96,7 @@ COMPONENTS --> ROUTES
 
 **Diagram sources**
 - [index.ts](file://src/db/index.ts#L1-L8)
-- [schema.ts](file://src/db/schema.ts#L1-L235)
+- [schema.ts](file://src/db/schema.ts#L1-L253)
 - [drizzle.config.ts](file://drizzle.config.ts#L1-L11)
 - [_journal.json](file://drizzle/meta/_journal.json#L1-L69)
 - [0000_special_white_queen.sql](file://drizzle/0000_special_white_queen.sql#L1-L80)
@@ -109,6 +110,7 @@ COMPONENTS --> ROUTES
 - [0008_stiff_toro.sql](file://drizzle/0008_stiff_toro.sql#L1-L1)
 - [0009_order_bumps.sql](file://drizzle/0009_order_bumps.sql#L1-L12)
 - [0010_ads_table.sql](file://drizzle/0010_ads_table.sql#L1-L21)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L1-L21)
 - [migrate-postback.ts](file://scripts/migrate-postback.ts#L1-L22)
 
 **Section sources**
@@ -161,7 +163,7 @@ This section describes the primary table categories and their roles within the p
 
 - Whitelabel Models
   - Purpose: Federated model representation for white-label environments.
-  - Scope: Folder-based identity, branding assets, synchronization metadata, and counts.
+  - Scope: folder-based identity, branding assets, synchronization metadata, and counts.
   - Key attributes: folder name, thumbnails/icons/banners, post count, status, timestamps.
 
 - Whitelabel Posts
@@ -189,7 +191,17 @@ This section describes the primary table categories and their roles within the p
   - Scope: Campaign management, placement targeting, statistics tracking, scheduling, and content management.
   - Key attributes: name, type, placement, status, content fields, impressions, clicks, priority, date ranges, timestamps.
 
-**Updated** Added comprehensive Ads table with campaign management, placement targeting, and analytics tracking capabilities.
+- Impressions
+  - Purpose: Track detailed impression events with metadata for analytics and attribution.
+  - Scope: Individual impression records with placement, user agent, IP address, and timestamp.
+  - Key attributes: ad reference, placement, user agent, IP address, timestamp.
+
+- Clicks
+  - Purpose: Track detailed click events with metadata for analytics and attribution.
+  - Scope: Individual click records with placement, user agent, IP address, and timestamp.
+  - Key attributes: ad reference, placement, user agent, IP address, timestamp.
+
+**Updated** Added comprehensive Ads table with campaign management, placement targeting, and analytics tracking capabilities, plus dedicated impressions and clicks tracking tables with detailed metadata.
 
 **Section sources**
 - [schema.ts](file://src/db/schema.ts#L6-L14)
@@ -205,7 +217,7 @@ This section describes the primary table categories and their roles within the p
 - [schema.ts](file://src/db/schema.ts#L97-L104)
 - [schema.ts](file://src/db/schema.ts#L69-L72)
 - [schema.ts](file://src/db/schema.ts#L106-L112)
-- [schema.ts](file://src/db/schema.ts#L196-L235)
+- [schema.ts](file://src/db/schema.ts#L196-L253)
 
 ## Architecture Overview
 The database architecture centers around a few core entities and their relationships:
@@ -218,6 +230,7 @@ The database architecture centers around a few core entities and their relations
 - Admin Settings provide centralized configuration.
 - Support Contacts expose platform contact channels.
 - Ads manage advertising campaigns across different placements with comprehensive analytics tracking.
+- Impressions and Clicks tables provide detailed event tracking with metadata for attribution and analytics.
 
 ```mermaid
 erDiagram
@@ -358,9 +371,25 @@ timestamp end_date
 timestamp created_at
 timestamp updated_at
 }
+IMPRESSIONS {
+int id PK
+int ad_id FK
+text placement
+text user_agent
+text ip
+timestamp created_at
+}
+CLICKS {
+int id PK
+int ad_id FK
+text placement
+text user_agent
+text ip
+timestamp created_at
+}
 ```
 
-**Updated** Added comprehensive Ads table with campaign management, placement targeting, and analytics tracking capabilities.
+**Updated** Added comprehensive Ads table with campaign management, placement targeting, and analytics tracking capabilities, plus dedicated impressions and clicks tracking tables with detailed metadata.
 
 **Diagram sources**
 - [schema.ts](file://src/db/schema.ts#L6-L14)
@@ -376,7 +405,7 @@ timestamp updated_at
 - [schema.ts](file://src/db/schema.ts#L97-L104)
 - [schema.ts](file://src/db/schema.ts#L69-L72)
 - [schema.ts](file://src/db/schema.ts#L106-L112)
-- [schema.ts](file://src/db/schema.ts#L196-L235)
+- [schema.ts](file://src/db/schema.ts#L196-L253)
 
 ## Detailed Component Analysis
 
@@ -585,20 +614,23 @@ SaveCheckout --> End(["Complete"])
 - [api.tsx](file://src/routes/api.tsx#L707-L721)
 
 ### Advertising System (Ads)
-- Entities: ads
+- Entities: ads, impressions, clicks
 - Responsibilities:
   - Ads: comprehensive advertising campaign management with placement targeting and analytics tracking.
   - Campaign management: name, type, placement, status, content fields, scheduling, and priority.
   - Analytics tracking: impressions, clicks, CTR calculation, and performance metrics.
   - Content management: title, subtitle, CTA text, image URL, link, and category.
+  - Event tracking: detailed impression and click records with metadata for attribution.
 - Advanced Features:
   - Multiple ad types: diamond, diamond_block, banner, spot, hero with specific placement restrictions.
   - Sophisticated placement targeting with 12 different locations across the platform.
-  - Real-time analytics with impression and click tracking.
+  - Real-time analytics with detailed metadata tracking including user agents and IP addresses.
+  - Atomic increment operations with transaction support for high-performance analytics.
   - Priority-based display ordering with configurable scheduling.
   - Comprehensive admin interface with filtering, preview, and CRUD operations.
+  - Foreign key relationships with cascade deletion for clean data management.
 
-**New** Comprehensive advertising system with full campaign management, placement targeting, and analytics tracking capabilities.
+**Updated** Enhanced advertising system with dedicated impressions and clicks tracking tables featuring detailed metadata and atomic operations.
 
 ```mermaid
 classDiagram
@@ -622,6 +654,22 @@ class Ad {
 +timestamp created_at
 +timestamp updated_at
 }
+class Impression {
++int id
++int ad_id
++string placement
++string user_agent
++string ip
++timestamp created_at
+}
+class Click {
++int id
++int ad_id
++string placement
++string user_agent
++string ip
++timestamp created_at
+}
 class AdsService {
 +list(page, limit, filters) ListAdsResult
 +getById(id) Ad
@@ -629,41 +677,50 @@ class AdsService {
 +update(input) Ad
 +delete(id) boolean
 +toggleStatus(id) Ad
-+trackImpression(id) void
-+trackClick(id) void
-+getActiveByPlacement(placement, limit) Ad[]
-+getActiveByPlacements(placements) Record
++trackImpression(id, metadata) void
++trackClick(id, metadata) void
++trackEvent(adId, type, metadata) void
++getActiveByPlacement(placement, limit, track) Ad[]
++getActiveByPlacements(placements, track) Record
 +formatPlacementLabel(placement) string
 +formatTypeLabel(type) string
 }
 Ad <.. AdsService : "manages"
+Impression <.. AdsService : "tracks"
+Click <.. AdsService : "tracks"
+Ad ||--|| Impression : "has many"
+Ad ||--|| Click : "has many"
 ```
 
 **Diagram sources**
-- [schema.ts](file://src/db/schema.ts#L196-L235)
-- [ads.ts](file://src/services/ads.ts#L86-L329)
+- [schema.ts](file://src/db/schema.ts#L196-L253)
+- [ads.ts](file://src/services/ads.ts#L86-L380)
 
 **Section sources**
-- [schema.ts](file://src/db/schema.ts#L196-L235)
-- [ads.ts](file://src/services/ads.ts#L1-L329)
+- [schema.ts](file://src/db/schema.ts#L196-L253)
+- [ads.ts](file://src/services/ads.ts#L1-L380)
 - [Ads.tsx](file://src/pages/admin/Ads.tsx#L1-L131)
 - [AdsCreate.tsx](file://src/pages/admin/AdsCreate.tsx#L1-L569)
 - [AdTable.tsx](file://src/components/organisms/AdTable.tsx#L1-L119)
 
 ### Administrative Functions
-- Entities: admin_settings, support_contacts, ads
+- Entities: admin_settings, support_contacts, ads, impressions, clicks
 - Responsibilities:
   - Admin Settings: centralized key-value configuration.
   - Support Contacts: platform support channels with activity flags and update timestamps.
   - Ads: comprehensive advertising campaign management with full CRUD operations support.
+  - Impressions: detailed impression event tracking with metadata for analytics.
+  - Clicks: detailed click event tracking with metadata for analytics.
 - Enhanced Features:
   - Ads management interface with filtering by status and placement.
   - Real-time preview of ad placements across different screen types.
   - Dynamic placement validation based on ad type restrictions.
   - Analytics dashboard showing impressions, clicks, and CTR calculations.
+  - Detailed metadata tracking including user agents and IP addresses.
+  - Atomic increment operations with transaction support for reliable analytics.
   - Full CRUD operations with validation and error handling.
 
-**Updated** Enhanced Administrative Functions section to include comprehensive ads table with full CRUD operations support.
+**Updated** Enhanced Administrative Functions section to include comprehensive ads table with full CRUD operations support and detailed analytics tracking capabilities.
 
 ```mermaid
 classDiagram
@@ -698,6 +755,22 @@ class Ad {
 +timestamp created_at
 +timestamp updated_at
 }
+class Impression {
++int id
++int ad_id
++string placement
++string user_agent
++string ip
++timestamp created_at
+}
+class Click {
++int id
++int ad_id
++string placement
++string user_agent
++string ip
++timestamp created_at
+}
 class AdminAdsInterface {
 +renderList() JSX.Element
 +renderCreateForm() JSX.Element
@@ -707,12 +780,14 @@ class AdminAdsInterface {
 +calculateCTR(ad) string
 }
 Ad <.. AdminAdsInterface : "managed by"
+Impression <.. AdminAdsInterface : "tracked by"
+Click <.. AdminAdsInterface : "tracked by"
 ```
 
 **Diagram sources**
 - [schema.ts](file://src/db/schema.ts#L69-L72)
 - [schema.ts](file://src/db/schema.ts#L106-L112)
-- [schema.ts](file://src/db/schema.ts#L196-L235)
+- [schema.ts](file://src/db/schema.ts#L196-L253)
 - [Ads.tsx](file://src/pages/admin/Ads.tsx#L29-L131)
 - [AdsCreate.tsx](file://src/pages/admin/AdsCreate.tsx#L40-L569)
 - [AdTable.tsx](file://src/components/organisms/AdTable.tsx#L17-L119)
@@ -720,7 +795,7 @@ Ad <.. AdminAdsInterface : "managed by"
 **Section sources**
 - [schema.ts](file://src/db/schema.ts#L69-L72)
 - [schema.ts](file://src/db/schema.ts#L106-L112)
-- [schema.ts](file://src/db/schema.ts#L196-L235)
+- [schema.ts](file://src/db/schema.ts#L196-L253)
 - [Ads.tsx](file://src/pages/admin/Ads.tsx#L1-L131)
 - [AdsCreate.tsx](file://src/pages/admin/AdsCreate.tsx#L1-L569)
 - [AdTable.tsx](file://src/components/organisms/AdTable.tsx#L1-L119)
@@ -742,6 +817,7 @@ DRIZZLECFG --> MIGR7["0007_orange_toad_men.sql"]
 DRIZZLECFG --> MIGR8["0008_stiff_toro.sql"]
 DRIZZLECFG --> MIGR9["0009_order_bumps.sql"]
 DRIZZLECFG --> MIGR10["0010_ads_table.sql"]
+DRIZZLECFG --> MIGR11["0011_ads_tracking.sql"]
 MIGR0 --> PG["PostgreSQL"]
 MIGR1 --> PG
 MIGR2 --> PG
@@ -753,14 +829,15 @@ MIGR7 --> PG
 MIGR8 --> PG
 MIGR9 --> PG
 MIGR10 --> PG
+MIGR11 --> PG
 ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
 ```
 
-**Updated** Added new migration files 0009 and 0010 to the dependency graph.
+**Updated** Added new migration files 0009, 0010, and 0011 to the dependency graph, including the new advertising tracking system.
 
 **Diagram sources**
 - [index.ts](file://src/db/index.ts#L1-L8)
-- [schema.ts](file://src/db/schema.ts#L1-L235)
+- [schema.ts](file://src/db/schema.ts#L1-L253)
 - [drizzle.config.ts](file://drizzle.config.ts#L1-L11)
 - [_journal.json](file://drizzle/meta/_journal.json#L1-L69)
 - [0000_special_white_queen.sql](file://drizzle/0000_special_white_queen.sql#L1-L80)
@@ -774,6 +851,7 @@ ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
 - [0008_stiff_toro.sql](file://drizzle/0008_stiff_toro.sql#L1-L1)
 - [0009_order_bumps.sql](file://drizzle/0009_order_bumps.sql#L1-L12)
 - [0010_ads_table.sql](file://drizzle/0010_ads_table.sql#L1-L21)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L1-L21)
 - [migrate-postback.ts](file://scripts/migrate-postback.ts#L1-L22)
 
 **Section sources**
@@ -789,6 +867,7 @@ ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
   - Batched updates for post counts and media CDN JSON reduce query overhead during sync.
 - Foreign Key Cascades
   - Explicit cascading deletes for whitelabel posts and media maintain referential integrity during cleanup.
+  - Cascade deletion for impressions and clicks ensures clean data management when ads are removed.
 - Timestamps
   - Default timestamps and update triggers minimize application-side timestamp management.
 - Column Management
@@ -796,11 +875,14 @@ ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
 - JSON Data Handling
   - order_bump_ids JSON column provides flexible multi-order bump tracking while maintaining performance through proper indexing and query patterns.
 - Analytics Tracking
-  - Dedicated impressions and clicks counters with atomic increment operations for high-performance analytics.
+  - Dedicated impressions and clicks tables with atomic increment operations for high-performance analytics.
+  - Transaction support ensures data consistency for both denormalized counters and detailed event tracking.
   - Priority-based sorting with efficient indexing for optimal ad delivery performance.
   - Date range filtering with proper indexing for campaign scheduling and reporting.
+  - Metadata tracking (user agents, IP addresses) enables detailed attribution and analytics without impacting core performance.
+  - Foreign key relationships with cascade deletion maintain referential integrity for analytics data.
 
-**Updated** Added performance considerations for analytics tracking and ad delivery optimization.
+**Updated** Added performance considerations for analytics tracking, ad delivery optimization, and detailed metadata handling.
 
 ## Troubleshooting Guide
 - Migration Issues
@@ -809,6 +891,7 @@ ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
   - Use the migration helper script for postback_url column addition.
   - Check that order_bumps migration was applied successfully.
   - Verify ads table migration completed without errors.
+  - Ensure impressions and clicks tracking migrations were applied successfully.
 - Connection Problems
   - Check the database URL environment variable or fallback configuration.
   - Ensure PostgreSQL is reachable and credentials are valid.
@@ -832,8 +915,12 @@ ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
   - Ensure placement validation logic works correctly for ad type restrictions.
   - Validate analytics tracking counters are updating properly.
   - Confirm admin interface filters are working for status and placement queries.
+  - Verify impressions and clicks tables exist with proper foreign key constraints.
+  - Check that atomic increment operations are working correctly in transaction context.
+  - Ensure metadata tracking (user agents, IP addresses) is functioning properly.
+  - Validate cascade deletion behavior for impressions and clicks when ads are removed.
 
-**Updated** Added troubleshooting guidance for new ad system functionality and enhanced payment-related columns.
+**Updated** Added troubleshooting guidance for new ad system functionality, enhanced payment-related columns, and comprehensive advertising tracking system.
 
 **Section sources**
 - [_journal.json](file://drizzle/meta/_journal.json#L1-L69)
@@ -844,9 +931,10 @@ ENDSCRIPT["scripts/migrate-postback.ts"] --> PG
 - [migrate-postback.ts](file://scripts/migrate-postback.ts#L1-L22)
 - [0009_order_bumps.sql](file://drizzle/0009_order_bumps.sql#L1-L12)
 - [0010_ads_table.sql](file://drizzle/0010_ads_table.sql#L1-L21)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L1-L21)
 
 ## Conclusion
-CreatorFlix employs a clear, layered database design centered on users, plans, subscriptions, and content—both native and whitelabel. The schema emphasizes integrity through enumerations, unique constraints, and explicit relations. Migrations evolve the schema incrementally, and the whitelabel pipeline demonstrates scalable content ingestion with robust cleanup and aggregation. Recent enhancements include improved payment tracking with external_id columns, webhook support through postback_url configurations, and sophisticated order bump management for multi-add-on purchases. The addition of the comprehensive Ads table with campaign management, placement targeting, and analytics tracking provides a complete advertising solution for the platform. This foundation supports a flexible, extensible platform for premium content creators with comprehensive monetization capabilities and advanced advertising features.
+CreatorFlix employs a clear, layered database design centered on users, plans, subscriptions, and content—both native and whitelabel. The schema emphasizes integrity through enumerations, unique constraints, and explicit relations. Migrations evolve the schema incrementally, and the whitelabel pipeline demonstrates scalable content ingestion with robust cleanup and aggregation. Recent enhancements include improved payment tracking with external_id columns, webhook support through postback_url configurations, and sophisticated order bump management for multi-add-on purchases. The addition of the comprehensive Ads table with campaign management, placement targeting, and analytics tracking provides a complete advertising solution for the platform. The new dedicated impressions and clicks tracking tables with detailed metadata support comprehensive analytics and attribution capabilities. This foundation supports a flexible, extensible platform for premium content creators with comprehensive monetization capabilities, advanced advertising features, and robust analytics infrastructure.
 
 ## Appendices
 
@@ -857,6 +945,7 @@ CreatorFlix employs a clear, layered database design centered on users, plans, s
   - Upsert patterns and "do nothing on conflict" strategies prevent duplication during sync.
 - Referential Integrity
   - Foreign keys enforce relationships; cascading deletes handle dependent cleanup.
+  - Cascade deletion for impressions and clicks ensures clean data management.
 - JSON Payloads
   - Benefits, media CDNs, and order_bump_ids are stored as JSON for flexibility and reduced schema churn.
 - Enumerations
@@ -872,8 +961,11 @@ CreatorFlix employs a clear, layered database design centered on users, plans, s
   - Dedicated counters and atomic operations for high-performance analytics tracking.
   - Priority-based sorting and efficient indexing for optimal ad delivery performance.
   - Comprehensive filtering and reporting capabilities through structured data models.
+  - Detailed metadata tracking (user agents, IP addresses) enables advanced attribution and analytics.
+  - Transaction support ensures data consistency for complex analytics operations.
+  - Foreign key relationships with cascade deletion maintain referential integrity for analytics data.
 
-**Updated** Added migration management, column enhancement patterns, multi-entity relationship handling, and analytics-first design principles.
+**Updated** Added migration management, column enhancement patterns, multi-entity relationship handling, analytics-first design principles, and comprehensive metadata tracking capabilities.
 
 **Section sources**
 - [_journal.json](file://drizzle/meta/_journal.json#L1-L69)
@@ -888,6 +980,7 @@ CreatorFlix employs a clear, layered database design centered on users, plans, s
 - [0008_stiff_toro.sql](file://drizzle/0008_stiff_toro.sql#L1-L1)
 - [0009_order_bumps.sql](file://drizzle/0009_order_bumps.sql#L1-L12)
 - [0010_ads_table.sql](file://drizzle/0010_ads_table.sql#L1-L21)
-- [schema.ts](file://src/db/schema.ts#L1-L235)
+- [0011_ads_tracking.sql](file://drizzle/0011_ads_tracking.sql#L1-L21)
+- [schema.ts](file://src/db/schema.ts#L1-L253)
 - [migrate-postback.ts](file://scripts/migrate-postback.ts#L1-L22)
-- [ads.ts](file://src/services/ads.ts#L1-L329)
+- [ads.ts](file://src/services/ads.ts#L1-L380)

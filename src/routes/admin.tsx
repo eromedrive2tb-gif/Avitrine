@@ -13,6 +13,7 @@ import { AdminWhitelabel } from '../pages/admin/Whitelabel';
 import { AdminSupport } from '../pages/admin/Support';
 import { AdminFinance } from '../pages/admin/Finance';
 import { AdminClients } from '../pages/admin/Clients';
+import { Alert } from '../components/atoms/Alert';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AdsService, type AdStatus, type AdPlacement, type AdType } from '../services/ads';
 
@@ -509,7 +510,7 @@ adminRoutes.get('/clients/:id/history', async (c) => {
   return c.html(
     <div class="space-y-4 p-1">
       {allTransactions.map((tx) => (
-        <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-primary/30 transition-all group">
+        <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-primary/30 transition-all group" key={tx.id}>
           <div class="flex justify-between items-start mb-3">
             <div>
               <span class="text-[10px] font-black tracking-widest text-primary/60 uppercase">{tx.type}</span>
@@ -547,6 +548,109 @@ adminRoutes.get('/clients/:id/history', async (c) => {
       ))}
     </div>
   );
+});
+
+adminRoutes.get('/clients/:id/add-plan', async (c) => {
+  const userId = parseInt(c.req.param('id'));
+  const allPlans = await db.select().from(plans).orderBy(plans.duration);
+
+  return c.html(
+    <div class="space-y-4 p-1">
+      {allPlans.map((plan) => (
+        <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-green-500/30 transition-all group" key={plan.id}>
+          <div class="flex justify-between items-center">
+            <div>
+              <h5 class="text-white font-bold text-sm">{plan.name}</h5>
+              <p class="text-[10px] text-gray-500 uppercase font-bold">
+                {plan.duration} dias • {(plan.price / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+            <form 
+              hx-post={`/admin/clients/${userId}/activate-plan`} 
+              hx-target="#add-plan-alert-container" 
+              hx-swap="innerHTML"
+              hx-on="htmx:after-request: document.getElementById('add-plan-alert-container').classList.remove('hidden')"
+            >
+              <input type="hidden" name="planId" value={plan.id} />
+              <button 
+                type="submit"
+                class="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-4 py-2 rounded uppercase tracking-widest transition-all"
+              >
+                Ativar
+              </button>
+            </form>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
+
+adminRoutes.post('/clients/:id/activate-plan', async (c) => {
+  const userId = parseInt(c.req.param('id'));
+  const body = await c.req.parseBody();
+  const planId = parseInt(body['planId'] as string);
+
+  const plan = await db.query.plans.findFirst({
+    where: eq(plans.id, planId)
+  });
+
+  if (!plan) {
+    return c.html(
+      <>
+        <Alert variant="error" title="Erro na Ativação">
+          O plano selecionado não foi encontrado no sistema.
+        </Alert>
+        <script dangerouslySetInnerHTML={{__html: `document.getElementById('add-plan-alert-container').classList.remove('hidden');` }} />
+      </>
+    );
+  }
+
+  try {
+    // 1. Calcular datas
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + plan.duration);
+
+    // 2. Criar subscription
+    await db.insert(subscriptions).values({
+      userId,
+      planId,
+      status: 'active',
+      startDate,
+      endDate,
+      externalId: 'MANUAL_ADMIN'
+    });
+
+    // 3. Atualizar status do usuário
+    await db.update(users)
+      .set({ subscriptionStatus: 1 })
+      .where(eq(users.id, userId));
+
+    return c.html(
+      <>
+        <Alert variant="success" title="Plano Ativado!">
+          O plano <strong>{plan.name}</strong> foi ativado com sucesso para o cliente. A página será atualizada em instantes.
+        </Alert>
+        <script dangerouslySetInnerHTML={{__html: `
+          document.getElementById('add-plan-alert-container').classList.remove('hidden');
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        `}} />
+      </>
+    );
+  } catch (err: any) {
+    console.error('Manual activation error:', err);
+    return c.html(
+      <>
+        <Alert variant="error" title="Falha no Processamento">
+          Ocorreu um erro ao tentar ativar o plano: {err.message}
+        </Alert>
+        <script dangerouslySetInnerHTML={{__html: `document.getElementById('add-plan-alert-container').classList.remove('hidden');` }} />
+      </>
+    );
+  }
 });
 
 // WHITELABEL ROUTES

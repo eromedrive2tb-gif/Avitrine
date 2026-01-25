@@ -27,12 +27,11 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive advertising system API endpoints documentation
-- Documented ad campaign management endpoints for administrators
-- Added public advertising endpoints for fetching active ads by placement
-- Included ad tracking endpoints for clicks and impressions
-- Documented ad types, placements, and validation rules
-- Added advertising analytics and CTR calculation
+- Added comprehensive advertising tracking endpoints documentation for /ads/:id/impression, /ads/:id/click, and /ads/:id/event
+- Documented enhanced metadata collection capabilities including user agent, IP address, and placement tracking
+- Added transactional guarantees for advertising event recording
+- Updated advertising system with comprehensive tracking infrastructure
+- Enhanced ad campaign management endpoints with improved metadata handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -48,7 +47,7 @@
 11. [Appendices](#appendices)
 
 ## Introduction
-This document describes CreatorFlix's REST API surface implemented with Hono. It covers authentication endpoints, payment processing endpoints, content management endpoints, administrative management endpoints, and the newly added advertising system. For each endpoint, you will find HTTP methods, URL patterns, request/response schemas, authentication requirements, error codes, and practical examples. Security considerations, rate limiting, and API versioning are also documented.
+This document describes CreatorFlix's REST API surface implemented with Hono. It covers authentication endpoints, payment processing endpoints, content management endpoints, administrative management endpoints, and the comprehensive advertising system. For each endpoint, you will find HTTP methods, URL patterns, request/response schemas, authentication requirements, error codes, and practical examples. Security considerations, rate limiting, and API versioning are also documented.
 
 ## Project Structure
 The API is organized under route modules:
@@ -81,10 +80,11 @@ A11["GET /api/ads/placement/:placement"]
 A12["POST /api/ads/placements"]
 A13["POST /api/ads/:id/click"]
 A14["POST /api/ads/:id/impression"]
-A15["POST /api/admin/finance/gateway"]
-A16["POST /api/admin/finance/junglepay"]
-A17["POST /api/admin/plans/update"]
-A18["POST /api/admin/whitelabel/activate"]
+A15["POST /api/ads/:id/event"]
+A16["POST /api/admin/finance/gateway"]
+A17["POST /api/admin/finance/junglepay"]
+A18["POST /api/admin/plans/update"]
+A19["POST /api/admin/whitelabel/activate"]
 end
 subgraph "Admin Routes"
 M1["GET /admin"]
@@ -117,18 +117,18 @@ A6 --> A7
 
 **Diagram sources**
 - [public.tsx](file://src/routes/public.tsx#L54-L165)
-- [api.tsx](file://src/routes/api.tsx#L16-L950)
+- [api.tsx](file://src/routes/api.tsx#L16-L973)
 - [admin.tsx](file://src/routes/admin.tsx#L18-L162)
 
 **Section sources**
 - [public.tsx](file://src/routes/public.tsx#L1-L170)
-- [api.tsx](file://src/routes/api.tsx#L1-L950)
+- [api.tsx](file://src/routes/api.tsx#L1-L973)
 - [admin.tsx](file://src/routes/admin.tsx#L1-L162)
 
 ## Core Components
 - Authentication service: handles registration, login, subscription creation, and subscription status checks.
 - Payment services: orchestrates internal checkout creation and integrates with JunglePay for PIX transactions.
-- Advertising service: manages ad campaigns, placements, tracking, and analytics.
+- Advertising service: manages ad campaigns, placements, tracking, and analytics with enhanced metadata collection.
 - Whitelabel content service: manages model and post listings, signing CDN URLs, and synchronization from S3.
 - Admin service: activates whitelabel models and upserts production content.
 
@@ -137,13 +137,13 @@ Key implementation references:
 - Checkout and PIX charge endpoints
 - Webhooks for payment success and JunglePay notifications
 - Public content endpoints for models and posts
-- Advertising endpoints for fetching active ads and tracking engagement
+- Advertising endpoints for fetching active ads and tracking engagement with metadata collection
 - Admin management endpoints for finance, plans, whitelabel activation, and ad campaign management
 
 **Section sources**
 - [auth.ts](file://src/services/auth.ts#L1-L91)
 - [junglepay.ts](file://src/services/junglepay.ts#L1-L270)
-- [ads.ts](file://src/services/ads.ts#L1-L329)
+- [ads.ts](file://src/services/ads.ts#L1-L380)
 - [whitelabel.ts](file://src/services/whitelabel.ts#L1-L24)
 - [models.ts](file://src/services/whitelabel/queries/models.ts#L1-L94)
 - [posts.ts](file://src/services/whitelabel/queries/posts.ts#L1-L47)
@@ -154,7 +154,7 @@ Key implementation references:
 The API follows a layered architecture:
 - Route handlers define endpoints and orchestrate requests
 - Services encapsulate business logic (auth, payment, advertising, whitelabel, admin)
-- Database schema defines entities and relations
+- Database schema defines entities and relations with dedicated tracking tables
 - External integrations (JunglePay, S3) are abstracted behind typed services
 
 ```mermaid
@@ -172,17 +172,20 @@ Ads->>DB : query active ads with date filters
 DB-->>Ads : filtered ads
 Ads-->>API : ad list with impressions tracking
 API-->>Client : JSON with ads and tracking pixels
-Client->>API : POST /api/ads/ : id/click
-API->>Ads : trackClick(id)
-Ads->>DB : increment clicks counter
-Client->>API : POST /api/ads/ : id/impression
-API->>Ads : trackImpression(id)
-Ads->>DB : increment impressions counter
+Client->>API : POST /api/ads/ : id/click?placement=home_top
+API->>Ads : trackClick(id, { userAgent, ip, placement })
+Ads->>DB : increment clicks counter and insert event
+Client->>API : POST /api/ads/ : id/impression?placement=sidebar
+API->>Ads : trackImpression(id, { userAgent, ip, placement })
+Ads->>DB : increment impressions counter and insert event
+Client->>API : POST /api/ads/ : id/event - {"type" : "click","metadata" : {"customField" : "value"}}
+API->>Ads : trackEvent(id, type, metadata)
+Ads->>DB : transactional event recording
 ```
 
 **Diagram sources**
-- [api.tsx](file://src/routes/api.tsx#L864-L950)
-- [ads.ts](file://src/services/ads.ts#L243-L259)
+- [api.tsx](file://src/routes/api.tsx#L864-L973)
+- [ads.ts](file://src/services/ads.ts#L243-L301)
 
 ## Detailed Component Analysis
 
@@ -320,7 +323,7 @@ Ads->>DB : increment impressions counter
   - Response: JSON acknowledging receipt or error.
 
 **Section sources**
-- [api.tsx](file://src/routes/api.tsx#L16-L950)
+- [api.tsx](file://src/routes/api.tsx#L16-L973)
 - [auth.ts](file://src/services/auth.ts#L6-L91)
 - [junglepay.ts](file://src/services/junglepay.ts#L107-L268)
 - [schema.ts](file://src/db/schema.ts#L6-L127)
@@ -478,7 +481,7 @@ Administrators can manage advertising campaigns through the following endpoints:
   - Response: Redirects to /admin/ads with success flag.
 
 ### Public Advertising Endpoints
-Public endpoints for fetching and tracking advertisements:
+Public endpoints for fetching and tracking advertisements with enhanced metadata collection:
 
 - GET /api/ads/placement/:placement
   - Purpose: Fetch active advertisements for a specific placement.
@@ -488,7 +491,7 @@ Public endpoints for fetching and tracking advertisements:
   - Query parameters:
     - limit: number (default 5, maximum 20)
   - Response: JSON with success flag and data array of ads.
-  - Auto-tracking: Automatically increments impression count for each returned ad.
+  - Auto-tracking: Does not automatically increment impression count for returned ads.
 
 - POST /api/ads/placements
   - Purpose: Fetch active advertisements for multiple placements in a single request.
@@ -496,21 +499,58 @@ Public endpoints for fetching and tracking advertisements:
   - Request body fields:
     - placements: string[] (array of placement identifiers)
   - Response: JSON with success flag and data object mapping placement to ad arrays.
-  - Auto-tracking: Automatically increments impression count for each returned ad.
+  - Auto-tracking: Does not automatically increment impression count for returned ads.
 
 - POST /api/ads/:id/click
-  - Purpose: Track advertisement click event.
+  - Purpose: Track advertisement click event with metadata collection.
   - Authentication: None required.
   - Path parameters:
     - id: number (advertisement ID)
+  - Query parameters:
+    - placement: string (optional placement identifier)
+  - Request headers:
+    - user-agent: string (automatically captured)
+    - x-forwarded-for: string (automatically captured)
+    - remote-addr: string (automatically captured)
   - Response: JSON with success flag.
+  - Metadata collected: placement, user agent, IP address.
 
 - POST /api/ads/:id/impression
-  - Purpose: Manually track advertisement impression event.
+  - Purpose: Manually track advertisement impression event with metadata collection.
   - Authentication: None required.
   - Path parameters:
     - id: number (advertisement ID)
+  - Query parameters:
+    - placement: string (optional placement identifier)
+  - Request headers:
+    - user-agent: string (automatically captured)
+    - x-forwarded-for: string (automatically captured)
+    - remote-addr: string (automatically captured)
   - Response: JSON with success flag.
+  - Metadata collected: placement, user agent, IP address.
+
+- POST /api/ads/:id/event
+  - Purpose: Generic event tracking endpoint for agnostic event handling.
+  - Authentication: None required.
+  - Path parameters:
+    - id: number (advertisement ID)
+  - Request body fields:
+    - type: string (either "impression" or "click")
+    - metadata: object (custom metadata fields)
+  - Request headers:
+    - user-agent: string (automatically captured)
+    - x-forwarded-for: string (automatically captured)
+    - remote-addr: string (automatically captured)
+  - Response: JSON with success flag.
+  - Metadata collected: placement, user agent, IP address, plus custom metadata from request body.
+
+### Enhanced Tracking Capabilities
+The advertising system now provides comprehensive tracking with metadata collection:
+
+- **Automatic metadata capture**: User agent, IP address, and placement are automatically captured from request headers and query parameters.
+- **Transactional event recording**: Both impression and click events are recorded in separate tracking tables with foreign key relationships to the ads table.
+- **Custom metadata support**: The generic event endpoint allows for custom metadata fields to be passed along with tracking events.
+- **Non-blocking operations**: Tracking operations use non-blocking database updates to prevent performance degradation.
 
 ### Ad Types and Valid Placements
 The advertising system supports five ad types with specific placement restrictions:
@@ -572,12 +612,13 @@ The advertising system provides built-in analytics with click-through rate (CTR)
   - Average: ≤ 1%
 
 **Section sources**
-- [ads.ts](file://src/services/ads.ts#L1-L329)
-- [api.tsx](file://src/routes/api.tsx#L864-L950)
+- [ads.ts](file://src/services/ads.ts#L1-L380)
+- [api.tsx](file://src/routes/api.tsx#L864-L973)
 - [admin.tsx](file://src/routes/admin.tsx#L39-L161)
 - [Ads.tsx](file://src/pages/admin/Ads.tsx#L1-L131)
 - [AdsCreate.tsx](file://src/pages/admin/AdsCreate.tsx#L1-L569)
 - [AdTable.tsx](file://src/components/organisms/AdTable.tsx#L1-L119)
+- [schema.ts](file://src/db/schema.ts#L194-L253)
 
 ## Dependency Analysis
 The API relies on typed schemas and services to maintain consistency and reduce coupling.
@@ -620,6 +661,22 @@ class Ads {
 +createdAt
 +updatedAt
 }
+class Impressions {
++id
++adId
++placement
++userAgent
++ip
++createdAt
+}
+class Clicks {
++id
++adId
++placement
++userAgent
++ip
++createdAt
+}
 class Subscriptions {
 +id
 +userId
@@ -655,24 +712,25 @@ Plans ||--o{ Subscriptions : "defines"
 Users ||--o{ Checkouts : "creates"
 Plans ||--o{ Checkouts : "defines"
 Ads ||--|| Ads : "tracking"
+Ads ||--o{ Impressions : "tracks"
+Ads ||--o{ Clicks : "tracks"
 PaymentGateways ||--|| Checkouts : "relates"
 ```
 
 **Diagram sources**
-- [schema.ts](file://src/db/schema.ts#L6-L127)
+- [schema.ts](file://src/db/schema.ts#L6-L253)
 
 **Section sources**
-- [schema.ts](file://src/db/schema.ts#L1-L178)
+- [schema.ts](file://src/db/schema.ts#L1-L253)
 
 ## Performance Considerations
 - Pagination: Public and admin endpoints use page-based pagination with fixed limits to control payload sizes.
 - Batch operations: Admin whitelabel sync processes S3 objects in batches and performs upserts with conflict handling to minimize writes.
 - CDN URL signing: Media URLs are signed on demand to avoid storing long-lived presigned URLs.
 - Webhook processing: Webhooks avoid heavy computations and rely on database lookups; pending/active transitions are handled efficiently.
-- Ad tracking: Click and impression tracking uses non-blocking operations to prevent performance degradation.
+- Ad tracking: Click and impression tracking uses non-blocking operations with transactional guarantees to prevent performance degradation.
 - Ad caching: Active ad queries consider date filters and priority ordering for efficient retrieval.
-
-[No sources needed since this section provides general guidance]
+- Metadata collection: Automatic metadata capture is optimized to minimize overhead while providing comprehensive tracking data.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -693,32 +751,28 @@ Common issues and resolutions:
 - Advertising system issues
   - Ad placement validation: Ensure ad placement matches the ad type constraints.
   - Active campaign filtering: Ads must have status 'active' and fall within start/end date range.
-  - Tracking failures: Click and impression tracking uses non-blocking operations; check database connectivity.
+  - Tracking failures: Click and impression tracking uses non-blocking operations with transactional guarantees; check database connectivity.
+  - Metadata collection: Verify that request headers (user-agent, x-forwarded-for, remote-addr) are properly captured.
+  - Generic event tracking: Ensure event type is either 'impression' or 'click' and ad ID is valid.
 
 **Section sources**
 - [api.tsx](file://src/routes/api.tsx#L316-L398)
 - [api.tsx](file://src/routes/api.tsx#L42-L86)
 - [api.tsx](file://src/routes/api.tsx#L88-L170)
-- [api.tsx](file://src/routes/api.tsx#L402-L950)
-- [ads.ts](file://src/services/ads.ts#L145-L293)
+- [api.tsx](file://src/routes/api.tsx#L402-L973)
+- [ads.ts](file://src/services/ads.ts#L145-L301)
 
 ## Conclusion
-CreatorFlix exposes a cohesive REST API for authentication, payment processing, content discovery, administration, and advertising management. The endpoints are designed with clear request/response contracts, robust error handling, and integration points for external services. Administrators can manage gateways, plans, whitelabel content, and advertising campaigns, while clients can authenticate, subscribe, consume curated content, and interact with targeted advertisements. The advertising system provides comprehensive campaign management, placement validation, and analytics capabilities.
-
-[No sources needed since this section summarizes without analyzing specific files]
+CreatorFlix exposes a cohesive REST API for authentication, payment processing, content discovery, administration, and advertising management. The endpoints are designed with clear request/response contracts, robust error handling, and integration points for external services. Administrators can manage gateways, plans, whitelabel content, and advertising campaigns, while clients can authenticate, subscribe, consume curated content, and interact with targeted advertisements. The advertising system provides comprehensive campaign management, placement validation, analytics capabilities, and enhanced tracking with metadata collection for detailed performance insights.
 
 ## Appendices
 
 ### API Versioning
 - No explicit versioning header or URL segment is used. Clients should pin to the current major behavior and monitor repository changes.
 
-[No sources needed since this section provides general guidance]
-
 ### Rate Limiting
 - No built-in rate limiting is implemented in the routes. Consider deploying a reverse proxy or middleware to enforce per-IP or per-token limits as needed.
-- Ad tracking endpoints use non-blocking operations to handle high-frequency requests without blocking the main application thread.
-
-[No sources needed since this section provides general guidance]
+- Ad tracking endpoints use non-blocking operations with transactional guarantees to handle high-frequency requests without blocking the main application thread.
 
 ### Security Considerations
 - Authentication
@@ -731,10 +785,12 @@ CreatorFlix exposes a cohesive REST API for authentication, payment processing, 
 - Data Validation
   - Payment endpoints validate required fields and gateway configuration before calling external services.
   - Ad placement validation ensures type-specific placement constraints are enforced.
+  - Event tracking endpoints validate ad IDs and event types before processing.
 
 - Sensitive Data
   - Secret keys for payment gateways are stored in the database; ensure environment isolation and least-privilege access.
-  - Ad tracking operations use non-blocking database updates to prevent timing attacks.
+  - Ad tracking operations use non-blocking database updates with transactional guarantees to prevent timing attacks.
+  - Metadata collection is limited to necessary fields (user agent, IP, placement) to minimize privacy concerns.
 
 **Section sources**
 - [api.tsx](file://src/routes/api.tsx#L336-L343)
@@ -780,13 +836,17 @@ CreatorFlix exposes a cohesive REST API for authentication, payment processing, 
   - curl
     - curl -X POST https://your-host/api/ads/placements -H "Content-Type: application/json" -d '{"placements":["home_top","sidebar","feed_model"]}'
 
-- Track Ad Click
+- Track Ad Click with Metadata
   - curl
-    - curl -X POST https://your-host/api/ads/123/click
+    - curl -X POST https://your-host/api/ads/123/click?placement=home_top -H "User-Agent: Mozilla/5.0" -H "X-Forwarded-For: 192.168.1.1"
 
-- Track Ad Impression
+- Track Ad Impression with Metadata
   - curl
-    - curl -X POST https://your-host/api/ads/123/impression
+    - curl -X POST https://your-host/api/ads/123/impression?placement=sidebar -H "User-Agent: Mozilla/5.0" -H "X-Forwarded-For: 192.168.1.1"
+
+- Generic Event Tracking
+  - curl
+    - curl -X POST https://your-host/api/ads/123/event -H "Content-Type: application/json" -d '{"type":"click","metadata":{"customField":"value","source":"widget"}}'
 
 - Admin: Toggle Gateway
   - curl
@@ -820,8 +880,6 @@ CreatorFlix exposes a cohesive REST API for authentication, payment processing, 
   - curl
     - curl -X POST https://your-host/admin/ads/1/delete
 
-[No sources needed since this section provides general guidance]
-
 ### Client Implementation Guidelines
 - Use the auth cookie for subsequent authenticated requests.
 - For payment flows, call /api/checkout/process first, then /api/checkout/pix to obtain a QR code and secure URL.
@@ -829,10 +887,10 @@ CreatorFlix exposes a cohesive REST API for authentication, payment processing, 
 - For content consumption, use GET /api/models and GET /api/models/:modelName/posts with pagination.
 - For advertising integration, use GET /api/ads/placement/:placement for single placement or POST /api/ads/placements for multiple placements.
 - Implement automatic impression tracking when displaying ads and manual click tracking on user interactions.
+- Utilize the generic event tracking endpoint for custom analytics and behavioral tracking.
+- Collect and pass relevant metadata (user agent, IP, placement) for comprehensive tracking.
 - For admin operations, ensure the client respects redirects and handles success/error query parameters.
 - Validate ad placement constraints client-side before submitting campaigns to prevent server errors.
-
-[No sources needed since this section provides general guidance]
 
 ### Testing Strategies and Debugging
 - Unit tests for services
@@ -840,22 +898,28 @@ CreatorFlix exposes a cohesive REST API for authentication, payment processing, 
   - Validate JunglePayService.createPixCharge with various scenarios (invalid data, inactive gateway, API errors).
   - Validate AdsService.create, AdsService.update, and AdsService.delete operations.
   - Test ad placement validation and type-specific constraints.
+  - Test enhanced tracking endpoints with metadata collection.
+  - Test generic event tracking with custom metadata.
 - Integration tests for endpoints
   - Test /api/login and /api/register redirects and cookie setting.
   - Test /api/checkout/process and /api/checkout/pix responses and database inserts.
   - Verify webhook endpoints update subscriptions and user status.
   - Test ad campaign CRUD operations in admin routes.
   - Validate ad placement filtering and date-based activation logic.
-  - Test click and impression tracking endpoints.
+  - Test click and impression tracking endpoints with metadata capture.
+  - Test generic event tracking endpoint with various event types and metadata combinations.
 - Logging and monitoring
   - Inspect server logs for webhook receipts and errors.
   - Confirm database state after operations (checkouts, subscriptions, users, ads).
   - Monitor ad tracking metrics and CTR calculations.
   - Verify ad placement validation errors and constraint violations.
+  - Monitor tracking table entries for impressions and clicks.
+  - Validate metadata collection accuracy in tracking records.
 
 **Section sources**
 - [auth.ts](file://src/services/auth.ts#L6-L91)
 - [junglepay.ts](file://src/services/junglepay.ts#L107-L268)
-- [ads.ts](file://src/services/ads.ts#L86-L329)
+- [ads.ts](file://src/services/ads.ts#L86-L380)
 - [api.tsx](file://src/routes/api.tsx#L88-L170)
-- [api.tsx](file://src/routes/api.tsx#L402-L950)
+- [api.tsx](file://src/routes/api.tsx#L402-L973)
+- [schema.ts](file://src/db/schema.ts#L237-L253)

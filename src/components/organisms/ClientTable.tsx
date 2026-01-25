@@ -1,5 +1,6 @@
 import { FC } from 'hono/jsx';
 import { ActionHistoryButton } from '../molecules/ActionHistoryButton';
+import { AddPlanButton } from '../molecules/AddPlanButton';
 import { Pagination } from '../molecules/Pagination';
 import { Badge } from '../atoms/Badge';
 
@@ -39,7 +40,8 @@ const ClientTableRow: FC<{ user: UserData }> = ({ user }) => (
         {user.subscriptionStatus === 1 ? 'Ativa' : 'Inativa'}
       </Badge>
     </td>
-    <td class="px-6 py-4 text-right">
+    <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
+      <AddPlanButton userId={user.id} />
       <ActionHistoryButton userId={user.id} />
     </td>
   </tr>
