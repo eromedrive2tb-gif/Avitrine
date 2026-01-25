@@ -4,7 +4,7 @@ import { AdsService } from '../../services/ads';
 
 export const Sidebar: FC = async () => {
   // Fetch sidebar ads from database
-  const sidebarAds = await AdsService.getActiveByPlacement('sidebar', 1);
+  const sidebarAds = await AdsService.getActiveByPlacement('sidebar', 1, true);
   const activeSpotAd = sidebarAds.find(ad => ad.type === 'spot');
 
   const menuItems = [
@@ -116,6 +116,7 @@ export const Sidebar: FC = async () => {
             buttonText={activeSpotAd.ctaText || 'SAIBA MAIS'}
             link={activeSpotAd.link}
             imageUrl={activeSpotAd.imageUrl || undefined}
+            adId={activeSpotAd.id}
           />
         )}
 

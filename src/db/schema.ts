@@ -233,3 +233,21 @@ export const ads = pgTable('ads', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
 });
+
+export const impressions = pgTable('impressions', {
+  id: serial('id').primaryKey(),
+  adId: integer('ad_id').references(() => ads.id, { onDelete: 'cascade' }).notNull(),
+  placement: text('placement'),
+  userAgent: text('user_agent'),
+  ip: text('ip'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const clicks = pgTable('clicks', {
+  id: serial('id').primaryKey(),
+  adId: integer('ad_id').references(() => ads.id, { onDelete: 'cascade' }).notNull(),
+  placement: text('placement'),
+  userAgent: text('user_agent'),
+  ip: text('ip'),
+  createdAt: timestamp('created_at').defaultNow(),
+});

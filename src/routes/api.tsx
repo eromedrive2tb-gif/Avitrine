@@ -869,13 +869,7 @@ apiRoutes.get('/ads/placement/:placement', async (c) => {
     const placement = c.req.param('placement') as AdPlacement;
     const limit = parseInt(c.req.query('limit') || '5');
     
-    const ads = await AdsService.getActiveByPlacement(placement, limit);
-    
-    // Track impressions para cada anúncio retornado
-    for (const ad of ads) {
-      // Non-blocking impression tracking
-      AdsService.trackImpression(ad.id).catch(() => {});
-    }
+    const ads = await AdsService.getActiveByPlacement(placement, limit, true);
     
     return c.json({ success: true, data: ads });
   } catch (e: any) {
@@ -894,15 +888,7 @@ apiRoutes.post('/ads/placements', async (c) => {
       return c.json({ success: false, error: 'Placements array required' }, 400);
     }
     
-    const adsMap = await AdsService.getActiveByPlacements(placements);
-    
-    // Track impressions
-    for (const placement of placements) {
-      const ads = adsMap[placement] || [];
-      for (const ad of ads) {
-        AdsService.trackImpression(ad.id).catch(() => {});
-      }
-    }
+    const adsMap = await AdsService.getActiveByPlacements(placements, true);
     
     return c.json({ success: true, data: adsMap });
   } catch (e: any) {
@@ -915,12 +901,15 @@ apiRoutes.post('/ads/placements', async (c) => {
 apiRoutes.post('/ads/:id/click', async (c) => {
   try {
     const id = parseInt(c.req.param('id'));
+    const userAgent = c.req.header('user-agent');
+    const ip = c.req.header('x-forwarded-for') || c.req.header('remote-addr');
+    const placement = c.req.query('placement');
     
     if (!id || isNaN(id)) {
       return c.json({ success: false, error: 'Invalid ad ID' }, 400);
     }
     
-    await AdsService.trackClick(id);
+    await AdsService.trackClick(id, { userAgent, ip, placement });
     
     return c.json({ success: true });
   } catch (e: any) {
@@ -933,16 +922,50 @@ apiRoutes.post('/ads/:id/click', async (c) => {
 apiRoutes.post('/ads/:id/impression', async (c) => {
   try {
     const id = parseInt(c.req.param('id'));
+    const userAgent = c.req.header('user-agent');
+    const ip = c.req.header('x-forwarded-for') || c.req.header('remote-addr');
+    const placement = c.req.query('placement');
     
     if (!id || isNaN(id)) {
       return c.json({ success: false, error: 'Invalid ad ID' }, 400);
     }
     
-    await AdsService.trackImpression(id);
+    await AdsService.trackImpression(id, { userAgent, ip, placement });
     
     return c.json({ success: true });
   } catch (e: any) {
     console.error("[Ads] Impression Track Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
+// Generic Event Tracker (Agnostic approach)
+apiRoutes.post('/ads/:id/event', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    const body = await c.req.json();
+    const { type, metadata } = body;
+    
+    const userAgent = c.req.header('user-agent');
+    const ip = c.req.header('x-forwarded-for') || c.req.header('remote-addr');
+    
+    if (!id || isNaN(id)) {
+      return c.json({ success: false, error: 'Invalid ad ID' }, 400);
+    }
+    
+    if (!type || !['impression', 'click'].includes(type)) {
+      return c.json({ success: false, error: 'Invalid event type' }, 400);
+    }
+    
+    await AdsService.trackEvent(id, type as 'impression' | 'click', {
+      ...metadata,
+      userAgent,
+      ip
+    });
+    
+    return c.json({ success: true });
+  } catch (e: any) {
+    console.error("[Ads] Event Track Error:", e);
     return c.json({ success: false, error: e.message }, 500);
   }
 });

@@ -241,12 +241,12 @@ publicRoutes.get('/checkout', async (c) => {
 });
 
 publicRoutes.get('/login', async (c) => {
-  const loginAds = await AdsService.getActiveByPlacement('login', 3);
+  const loginAds = await AdsService.getActiveByPlacement('login', 3, true);
   return c.html(<AuthPage type="login" ads={loginAds} />);
 });
 
 publicRoutes.get('/register', async (c) => {
-  const registerAds = await AdsService.getActiveByPlacement('register', 3);
+  const registerAds = await AdsService.getActiveByPlacement('register', 3, true);
   return c.html(<AuthPage type="register" ads={registerAds} />);
 });
 

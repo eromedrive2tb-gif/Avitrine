@@ -34,7 +34,7 @@ export const HeroCarousel: FC<HeroCarouselProps> = ({ slides: customSlides }) =>
               </div>
               <h2 class="text-4xl md:text-5xl font-display text-white mb-4 leading-none">{slide.title}</h2>
               <div class="flex gap-3">
-                <a href={slide.link || '#'}>
+                <a href={slide.link || '#'} onclick={slide.adId ? `fetch('/api/ads/${slide.adId}/click', {method:'POST'})` : ''}>
                   <Button variant="primary" className="!py-2 !px-6 text-sm">Acessar</Button>
                 </a>
                 {slide.modelSlug && (

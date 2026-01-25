@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { ads } from '../db/schema';
+import { ads, impressions, clicks } from '../db/schema';
 import { eq, desc, asc, and, or, sql, gte, lte, isNull } from 'drizzle-orm';
 
 // Types
@@ -241,28 +241,70 @@ export const AdsService = {
   },
 
   /**
-   * Incrementa o contador de impressões
+   * Incrementa o contador de impressões e registra o evento
    */
-  async trackImpression(id: number): Promise<void> {
-    await db.update(ads)
-      .set({ impressions: sql`${ads.impressions} + 1` })
-      .where(eq(ads.id, id));
+  async trackImpression(id: number, metadata?: { placement?: string; userAgent?: string; ip?: string }): Promise<void> {
+    try {
+      // Usamos uma transação para garantir que ambos os registros sejam feitos
+      await db.transaction(async (tx) => {
+        // 1. Atualiza o contador denormalizado na tabela de anúncios
+        await tx.update(ads)
+          .set({ impressions: sql`${ads.impressions} + 1` })
+          .where(eq(ads.id, id));
+        
+        // 2. Registra o evento individual na tabela de impressões (agnóstico)
+        await tx.insert(impressions).values({
+          adId: id,
+          placement: metadata?.placement || null,
+          userAgent: metadata?.userAgent || null,
+          ip: metadata?.ip || null,
+        });
+      });
+    } catch (error) {
+      console.error(`[AdsService] Erro ao rastrear impressão do anúncio ${id}:`, error);
+    }
   },
 
   /**
-   * Incrementa o contador de cliques
+   * Incrementa o contador de cliques e registra o evento
    */
-  async trackClick(id: number): Promise<void> {
-    await db.update(ads)
-      .set({ clicks: sql`${ads.clicks} + 1` })
-      .where(eq(ads.id, id));
+  async trackClick(id: number, metadata?: { placement?: string; userAgent?: string; ip?: string }): Promise<void> {
+    try {
+      await db.transaction(async (tx) => {
+        // 1. Atualiza o contador denormalizado
+        await tx.update(ads)
+          .set({ clicks: sql`${ads.clicks} + 1` })
+          .where(eq(ads.id, id));
+        
+        // 2. Registra o evento individual na tabela de cliques
+        await tx.insert(clicks).values({
+          adId: id,
+          placement: metadata?.placement || null,
+          userAgent: metadata?.userAgent || null,
+          ip: metadata?.ip || null,
+        });
+      });
+    } catch (error) {
+      console.error(`[AdsService] Erro ao rastrear clique do anúncio ${id}:`, error);
+    }
+  },
+
+  /**
+   * Método genérico para rastreamento de eventos (agnóstico)
+   */
+  async trackEvent(adId: number, type: 'impression' | 'click', metadata?: any): Promise<void> {
+    if (type === 'impression') {
+      return this.trackImpression(adId, metadata);
+    } else if (type === 'click') {
+      return this.trackClick(adId, metadata);
+    }
   },
 
   /**
    * Busca anúncios ativos para um placement específico
    * Considera datas de início e fim se configuradas
    */
-  async getActiveByPlacement(placement: AdPlacement, limit: number = 10): Promise<Ad[]> {
+  async getActiveByPlacement(placement: AdPlacement, limit: number = 10, track: boolean = false): Promise<Ad[]> {
     const now = new Date();
     
     const result = await db.select().from(ads).where(
@@ -276,17 +318,26 @@ export const AdsService = {
       )
     ).orderBy(desc(ads.priority), desc(ads.createdAt)).limit(limit);
 
-    return result as Ad[];
+    const formattedResult = result as Ad[];
+
+    // Rastreamento automático se solicitado
+    if (track) {
+      for (const ad of formattedResult) {
+        this.trackImpression(ad.id, { placement }).catch(() => {});
+      }
+    }
+
+    return formattedResult;
   },
 
   /**
    * Busca anúncios ativos para múltiplos placements
    */
-  async getActiveByPlacements(placements: AdPlacement[]): Promise<Record<AdPlacement, Ad[]>> {
+  async getActiveByPlacements(placements: AdPlacement[], track: boolean = false): Promise<Record<AdPlacement, Ad[]>> {
     const result: Record<string, Ad[]> = {};
     
     for (const placement of placements) {
-      result[placement] = await this.getActiveByPlacement(placement);
+      result[placement] = await this.getActiveByPlacement(placement, 10, track);
     }
     
     return result as Record<AdPlacement, Ad[]>;
