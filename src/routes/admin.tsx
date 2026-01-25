@@ -18,6 +18,7 @@ import { Alert } from '../components/atoms/Alert';
 import { WhitelabelDbService } from '../services/whitelabel';
 import { AdsService, type AdStatus, type AdPlacement, type AdType } from '../services/ads';
 import { AdminModelsService } from '../services/admin/adModels';
+import { AdminPostsService } from '../services/admin/posts';
 
 const adminRoutes = new Hono();
 
@@ -149,6 +150,156 @@ adminRoutes.post('/models/:id/delete', async (c) => {
   } catch (e: any) {
     console.error('[Models Delete Error]', e);
     return c.redirect('/admin/models?error=' + encodeURIComponent(e.message));
+  }
+});
+
+// === MODEL POSTS ROUTES ===
+import { AdminModelPosts } from '../pages/admin/ModelPosts';
+import { AdminPostEdit } from '../pages/admin/PostEdit';
+
+adminRoutes.get('/models/:modelId/posts', async (c) => {
+  const modelId = parseInt(c.req.param('modelId'));
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const search = c.req.query('search') || '';
+  const type = c.req.query('type') as 'image' | 'video' | undefined;
+  
+  try {
+    // Verificar se a modelo existe
+    const model = await AdminModelsService.getById(modelId);
+    if (!model) {
+      return c.redirect('/admin/models?error=model_not_found');
+    }
+    
+    // Buscar posts
+    const result = await AdminPostsService.listByModel(modelId, page, 20, {
+      search: search || undefined,
+      type: type || undefined
+    });
+    
+    return c.html(
+      <AdminModelPosts 
+        model={model}
+        posts={result.data}
+        page={result.page}
+        totalPages={result.totalPages}
+        searchQuery={search}
+        typeFilter={type}
+      />
+    );
+  } catch (e: any) {
+    console.error('[Model Posts Error]', e);
+    return c.redirect('/admin/models?error=' + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.get('/models/:modelId/posts/new', async (c) => {
+  const modelId = parseInt(c.req.param('modelId'));
+  
+  try {
+    const model = await AdminModelsService.getById(modelId);
+    if (!model) {
+      return c.redirect('/admin/models?error=model_not_found');
+    }
+    
+    return c.html(
+      <AdminPostEdit 
+        model={model}
+        formData={{
+          contentUrl: '',
+          type: 'image'
+        }}
+        isEditing={false}
+      />
+    );
+  } catch (e: any) {
+    console.error('[New Post Error]', e);
+    return c.redirect(`/admin/models/${modelId}/posts?error=` + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.get('/models/:modelId/posts/:postId/edit', async (c) => {
+  const modelId = parseInt(c.req.param('modelId'));
+  const postId = parseInt(c.req.param('postId'));
+  
+  try {
+    const model = await AdminModelsService.getById(modelId);
+    if (!model) {
+      return c.redirect('/admin/models?error=model_not_found');
+    }
+    
+    const post = await AdminPostsService.getById(postId);
+    if (!post) {
+      return c.redirect(`/admin/models/${modelId}/posts?error=post_not_found`);
+    }
+    
+    return c.html(
+      <AdminPostEdit 
+        model={model}
+        formData={{
+          title: post.title || undefined,
+          contentUrl: post.contentUrl,
+          type: post.type as 'image' | 'video'
+        }}
+        isEditing={true}
+        postId={postId}
+      />
+    );
+  } catch (e: any) {
+    console.error('[Edit Post Error]', e);
+    return c.redirect(`/admin/models/${modelId}/posts?error=` + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/models/:modelId/posts/create', async (c) => {
+  const modelId = parseInt(c.req.param('modelId'));
+  const body = await c.req.parseBody();
+  
+  try {
+    await AdminPostsService.create({
+      modelId: modelId,
+      title: body['title'] as string || undefined,
+      contentUrl: body['contentUrl'] as string,
+      type: body['type'] as 'image' | 'video'
+    });
+    
+    return c.redirect(`/admin/models/${modelId}/posts?success=created`);
+  } catch (e: any) {
+    console.error('[Create Post Error]', e);
+    return c.redirect(`/admin/models/${modelId}/posts/new?error=` + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/models/:modelId/posts/:postId/update', async (c) => {
+  const modelId = parseInt(c.req.param('modelId'));
+  const postId = parseInt(c.req.param('postId'));
+  const body = await c.req.parseBody();
+  
+  try {
+    await AdminPostsService.update({
+      id: postId,
+      modelId: modelId,
+      title: body['title'] as string || undefined,
+      contentUrl: body['contentUrl'] as string,
+      type: body['type'] as 'image' | 'video'
+    });
+    
+    return c.redirect(`/admin/models/${modelId}/posts?success=updated`);
+  } catch (e: any) {
+    console.error('[Update Post Error]', e);
+    return c.redirect(`/admin/models/${modelId}/posts/${postId}/edit?error=` + encodeURIComponent(e.message));
+  }
+});
+
+adminRoutes.post('/models/:modelId/posts/:postId/delete', async (c) => {
+  const modelId = parseInt(c.req.param('modelId'));
+  const postId = parseInt(c.req.param('postId'));
+  
+  try {
+    await AdminPostsService.delete(postId);
+    return c.redirect(`/admin/models/${modelId}/posts?success=deleted`);
+  } catch (e: any) {
+    console.error('[Delete Post Error]', e);
+    return c.redirect(`/admin/models/${modelId}/posts?error=` + encodeURIComponent(e.message));
   }
 });
 

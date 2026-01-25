@@ -133,6 +133,7 @@ export const AdminModels: FC<AdminModelsProps> = ({ models, stats, pagination, f
             <tr>
               <th class="px-6 py-4">Modelo</th>
               <th class="px-6 py-4">Status</th>
+              <th class="px-6 py-4">Posts</th>
               <th class="px-6 py-4">Flags</th>
               <th class="px-6 py-4">Criado em</th>
               <th class="px-6 py-4 text-right">Ações</th>
@@ -141,7 +142,7 @@ export const AdminModels: FC<AdminModelsProps> = ({ models, stats, pagination, f
           <tbody class="divide-y divide-white/5 bg-surface">
             {models.length === 0 ? (
               <tr>
-                <td colspan={5} class="px-6 py-12 text-center text-gray-500">
+                <td colspan={6} class="px-6 py-12 text-center text-gray-500">
                   <div class="flex flex-col items-center gap-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="opacity-20"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     <p>Nenhum modelo encontrado.</p>
@@ -178,6 +179,15 @@ export const AdminModels: FC<AdminModelsProps> = ({ models, stats, pagination, f
                   }`}>
                     {m.status === 'active' ? 'Ativo' : m.status === 'hidden' ? 'Oculto' : 'Rascunho'}
                   </span>
+                </td>
+                <td class="px-6 py-4">
+                  <a 
+                    href={`/admin/models/${m.id}/posts`}
+                    class="text-primary hover:text-primary-light text-sm font-bold flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    {m.postCount || 0}
+                  </a>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex gap-1">
