@@ -31587,7 +31587,7 @@ var clicks = pgTable("clicks", {
 });
 
 // src/db/index.ts
-var connectionString = process.env.DATABASE_URL || "postgres://vitrine:vitrine@24.199.121.28:5432/vitrine?sslmode=disable";
+var connectionString = process.env.DATABASE_URL || "postgres://vitrine:Grau1234@64.176.20.29:5432/vitrine?sslmode=disable";
 var client = src_default(connectionString);
 var db = drizzle(client, { schema: exports_schema });
 
