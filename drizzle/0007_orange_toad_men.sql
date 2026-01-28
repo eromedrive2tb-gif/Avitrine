@@ -1,1 +1,0 @@
-ALTER TABLE "payment_gateways" ADD COLUMN "postback_url" text;

@@ -1,1 +1,0 @@
-ALTER TABLE "checkouts" ADD COLUMN "external_id" text;

@@ -5,92 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1768778573147,
-      "tag": "0000_special_white_queen",
+      "when": 1769625969930,
+      "tag": "0000_nebulous_kat_farrell",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1768840404767,
-      "tag": "0001_chunky_thunderbolts",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1768840438028,
-      "tag": "0002_sparkling_madripoor",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1768842793938,
-      "tag": "0003_deep_thunderbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1768897716839,
-      "tag": "0004_mixed_vermin",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1769117349219,
-      "tag": "0005_furry_catseye",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1769172535715,
-      "tag": "0006_overconfident_titania",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1769196783751,
-      "tag": "0007_orange_toad_men",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1769234638118,
-      "tag": "0008_stiff_toro",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1769275541951,
-      "tag": "0009_order_bumps",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1769287613695,
-      "tag": "0010_ads_table",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1769583407635,
-      "tag": "0011_eager_the_order",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1769583595657,
-      "tag": "0012_add_python_triggers",
+      "when": 1769626206238,
+      "tag": "0001_initial_setup_and_triggers",
       "breakpoints": true
     }
   ]
