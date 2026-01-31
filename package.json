@@ -1,9 +1,11 @@
 {
   "name": "code",
   "scripts": {
+    "start": "bun run css:build && bun src/index.tsx",
     "dev": "bun run --hot src/index.tsx",
     "css:build": "tailwindcss -i ./src/input.css -o ./static/styles.css",
-    "css:watch": "tailwindcss -i ./src/input.css -o ./static/styles.css --watch"
+    "css:watch": "tailwindcss -i ./src/input.css -o ./static/styles.css --watch",
+    "build": "bun run css:build && bun build ./src/index.tsx --outdir ./dist --target bun"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",

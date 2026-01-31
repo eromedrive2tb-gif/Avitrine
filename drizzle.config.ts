@@ -5,6 +5,6 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: "postgres://vitrine:Grau1234@64.176.20.29:5432/vitrine?sslmode=disable",
+    url: "postgres://postgres:postgres@only_testepost:5432/only?sslmode=disable",
   },
 });

@@ -114,7 +114,7 @@ export const WhitelabelSyncService = {
               const modelId = modelMap.get(parsed.modelName);
               if (!modelId) continue;
               
-              const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
+              const cdnUrl = `https://whitelabel-only.sfo3.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
               if (parsed.fileName === 'icon.webp') {
                   await WhitelabelPersistence.updateModelProfile(modelId, { iconUrl: cdnUrl });
               } else if (parsed.fileName === 'banner.webp') {
@@ -131,7 +131,7 @@ export const WhitelabelSyncService = {
               const postId = postMap.get(postKey); // Should exist now
               if (!postId) continue;
 
-              const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
+              const cdnUrl = `https://whitelabel-only.sfo3.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
               
               mediaToInsert.push({
                   whitelabelPostId: postId,
@@ -276,7 +276,7 @@ export const WhitelabelSyncService = {
                 const modelId = modelMap.get(parsed.modelName);
                 if (!modelId) continue;
                 
-                const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
+                const cdnUrl = `https://whitelabel-only.sfo3.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
                 if (parsed.fileName === 'icon.webp') {
                     await WhitelabelPersistence.updateModelProfile(modelId, { iconUrl: cdnUrl });
                 } else if (parsed.fileName === 'banner.webp') {
@@ -293,7 +293,7 @@ export const WhitelabelSyncService = {
                 const postId = postMap.get(postKey);
                 if (!postId) continue;
 
-                const cdnUrl = `https://bucketcoomerst.sfo3.cdn.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
+                const cdnUrl = `https://whitelabel-only.sfo3.digitaloceanspaces.com/${item.Key.split('/').map((p: string) => encodeURIComponent(p)).join('/')}`;
                 mediaToInsert.push({
                     whitelabelPostId: postId,
                     s3Key: item.Key,

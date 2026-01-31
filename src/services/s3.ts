@@ -5,10 +5,10 @@ export const S3_CONFIG = {
   region: "sfo3",
   endpoint: "https://sfo3.digitaloceanspaces.com",
   credentials: {
-    accessKeyId: "DO009RPG3PDRWU7HUL77",
-    secretAccessKey: "fTdSHA/OhKK09x6qjXA86wN8eQiUZUKAx2YzT/GO8nw",
+    accessKeyId: "DO00N8MHEPAM98V3JXAG",
+    secretAccessKey: "QiBWGdSZkzoEbnBzFHss/VLnMTJb7wLyJC1towj0Kpw",
   },
-  bucket: "bucketcoomerst"
+  bucket: "whitelabel-only"
 };
 
 export const s3Client = new S3Client({

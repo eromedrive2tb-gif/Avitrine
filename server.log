@@ -1,0 +1,830 @@
+Started server: http://localhost:3000
+[Home] Ads data: {
+  home_top_count: 0,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 0,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 0,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 0,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
+[Home] Ads data: {
+  home_top_count: 1,
+  home_middle_count: 0,
+  home_bottom_count: 0,
+  top_banners: 0,
+  bottom_banners: 0,
+  models_counts: {
+    total: 20,
+    recommended: 5,
+    featured: 10,
+    new_revelations: 5,
+  },
+}
