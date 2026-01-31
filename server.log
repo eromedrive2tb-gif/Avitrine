@@ -828,3 +828,5 @@ Started server: http://localhost:3000
     new_revelations: 5,
   },
 }
+[SSE] Cleanup complete. Total clients: 0
+[SSE] Cleanup complete. Total clients: 0

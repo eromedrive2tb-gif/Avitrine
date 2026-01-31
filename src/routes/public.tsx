@@ -230,6 +230,11 @@ publicRoutes.get('/checkout', async (c) => {
       where: eq(paymentGateways.isActive, true)
   });
 
+  // Se o gateway ativo for Dias Marketplace e o plano tiver checkoutUrl, redirecionar
+  if (activeGateway && activeGateway.name === 'Dias Marketplace' && plan.checkoutUrl) {
+      return c.redirect(plan.checkoutUrl);
+  }
+
   // Buscar order bumps ativas ordenadas
   const activeOrderBumps = await db
     .select()
