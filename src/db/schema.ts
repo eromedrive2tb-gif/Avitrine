@@ -24,6 +24,10 @@ export const plans = pgTable('plans', {
   // Internal Checkout Flags
   acceptsPix: boolean('accepts_pix').default(true),
   acceptsCard: boolean('accepts_card').default(true),
+  // Status do plano
+  isActive: boolean('is_active').default(true),
+  // Estilo do card do plano
+  cardStyle: text('card_style', { enum: ['primary', 'secondary', 'outline'] }).default('secondary'),
 });
 
 export const paymentGateways = pgTable('payment_gateways', {

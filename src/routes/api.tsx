@@ -394,6 +394,8 @@ apiRoutes.post('/admin/plans/update', async (c) => {
   const checkoutUrl = body['checkoutUrl'] as string;
   const acceptsPix = body['acceptsPix'] === 'true';
   const acceptsCard = body['acceptsCard'] === 'true';
+  const isActive = body['isActive'] === 'true';
+  const cardStyle = body['cardStyle'] as 'primary' | 'secondary' | 'outline' | undefined;
   
   // Processar benefícios
   const benefits: any[] = [];
@@ -453,7 +455,7 @@ apiRoutes.post('/admin/plans/update', async (c) => {
   const priceInCents = Math.round(parseFloat(cleanPrice) * 100);
 
   try {
-    console.log('Dados a serem atualizados:', { price: priceInCents, checkoutUrl, acceptsPix, acceptsCard, benefits });
+    console.log('Dados a serem atualizados:', { price: priceInCents, checkoutUrl, acceptsPix, acceptsCard, isActive, cardStyle, benefits });
     console.log('ID do plano a ser atualizado:', id);
     
     const result = await db.update(plans)
@@ -462,6 +464,8 @@ apiRoutes.post('/admin/plans/update', async (c) => {
             checkoutUrl: checkoutUrl,
             acceptsPix: acceptsPix,
             acceptsCard: acceptsCard,
+            isActive: isActive,
+            cardStyle: cardStyle,
             benefits: benefits // Salvar benefícios no campo JSON
         })
         .where(eq(plans.id, id));

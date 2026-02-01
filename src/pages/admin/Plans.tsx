@@ -11,6 +11,8 @@ interface Plan {
   acceptsPix?: boolean | null;
   acceptsCard?: boolean | null;
   benefits?: (string | { icon?: string; title?: string; subtitle?: string })[] | null;
+  isActive?: boolean | null;
+  cardStyle?: 'primary' | 'secondary' | 'outline' | null;
 }
 
 interface OrderBump {
@@ -105,6 +107,62 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
           </div>
         )}
 
+        {/* Seção de ativação e estilo do plano */}
+        <div class="pt-4 border-t border-white/5 space-y-4">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Status do Plano</label>
+            <label class="flex items-center justify-between bg-[#1a1a1a] p-3 rounded border border-white/10 cursor-pointer hover:bg-white/5">
+              <span class="text-sm text-gray-300">Ativo (Visível na página de planos)</span>
+              <input 
+                type="checkbox" 
+                name="isActive" 
+                value="true"
+                checked={!!plan.isActive} 
+                class="accent-primary w-5 h-5 rounded" 
+              />
+            </label>
+          </div>
+          
+          <div>
+            <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Estilo do Card</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class={`flex flex-col items-center justify-center p-3 rounded border cursor-pointer transition-all ${plan.cardStyle === 'primary' ? 'border-primary bg-primary/10' : 'border-white/10 hover:border-white/30'}`}>
+                <input 
+                  type="radio" 
+                  name="cardStyle" 
+                  value="primary" 
+                  checked={plan.cardStyle === 'primary'}
+                  class="sr-only"
+                />
+                <span class="text-sm font-bold mb-1">Destaque</span>
+                <span class="text-xs text-gray-500">Principal</span>
+              </label>
+              <label class={`flex flex-col items-center justify-center p-3 rounded border cursor-pointer transition-all ${plan.cardStyle === 'secondary' ? 'border-primary bg-primary/10' : 'border-white/10 hover:border-white/30'}`}>
+                <input 
+                  type="radio" 
+                  name="cardStyle" 
+                  value="secondary" 
+                  checked={plan.cardStyle === 'secondary'}
+                  class="sr-only"
+                />
+                <span class="text-sm font-bold mb-1">Secundário</span>
+                <span class="text-xs text-gray-500">Normal</span>
+              </label>
+              <label class={`flex flex-col items-center justify-center p-3 rounded border cursor-pointer transition-all ${plan.cardStyle === 'outline' ? 'border-primary bg-primary/10' : 'border-white/10 hover:border-white/30'}`}>
+                <input 
+                  type="radio" 
+                  name="cardStyle" 
+                  value="outline" 
+                  checked={plan.cardStyle === 'outline'}
+                  class="sr-only"
+                />
+                <span class="text-sm font-bold mb-1">Borda</span>
+                <span class="text-xs text-gray-500">Claro</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
         {/* Seção de edição de benefícios */}
         <div class="pt-4 border-t border-white/5">
           <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Benefícios</label>

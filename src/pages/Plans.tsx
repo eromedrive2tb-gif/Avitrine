@@ -68,7 +68,7 @@ export const PlansPage: FC<PlansPageProps> = ({ plans, user }) => {
         
         <div class="max-w-7xl mx-auto px-6 relative z-10 w-full">
           <div class="text-center mb-20">
-            <h1 class="text-5xl md:text-7xl font-display mb-4">Escolha sua <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold to-[#FFFDD0]">Jornada</span></h1>
+            <h1 class="text-5xl md:text-7xl font-display mb-4">DESTRAVE O ACESSO<span class="text-transparent bg-clip-text bg-gradient-to-r from-gold to-[#FFFDD0]"> VIP</span></h1>
             <p class="text-gray-400 text-xl font-light tracking-wide">Acesso imediato. Cancele quando quiser.</p>
           </div>
 

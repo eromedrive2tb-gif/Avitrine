@@ -177,11 +177,14 @@ publicRoutes.get('/posts/:id', async (c) => {
 publicRoutes.get('/plans', async (c) => {
   const user = await getUser(c);
   try {
-      const dbPlans = await db.select().from(plans).orderBy(plans.duration);
+      const dbPlans = await db.select().from(plans).where(eq(plans.isActive, true)).orderBy(plans.duration);
       
           const uiPlans = dbPlans.map(p => {
           const isAnnual = p.duration === 365;
           const isWeekly = p.duration === 7;
+          
+          // Determinar se o plano deve ser destacado com base no cardStyle ou na duração
+          const isHighlighted = p.cardStyle === 'primary' || (isAnnual && !p.cardStyle);
           
           // Usar os benefícios do banco de dados, com fallback para benefícios padrão se não estiverem definidos
           const benefits = (p.benefits && p.benefits.length > 0) ? p.benefits : [
@@ -199,8 +202,9 @@ publicRoutes.get('/plans', async (c) => {
             currency: 'R$',
             period: p.duration === 7 ? '/semana' : p.duration === 30 ? '/mês' : '/ano',
             features: benefits,
-            highlighted: isAnnual,
-            variant: isAnnual ? 'primary' : isWeekly ? 'outline' : 'secondary',
+            highlighted: isHighlighted,
+            variant: p.cardStyle || (isAnnual ? 'primary' : isWeekly ? 'outline' : 'secondary'),
+            cardStyle: p.cardStyle,
             badge: isAnnual ? 'MELHOR VALOR' : undefined,
             checkoutUrl: p.checkoutUrl
           };
