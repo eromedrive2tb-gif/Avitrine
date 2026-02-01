@@ -1028,6 +1028,9 @@
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .flex-col {
     flex-direction: column;
   }
@@ -1433,6 +1436,9 @@
   }
   .bg-\[\#1a1a1a\] {
     background-color: #1a1a1a;
+  }
+  .bg-\[\#1a1a1a\]\/30 {
+    background-color: color-mix(in oklab, #1a1a1a 30%, transparent);
   }
   .bg-\[\#8A2BE2\] {
     background-color: #8A2BE2;
