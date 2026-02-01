@@ -205,6 +205,7 @@ publicRoutes.get('/plans', async (c) => {
             highlighted: isHighlighted,
             variant: p.cardStyle || (isAnnual ? 'primary' : isWeekly ? 'outline' : 'secondary'),
             cardStyle: p.cardStyle,
+            ctaText: p.ctaText,
             badge: isAnnual ? 'MELHOR VALOR' : undefined,
             checkoutUrl: p.checkoutUrl
           };

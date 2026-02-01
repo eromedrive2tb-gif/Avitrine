@@ -36,7 +36,8 @@ export const PlanCard: FC<PlanProps> = ({
   description,
   className,
   checkoutUrl,
-  cardStyle
+  cardStyle,
+  ctaText
 }) => {
   const effectiveVariant = cardStyle || variant || 'secondary';
   
@@ -46,7 +47,7 @@ export const PlanCard: FC<PlanProps> = ({
       variant={highlighted ? 'primary' : effectiveVariant as any} 
       className={highlighted ? "w-full !bg-gradient-to-r !from-gold !to-[#B8860B] !text-black hover:!brightness-110 !font-bold !text-lg !py-4 shadow-[0_0_20px_rgba(255,215,0,0.3)] border-none" : `w-full ${effectiveVariant === 'outline' ? 'border-gray-700 text-gray-400 hover:text-white hover:border-white' : ''}`}
     >
-        {highlighted ? `ASSINAR ${name}` : `Selecionar ${name}`}
+        {ctaText || (highlighted ? `ASSINAR ${name}` : `Selecionar ${name}`)}
     </Button>
   );
 

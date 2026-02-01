@@ -390,7 +390,9 @@ apiRoutes.post('/admin/finance/junglepay', async (c) => {
 apiRoutes.post('/admin/plans/update', async (c) => {
   const body = await c.req.parseBody();
   const id = parseInt(body['id'] as string);
+  const name = body['name'] as string;
   const priceRaw = body['price'] as string;
+  const ctaText = body['ctaText'] as string;
   const checkoutUrl = body['checkoutUrl'] as string;
   const acceptsPix = body['acceptsPix'] === 'true';
   const acceptsCard = body['acceptsCard'] === 'true';
@@ -455,12 +457,14 @@ apiRoutes.post('/admin/plans/update', async (c) => {
   const priceInCents = Math.round(parseFloat(cleanPrice) * 100);
 
   try {
-    console.log('Dados a serem atualizados:', { price: priceInCents, checkoutUrl, acceptsPix, acceptsCard, isActive, cardStyle, benefits });
+    console.log('Dados a serem atualizados:', { name, price: priceInCents, ctaText, checkoutUrl, acceptsPix, acceptsCard, isActive, cardStyle, benefits });
     console.log('ID do plano a ser atualizado:', id);
     
     const result = await db.update(plans)
         .set({ 
+            name: name,
             price: priceInCents,
+            ctaText: ctaText,
             checkoutUrl: checkoutUrl,
             acceptsPix: acceptsPix,
             acceptsCard: acceptsCard,

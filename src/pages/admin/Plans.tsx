@@ -13,6 +13,7 @@ interface Plan {
   benefits?: (string | { icon?: string; title?: string; subtitle?: string })[] | null;
   isActive?: boolean | null;
   cardStyle?: 'primary' | 'secondary' | 'outline' | null;
+  ctaText?: string | null;
 }
 
 interface OrderBump {
@@ -109,6 +110,30 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
 
         {/* Seção de ativação e estilo do plano */}
         <div class="pt-4 border-t border-white/5 space-y-4">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Nome do Plano</label>
+            <input 
+              type="text" 
+              name="name" 
+              value={plan.name} 
+              class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+              placeholder="Nome do plano"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Texto do Botão (CTA)</label>
+            <input 
+              type="text" 
+              name="ctaText" 
+              value={plan.ctaText || ''} 
+              class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+              placeholder="Ex: Assinar Agora"
+            />
+          </div>
+          
+
+          
           <div>
             <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Status do Plano</label>
             <label class="flex items-center justify-between bg-[#1a1a1a] p-3 rounded border border-white/10 cursor-pointer hover:bg-white/5">
