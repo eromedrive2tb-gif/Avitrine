@@ -14,7 +14,7 @@ app.route('/admin', adminRoutes);
 app.route('/api', apiRoutes);
 
 export default {
-  port: 3000,
+  port: parseInt(process.env.PORT || '3000'),
   fetch: app.fetch,
   idleTimeout: 120, // Increase timeout to 120 seconds
 };

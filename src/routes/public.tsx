@@ -179,17 +179,18 @@ publicRoutes.get('/plans', async (c) => {
   try {
       const dbPlans = await db.select().from(plans).orderBy(plans.duration);
       
-      const COMMON_FEATURES = [
-        "Acesso Ilimitado a todas as Modelos",
-        "Conteúdo Exclusivo em 4K",
-        "Chat Direto (VIP)",
-        "Novas Modelos toda semana",
-        "Cancelamento Fácil"
-      ];
-
-      const uiPlans = dbPlans.map(p => {
+          const uiPlans = dbPlans.map(p => {
           const isAnnual = p.duration === 365;
           const isWeekly = p.duration === 7;
+          
+          // Usar os benefícios do banco de dados, com fallback para benefícios padrão se não estiverem definidos
+          const benefits = (p.benefits && p.benefits.length > 0) ? p.benefits : [
+            "Acesso Ilimitado a todas as Modelos",
+            "Conteúdo Exclusivo em 4K",
+            "Chat Direto (VIP)",
+            "Novas Modelos toda semana",
+            "Cancelamento Fácil"
+          ];
           
           return {
             id: p.id,
@@ -197,7 +198,7 @@ publicRoutes.get('/plans', async (c) => {
             price: (p.price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
             currency: 'R$',
             period: p.duration === 7 ? '/semana' : p.duration === 30 ? '/mês' : '/ano',
-            features: COMMON_FEATURES,
+            features: benefits,
             highlighted: isAnnual,
             variant: isAnnual ? 'primary' : isWeekly ? 'outline' : 'secondary',
             badge: isAnnual ? 'MELHOR VALOR' : undefined,

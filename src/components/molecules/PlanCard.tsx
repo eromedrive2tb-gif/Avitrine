@@ -99,7 +99,7 @@ export const PlanCard: FC<PlanProps> = ({
         <ul class={`space-y-4 mb-8 text-sm ${variant === 'outline' ? 'text-gray-500' : 'text-gray-300'}`}>
             {features.map((feature: any) => (
             <li class="flex items-center gap-3">
-                <span class={variant === 'outline' ? 'text-gray-600' : 'text-primary'}>✓</span> {feature}
+                <span class={variant === 'outline' ? 'text-gray-600' : 'text-primary'}>✓</span> {typeof feature === 'string' ? feature : (feature.title || feature)}
             </li>
             ))}
         </ul>

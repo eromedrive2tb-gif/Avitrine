@@ -394,6 +394,57 @@ apiRoutes.post('/admin/plans/update', async (c) => {
   const checkoutUrl = body['checkoutUrl'] as string;
   const acceptsPix = body['acceptsPix'] === 'true';
   const acceptsCard = body['acceptsCard'] === 'true';
+  
+  // Processar benefícios
+  const benefits: any[] = [];
+  console.log('Corpo recebido:', body); // Log para depuração
+  
+  // Verificar se body tem propriedades com nomes começando com 'benefits['
+  for (const key in body) {
+    console.log('Chave encontrada:', key, 'Valor:', body[key]); // Log para depuração
+    if (key.startsWith('benefits[')) {
+      const value = body[key];
+      
+      // Verificar se é um array (benefits[0], benefits[1], etc.)
+      if (/^benefits\[\d+\]$/.test(key)) {
+        if (typeof value === 'string' && value.trim() !== '') {
+          benefits.push(value.trim());
+          console.log('Benefício adicionado:', value.trim()); // Log para depuração
+        }
+      } 
+      // Verificar se é uma propriedade aninhada (benefits[0][title], benefits[0][icon], etc.)
+      else if (/^benefits\[\d+\]\[(title|icon|subtitle)\]$/.test(key)) {
+        // Este bloco será tratado separadamente abaixo
+      }
+    }
+  }
+  
+  // Processar benefícios complexos (com título, ícone e subtítulo)
+  // Primeiro, identificar todos os índices usados
+  const indicesComplexos = new Set<number>();
+  for (const key in body) {
+    const match = key.match(/^benefits\[(\d+)\]\[(title|icon|subtitle)\]$/);
+    if (match) {
+      indicesComplexos.add(parseInt(match[1]));
+    }
+  }
+  
+  // Para cada índice identificado, montar o objeto de benefício complexo
+  for (const idx of indicesComplexos) {
+    const title = body[`benefits[${idx}][title]`];
+    const icon = body[`benefits[${idx}][icon]`];
+    const subtitle = body[`benefits[${idx}][subtitle]`];
+    
+    if (title && title.trim() !== '') {
+      const benefitObj: any = { title: title.trim() };
+      if (icon && icon.trim() !== '') benefitObj.icon = icon.trim();
+      if (subtitle && subtitle.trim() !== '') benefitObj.subtitle = subtitle.trim();
+      benefits.push(benefitObj);
+      console.log('Benefício complexo adicionado:', benefitObj); // Log para depuração
+    }
+  }
+  
+  console.log('Benefícios finais:', benefits); // Log para depuração
 
   if (!id) return c.redirect('/admin/plans?error=Invalid ID');
 
@@ -402,18 +453,28 @@ apiRoutes.post('/admin/plans/update', async (c) => {
   const priceInCents = Math.round(parseFloat(cleanPrice) * 100);
 
   try {
-    await db.update(plans)
+    console.log('Dados a serem atualizados:', { price: priceInCents, checkoutUrl, acceptsPix, acceptsCard, benefits });
+    console.log('ID do plano a ser atualizado:', id);
+    
+    const result = await db.update(plans)
         .set({ 
             price: priceInCents,
             checkoutUrl: checkoutUrl,
             acceptsPix: acceptsPix,
-            acceptsCard: acceptsCard
+            acceptsCard: acceptsCard,
+            benefits: benefits // Salvar benefícios no campo JSON
         })
         .where(eq(plans.id, id));
     
+    console.log('Resultado da atualização (affected rows):', result);
+    
+    // Verificar se realmente atualizou algo
+    const updatedPlan = await db.select().from(plans).where(eq(plans.id, id));
+    console.log('Plano após atualização:', updatedPlan[0]);
+    
     return c.redirect('/admin/plans?success=Updated');
   } catch (e) {
-    console.error(e);
+    console.error('Erro na atualização:', e);
     return c.redirect('/admin/plans?error=Database Error');
   }
 });

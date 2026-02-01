@@ -10,6 +10,7 @@ interface Plan {
   checkoutUrl: string | null;
   acceptsPix?: boolean | null;
   acceptsCard?: boolean | null;
+  benefits?: (string | { icon?: string; title?: string; subtitle?: string })[] | null;
 }
 
 interface OrderBump {
@@ -103,6 +104,78 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
              </label>
           </div>
         )}
+
+        {/* Seção de edição de benefícios */}
+        <div class="pt-4 border-t border-white/5">
+          <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Benefícios</label>
+          <div id={`benefits-container-${plan.id}`} class="space-y-2">
+            {(plan.benefits || []).map((benefit: any, index: number) => {
+              if (typeof benefit === 'string') {
+                return (
+                  <div key={index} class="flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      name={`benefits[${index}]`} 
+                      value={benefit} 
+                      class="flex-1 bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+                      placeholder="Digite um benefício"
+                    />
+                    <button 
+                      type="button" 
+                      onclick={`removeBenefit(${plan.id}, ${index})`}
+                      class="p-2 text-red-500 hover:bg-red-500/10 rounded"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={index} class="space-y-2 p-3 bg-[#1a1a1a]/30 rounded border border-white/5">
+                    <div class="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        name={`benefits[${index}][title]`} 
+                        value={benefit.title || ''} 
+                        class="flex-1 bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+                        placeholder="Título"
+                      />
+                      <button 
+                        type="button" 
+                        onclick={`removeBenefit(${plan.id}, ${index})`}
+                        class="p-2 text-red-500 hover:bg-red-500/10 rounded"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                    <input 
+                      type="text" 
+                      name={`benefits[${index}][icon]`} 
+                      value={benefit.icon || ''} 
+                      class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+                      placeholder="Ícone (opcional)"
+                    />
+                    <input 
+                      type="text" 
+                      name={`benefits[${index}][subtitle]`} 
+                      value={benefit.subtitle || ''} 
+                      class="w-full bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+                      placeholder="Subtítulo (opcional)"
+                    />
+                  </div>
+                );
+              }
+            })}
+          </div>
+          <button 
+            type="button" 
+            onclick={`addBenefit(${plan.id})`}
+            class="mt-2 w-full bg-white/5 hover:bg-primary hover:text-white text-gray-300 py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Benefício
+          </button>
+        </div>
 
         <div class="pt-4 border-t border-white/5">
              <button type="submit" class="w-full bg-white/5 hover:bg-primary hover:text-white text-gray-300 py-2 rounded-lg font-bold text-sm transition-all">
@@ -486,6 +559,62 @@ export const AdminPlans: FC<AdminPlansProps> = ({ plans, activeGateway, orderBum
             window.closeOrderBumpModal();
           }
         });
+        
+        // Funções para manipular benefícios
+        function addBenefit(planId) {
+          const container = document.getElementById('benefits-container-' + planId);
+          const index = container.children.length;
+          
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-2';
+          
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = 'benefits[' + index + ']';
+          input.value = '';
+          input.className = 'flex-1 bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none transition-colors';
+          input.placeholder = 'Digite um benefício';
+          
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.onclick = function() { removeBenefit(planId, index); };
+          button.className = 'p-2 text-red-500 hover:bg-red-500/10 rounded';
+          button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+          
+          div.appendChild(input);
+          div.appendChild(button);
+          
+          container.appendChild(div);
+        }
+        
+        function removeBenefit(planId, index) {
+          const container = document.getElementById('benefits-container-' + planId);
+          container.removeChild(container.children[index]);
+          
+          // Reorganizar os nomes dos campos após remoção
+          reindexBenefits(planId);
+        }
+        
+        function reindexBenefits(planId) {
+          const container = document.getElementById('benefits-container-' + planId);
+          // Atualizar os nomes dos campos após remoção
+          const benefitDivs = container.querySelectorAll('div.flex.items-center.gap-2');
+          
+          benefitDivs.forEach((div, newIndex) => {
+            const textInputs = div.querySelectorAll('input[type="text"]');
+            textInputs.forEach(input => {
+              if (input.name.includes('benefits[')) {
+                // Extrai o índice antigo do nome do campo e substitui pelo novo
+                input.name = input.name.replace(/benefits\[[^\]]*\]/, 'benefits[' + newIndex + ']');
+              }
+            });
+            
+            const removeButton = div.querySelector('button[onclick*="removeBenefit"]');
+            if (removeButton) {
+              removeButton.setAttribute('onclick', 'removeBenefit(' + planId + ', ' + newIndex + ')');
+            }
+          });
+        }
       `}} />
     </AdminLayout>
   );
